@@ -48,3 +48,20 @@ vi.mock('@sentry/react', () => ({
   init: vi.fn(),
   captureException: vi.fn(),
 }));
+
+// Mock React Router
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useLocation: () => ({
+      pathname: '/test-path',
+      search: '',
+      hash: '',
+      state: null,
+      key: 'test-key',
+    }),
+    useNavigate: () => vi.fn(),
+    useParams: () => ({}),
+  };
+});
