@@ -6,7 +6,7 @@ import { toast } from '@/hooks/use-toast';
 // Extended User type to include custom user_metadata
 // Note: For production, migrate API keys to separate encrypted profiles table with RLS policy:
 // CREATE POLICY "Enable read/write for own data" ON public.profiles AS PERMISSIVE FOR ALL TO authenticated USING (auth.uid() = id)
-interface AppUser extends User {
+interface AppUser extends Omit<User, 'user_metadata'> {
   user_metadata?: {
     api_keys?: {
       perplexity?: string;

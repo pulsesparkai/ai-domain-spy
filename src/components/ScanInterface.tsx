@@ -75,12 +75,7 @@ const ScanInterface = () => {
     // Rate limiting check
     const scansCount = user.user_metadata?.api_keys?.scans_count || 0;
     if (scansCount >= 100) {
-      showToast.error("Monthly scan limit reached (100 scans). Please upgrade your plan.", {
-        style: {
-          background: '#F44336',
-          color: 'white'
-        }
-      });
+      showToast.error("Monthly scan limit reached (100 scans). Please upgrade your plan.");
       return;
     }
 
@@ -89,8 +84,8 @@ const ScanInterface = () => {
 
     try {
       // Track analytics event
-      if (typeof gtag !== 'undefined') {
-        gtag('event', 'scan_run', {
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'scan_run', {
           event_category: 'engagement',
           event_label: scanType,
           value: queries.length
@@ -105,9 +100,7 @@ const ScanInterface = () => {
         }
         
         if (!user.user_metadata?.api_keys?.perplexity) {
-          showToast.error("Perplexity API key required. Please add it in Settings.", {
-            style: { background: '#F44336', color: 'white' }
-          });
+          showToast.error("Perplexity API key required. Please add it in Settings.");
         }
         
         setResults(mockScanResults);

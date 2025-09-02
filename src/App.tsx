@@ -15,7 +15,17 @@ import Success from "./pages/Success";
 import Cancel from "./pages/Cancel";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Create QueryClient with proper configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 3,
+    },
+  },
+});
+
+console.log('QueryClient initialized:', queryClient);
 
 const App = () => (
   <ErrorBoundary>
