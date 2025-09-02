@@ -53,16 +53,20 @@ app.post('/api/scan', authenticateUser, async (req, res) => {
       return res.status(400).json({ error: 'Queries are required' });
     }
 
-    // Check fair use limits
+    // Check fair use limits and subscription status
     const { data: profile } = await supabase
       .from('profiles')
-      .select('api_keys')
+      .select('api_keys, subscription_status, subscription_tier')
       .eq('user_id', req.user.id)
       .single();
 
-    const scansCount = profile?.api_keys?.scans_count || 0;
-    if (scansCount >= 100) {
-      return res.status(429).json({ error: 'Monthly scan limit reached (100 scans)' });
+    // Check if user is subscribed (Pro users have unlimited scans)
+    const isSubscribed = (req.user.user_metadata?.subscribed) || 
+      (profile?.subscription_status === 'active' && profile?.subscription_tier === 'pro');
+    
+    const scansCount = req.user.user_metadata?.scans_count || 0;
+    if (!isSubscribed && scansCount >= 100) {
+      return res.status(429).json({ error: 'Monthly scan limit reached (100 scans). Please upgrade to Pro.' });
     }
 
     // Create scan record
@@ -85,56 +89,128 @@ app.post('/api/scan', authenticateUser, async (req, res) => {
     const results = await Promise.allSettled(
       queries.map(async (query: string) => {
         try {
+          console.log(`Processing query: ${query}`);
+          
+          // Get user API keys from profile
+          const userApiKeys = profile?.api_keys || {};
+          
           // Perplexity search
-          const perplexityResults = await PerplexityAPI.search(query, process.env.PERPLEXITY_API_KEY!);
+          let perplexityResults = null;
+          if (userApiKeys.perplexity) {
+            try {
+              perplexityResults = await PerplexityAPI.search(query, userApiKeys.perplexity);
+              console.log(`Perplexity results for "${query}":`, perplexityResults);
+            } catch (error: any) {
+              console.error(`Perplexity API error for query "${query}":`, error);
+              if (error.message?.includes('401') || error.message?.includes('403')) {
+                throw new Error('Invalid Perplexity API key');
+              }
+            }
+          }
           
           // OpenAI analysis
-          const openaiAnalysis = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [
-              {
-                role: 'system',
-                content: 'Extract URLs and analyze mentions for the given query and search results.'
-              },
-              {
-                role: 'user',
-                content: `Query: ${query}\nResults: ${JSON.stringify(perplexityResults)}`
+          let openaiAnalysis = null;
+          let sentimentResult = { sentiment: 'neutral' };
+          let citations: string[] = [];
+          
+          if (userApiKeys.openai) {
+            try {
+              // Main content analysis
+              openaiAnalysis = await openai.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages: [
+                  {
+                    role: 'system',
+                    content: 'Analyze the query and provide insights about AI visibility and brand mentions. Include relevant URLs if discussing online presence.'
+                  },
+                  {
+                    role: 'user',
+                    content: `Query: ${query}${perplexityResults ? `\nPerplexity Results: ${JSON.stringify(perplexityResults)}` : ''}`
+                  }
+                ],
+                max_tokens: 500
+              });
+
+              const content = openaiAnalysis.choices[0]?.message?.content || '';
+              
+              // Extract URLs using regex to simulate citations
+              const urlRegex = /https?:\/\/[^\s)]+/g;
+              citations = content.match(urlRegex) || [];
+              
+              // Sentiment analysis
+              if (perplexityResults?.content || content) {
+                const sentimentAnalysis = await openai.chat.completions.create({
+                  model: 'gpt-4o-mini',
+                  messages: [
+                    {
+                      role: 'system',
+                      content: 'Analyze sentiment of the content. Return only a JSON object with "sentiment" field set to "positive", "neutral", or "negative".'
+                    },
+                    {
+                      role: 'user',
+                      content: perplexityResults?.content || content
+                    }
+                  ],
+                  max_tokens: 50
+                });
+
+                try {
+                  sentimentResult = JSON.parse(sentimentAnalysis.choices[0]?.message?.content || '{"sentiment": "neutral"}');
+                } catch {
+                  sentimentResult = { sentiment: 'neutral' };
+                }
               }
-            ]
-          });
-
-          // Extract sentiment analysis
-          const sentimentAnalysis = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [
-              {
-                role: 'system',
-                content: 'Analyze sentiment of the search results. Return JSON with sentiment: "positive", "neutral", or "negative"'
-              },
-              {
-                role: 'user',
-                content: JSON.stringify(perplexityResults)
+              
+              console.log(`OpenAI analysis for "${query}":`, { content: content.substring(0, 100), citations, sentiment: sentimentResult });
+            } catch (error: any) {
+              console.error(`OpenAI API error for query "${query}":`, error);
+              if (error.status === 401 || error.status === 403) {
+                throw new Error('Invalid OpenAI API key');
               }
-            ]
-          });
+            }
+          }
 
-          // Google Trends data
-          const trendsData = await GoogleTrendsAPI.getInterest(query);
+          // Google Trends data (keep existing)
+          let trendsData = null;
+          try {
+            trendsData = await GoogleTrendsAPI.getInterest(query);
+          } catch (error) {
+            console.error(`Google Trends error for query "${query}":`, error);
+          }
 
-          // DuckDuckGo trending
-          const trendingData = await DuckDuckGoAPI.getTrending(query);
+          // DuckDuckGo trending (keep existing)
+          let trendingData = null;
+          try {
+            trendingData = await DuckDuckGoAPI.getTrending(query);
+          } catch (error) {
+            console.error(`DuckDuckGo error for query "${query}":`, error);
+          }
 
+          // Compile comprehensive result
           return {
             query,
             perplexity: perplexityResults,
-            openai: openaiAnalysis.choices[0]?.message?.content,
-            sentiment: JSON.parse(sentimentAnalysis.choices[0]?.message?.content || '{"sentiment": "neutral"}'),
+            openai: openaiAnalysis?.choices[0]?.message?.content,
+            sentiment: sentimentResult,
+            citations: perplexityResults?.citations || citations,
             trends: trendsData,
-            trending: trendingData
+            trending: trendingData,
+            visibilityScore: Math.floor(Math.random() * 40) + 60, // Mock for now, could be calculated from actual data
+            hasApiKeys: {
+              perplexity: !!userApiKeys.perplexity,
+              openai: !!userApiKeys.openai
+            }
           };
         } catch (error) {
           console.error(`Error processing query ${query}:`, error);
-          throw error;
+          return {
+            query,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            hasApiKeys: {
+              perplexity: !!profile?.api_keys?.perplexity,
+              openai: !!profile?.api_keys?.openai
+            }
+          };
         }
       })
     );
@@ -153,20 +229,38 @@ app.post('/api/scan', authenticateUser, async (req, res) => {
       })
       .eq('id', scan.id);
 
-    // Update scans count
-    await supabase
-      .from('profiles')
-      .update({
-        api_keys: {
-          ...profile?.api_keys,
+    // Calculate aggregated metrics
+    const successfulResults = finalResults.filter(r => !r.error);
+    const aggregates = {
+      totalQueries: queries.length,
+      successfulQueries: successfulResults.length,
+      averageVisibilityScore: successfulResults.reduce((acc, r) => acc + (r.visibilityScore || 0), 0) / Math.max(successfulResults.length, 1),
+      sentimentBreakdown: {
+        positive: successfulResults.filter(r => r.sentiment?.sentiment === 'positive').length,
+        neutral: successfulResults.filter(r => r.sentiment?.sentiment === 'neutral').length,
+        negative: successfulResults.filter(r => r.sentiment?.sentiment === 'negative').length
+      },
+      totalCitations: successfulResults.reduce((acc, r) => acc + (r.citations?.length || 0), 0),
+      apiKeysUsed: {
+        perplexity: successfulResults.some(r => r.hasApiKeys?.perplexity),
+        openai: successfulResults.some(r => r.hasApiKeys?.openai)
+      }
+    };
+
+    // Update scan count (only for non-subscribed users)
+    if (!isSubscribed) {
+      await supabase.auth.admin.updateUserById(req.user.id, {
+        user_metadata: {
+          ...req.user.user_metadata,
           scans_count: scansCount + 1
         }
-      })
-      .eq('user_id', req.user.id);
+      });
+    }
 
     res.json({
       scanId: scan.id,
       results: finalResults,
+      aggregates,
       status: 'completed'
     });
 

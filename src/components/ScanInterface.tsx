@@ -94,15 +94,21 @@ const ScanInterface = () => {
         });
       }
 
-      if (devMode || !user.user_metadata?.api_keys?.perplexity) {
+      // Check if user has required API keys
+      const hasPerplexity = user.user_metadata?.api_keys?.perplexity;
+      const hasOpenAI = user.user_metadata?.api_keys?.openai;
+      
+      if (devMode || (!hasPerplexity && !hasOpenAI)) {
         // Mock scanning with progress for dev mode or missing API keys
         for (let i = 0; i <= 100; i += 20) {
           setProgress(i);
           await new Promise(resolve => setTimeout(resolve, 500));
         }
         
-        if (!user.user_metadata?.api_keys?.perplexity) {
-          showToast.error("Perplexity API key required. Please add it in Settings.");
+        if (!hasPerplexity && !hasOpenAI) {
+          showToast.error("API keys required. Please add Perplexity or OpenAI keys in Settings.");
+        } else if (!hasPerplexity) {
+          showToast.error("Perplexity API key recommended for best results. Add it in Settings.");
         }
         
         setResults(mockScanResults);
@@ -126,12 +132,22 @@ const ScanInterface = () => {
           throw new Error('Monthly scan limit reached');
         }
 
+        if (response.status === 401) {
+          throw new Error('Invalid API key. Please check your API keys in Settings.');
+        }
+
         if (!response.ok) {
-          throw new Error('Scan failed');
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error || 'Scan failed');
         }
 
         const data = await response.json();
         setResults(data.results);
+        
+        // Show API key warnings if some failed
+        if (data.results.some((r: any) => r.error?.includes('Invalid'))) {
+          showToast.error("Some API keys are invalid. Check Settings for details.");
+        }
 
         // Update scan count in user metadata (only if not subscribed)
         if (!isSubscribed) {

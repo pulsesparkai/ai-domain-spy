@@ -10,6 +10,7 @@ import { Eye, EyeOff, Save, User, Key, CreditCard } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import DevModeToggle from '@/components/DevModeToggle';
 import { ExportButton } from '@/components/ExportButton';
+import { ApiKeyValidator } from '@/components/ApiKeyValidator';
 
 export default function Settings() {
   const { user, profile, updateProfile, updateUserMetadata } = useAuth();
@@ -309,6 +310,8 @@ export default function Settings() {
                     </p>
                   </div>
 
+                  <ApiKeyValidator apiKeys={apiKeys} />
+                  
                   <Button onClick={handleApiKeysUpdate} style={{ backgroundColor: '#6B5BFF' }}>
                     <Save className="w-4 h-4 mr-2" />
                     Save API Keys
