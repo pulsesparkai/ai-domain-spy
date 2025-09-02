@@ -3,6 +3,22 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
+// Extended User type to include custom user_metadata
+// Note: For production, migrate API keys to separate encrypted profiles table with RLS policy:
+// CREATE POLICY "Enable read/write for own data" ON public.profiles AS PERMISSIVE FOR ALL TO authenticated USING (auth.uid() = id)
+interface AppUser extends User {
+  user_metadata?: {
+    api_keys?: {
+      perplexity?: string;
+      openai?: string;
+      google_analytics?: string;
+      screaming_frog?: string;
+      dev_mode?: boolean;
+      scans_count?: number;
+    };
+  };
+}
+
 interface Profile {
   id: string;
   user_id: string;
@@ -17,7 +33,7 @@ interface Profile {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
@@ -25,19 +41,21 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  updateUserMetadata: (metadata: any) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
     try {
+      // Ensure user-specific data: filter by auth.uid() = user_id
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -133,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
     
     try {
+      // Ensure user-specific data: filter by auth.uid() = user_id
       const { error } = await supabase
         .from('profiles')
         .update(updates)
@@ -155,6 +174,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateUserMetadata = async (metadata: any) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          ...user.user_metadata,
+          ...metadata
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Update local user state
+      setUser(prev => prev ? {
+        ...prev,
+        user_metadata: {
+          ...prev.user_metadata,
+          ...metadata
+        }
+      } : null);
+      
+      toast({
+        title: "Settings updated",
+        description: "Your settings have been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating user metadata:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update settings. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const value = {
     user,
     session,
@@ -164,6 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signOut,
     updateProfile,
+    updateUserMetadata,
     refreshProfile,
   };
 

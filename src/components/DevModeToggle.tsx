@@ -4,13 +4,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 
 const DevModeToggle = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateUserMetadata } = useAuth();
   const [devMode, setDevMode] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('dev-mode');
-    setDevMode(stored === 'true');
-  }, []);
+    const userDevMode = user?.user_metadata?.api_keys?.dev_mode;
+    setDevMode(stored === 'true' || userDevMode === true);
+  }, [user]);
 
   const handleToggle = async (enabled: boolean) => {
     setDevMode(enabled);
@@ -18,9 +19,9 @@ const DevModeToggle = () => {
     
     if (user) {
       try {
-        await updateProfile({
+        await updateUserMetadata({
           api_keys: {
-            ...user.api_keys,
+            ...user.user_metadata?.api_keys,
             dev_mode: enabled
           }
         });

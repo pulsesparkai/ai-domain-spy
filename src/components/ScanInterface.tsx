@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { showToast } from "@/lib/toast";
 import ScanProgressBar from "./ScanProgressBar";
 import { useMockData } from "@/hooks/useMockData";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { lazy, Suspense } from "react";
 
 // Lazy load Recharts components
@@ -28,6 +30,7 @@ const ScanInterface = () => {
   const [errors, setErrors] = useState<string[]>([]);
   
   const { devMode, mockScanResults } = useMockData();
+  const { user, session } = useAuth();
 
   const validateInputs = () => {
     const newErrors: string[] = [];
@@ -64,25 +67,58 @@ const ScanInterface = () => {
       return;
     }
 
+    if (!user) {
+      showToast.error("Please log in to perform scans");
+      return;
+    }
+
+    // Rate limiting check
+    const scansCount = user.user_metadata?.api_keys?.scans_count || 0;
+    if (scansCount >= 100) {
+      showToast.error("Monthly scan limit reached (100 scans). Please upgrade your plan.", {
+        style: {
+          background: '#F44336',
+          color: 'white'
+        }
+      });
+      return;
+    }
+
     setIsScanning(true);
     setProgress(0);
 
     try {
-      if (devMode) {
-        // Mock scanning with progress
+      // Track analytics event
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'scan_run', {
+          event_category: 'engagement',
+          event_label: scanType,
+          value: queries.length
+        });
+      }
+
+      if (devMode || !user.user_metadata?.api_keys?.perplexity) {
+        // Mock scanning with progress for dev mode or missing API keys
         for (let i = 0; i <= 100; i += 20) {
           setProgress(i);
           await new Promise(resolve => setTimeout(resolve, 500));
         }
+        
+        if (!user.user_metadata?.api_keys?.perplexity) {
+          showToast.error("Perplexity API key required. Please add it in Settings.", {
+            style: { background: '#F44336', color: 'white' }
+          });
+        }
+        
         setResults(mockScanResults);
       } else {
-        // Real API call logic would go here
-        // For now, simulate the process
-        const response = await fetch('/api/scan', {
+        // Real API call using Express server
+        const token = session?.access_token;
+        const response = await fetch('http://localhost:3001/api/scan', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
             queries: queries.filter(q => q.trim()),
@@ -91,17 +127,34 @@ const ScanInterface = () => {
           })
         });
 
+        if (response.status === 429) {
+          throw new Error('Monthly scan limit reached');
+        }
+
         if (!response.ok) {
           throw new Error('Scan failed');
         }
 
         const data = await response.json();
-        setResults(data);
+        setResults(data.results);
+
+        // Update scan count in user metadata
+        const newCount = scansCount + 1;
+        await supabase.auth.updateUser({
+          data: {
+            ...user.user_metadata,
+            api_keys: {
+              ...user.user_metadata?.api_keys,
+              scans_count: newCount
+            }
+          }
+        });
       }
       
       showToast.success("Scan completed successfully!");
     } catch (error) {
-      showToast.error("Scan failed. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : 'Scan failed';
+      showToast.error(errorMessage);
     } finally {
       setIsScanning(false);
       setProgress(0);
@@ -204,6 +257,7 @@ const ScanInterface = () => {
               onClick={handleScan} 
               disabled={isScanning}
               className="w-full"
+              aria-label="Run AI Scan"
             >
               {isScanning ? "Scanning..." : "Start Scan"}
             </Button>

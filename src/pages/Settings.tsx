@@ -9,20 +9,23 @@ import { CodeBlock } from '@/components/ui/code-block';
 import { Eye, EyeOff, Key, User, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import DevModeToggle from '@/components/DevModeToggle';
 
 export default function Settings() {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile, updateProfile, updateUserMetadata } = useAuth();
   const [profileData, setProfileData] = useState({
     full_name: profile?.full_name || '',
     email: profile?.email || '',
   });
   const [apiKeys, setApiKeys] = useState({
-    openai: profile?.api_keys?.openai || '',
-    google_analytics: profile?.api_keys?.google_analytics || '',
-    screaming_frog: profile?.api_keys?.screaming_frog || '',
+    openai: user?.user_metadata?.api_keys?.openai || '',
+    perplexity: user?.user_metadata?.api_keys?.perplexity || '',
+    google_analytics: user?.user_metadata?.api_keys?.google_analytics || '',
+    screaming_frog: user?.user_metadata?.api_keys?.screaming_frog || '',
   });
   const [showKeys, setShowKeys] = useState({
     openai: false,
+    perplexity: false,
     google_analytics: false,
     screaming_frog: false,
   });
@@ -38,32 +41,20 @@ export default function Settings() {
     setLoading(true);
     
     try {
-      await updateProfile({ api_keys: apiKeys });
+      // Store API keys in user_metadata (for development)
+      // Production note: migrate to separate encrypted profiles table with RLS policy
+      await updateUserMetadata({ api_keys: apiKeys });
     } finally {
       setLoading(false);
     }
   };
 
   const handleManageBilling = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('customer-portal', {
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-
-      // Open customer portal in a new tab
-      window.open(data.url, '_blank');
-    } catch (error) {
-      console.error('Billing portal error:', error);
-      toast({
-        title: "Error",
-        description: "Unable to open billing portal. Please try again.",
-        variant: "destructive",
-      });
-    }
+    // Stripe placeholder - coming soon
+    toast({
+      title: "Coming Soon",
+      description: "Billing management will be available soon!",
+    });
   };
 
   const toggleKeyVisibility = (key: keyof typeof showKeys) => {
@@ -144,6 +135,33 @@ export default function Settings() {
               <form onSubmit={handleApiKeysUpdate} className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="perplexity">Perplexity API Key</Label>
+                    <div className="relative">
+                      <Input
+                        id="perplexity"
+                        type={showKeys.perplexity ? "text" : "password"}
+                        value={apiKeys.perplexity}
+                        onChange={(e) => setApiKeys(prev => ({ ...prev, perplexity: e.target.value }))}
+                        placeholder="pplx-..."
+                        aria-label="Perplexity API Key"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                        onClick={() => toggleKeyVisibility('perplexity')}
+                        aria-label="Toggle Perplexity API Key visibility"
+                      >
+                        {showKeys.perplexity ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                      </Button>
+                    </div>
+                    <CodeBlock className="text-xs">
+                      {`# Example Perplexity API Key format:\npplx-1234567890abcdef1234567890abcdef`}
+                    </CodeBlock>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="openai">OpenAI API Key</Label>
                     <div className="relative">
                       <Input
@@ -152,6 +170,7 @@ export default function Settings() {
                         value={apiKeys.openai}
                         onChange={(e) => setApiKeys(prev => ({ ...prev, openai: e.target.value }))}
                         placeholder="sk-..."
+                        aria-label="OpenAI API Key"
                       />
                       <Button
                         type="button"
@@ -159,6 +178,7 @@ export default function Settings() {
                         size="sm"
                         className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
                         onClick={() => toggleKeyVisibility('openai')}
+                        aria-label="Toggle OpenAI API Key visibility"
                       >
                         {showKeys.openai ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                       </Button>
@@ -219,9 +239,13 @@ export default function Settings() {
                   </div>
                 </div>
                 
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Saving...' : 'Save API Keys'}
-                </Button>
+                <div className="space-y-4">
+                  <DevModeToggle />
+                  
+                  <Button type="submit" disabled={loading}>
+                    {loading ? 'Saving...' : 'Save API Keys'}
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
