@@ -95,9 +95,48 @@ All tables have RLS enabled with user-specific access:
 
 ## Testing Checklist
 
-### Pre-Production Testing:
+### End-to-End Testing Steps:
+
+#### 1. Development Testing
+1. **Create Sample Data**: Use the SampleDataScript component in dashboard (dev mode only)
+2. **User Registration Flow**:
+   - Sign up with test email
+   - Verify email confirmation (if enabled)
+   - Complete onboarding tour (purple steps, 4 tour stops)
+   - Check PostHog events (user_signed_up, page views)
+
+3. **Subscription Testing**:
+   - Test Stripe checkout with test cards (4242 4242 4242 4242)
+   - Verify subscription status updates in database
+   - Check Sentry error capture with intentional test error
+
+4. **Scan Functionality**:
+   - Add API keys in Settings (Perplexity, OpenAI)
+   - Run sample scan with test domain
+   - Verify all 7 dashboard features show real data:
+     - Visibility Score (with tooltip showing formula)
+     - Citations (competitor analysis)
+     - Sentiment (pie chart: green/gray/red)
+     - Rankings (color-coded table)
+     - Prompt Trends (gained/lost arrows)
+     - Competitor Traffic (Google Trends bar chart)
+     - Trending Pages (DuckDuckGo search results)
+   - Check database for scan results storage
+   - Test email notifications via Resend
+
+5. **UI/UX Integration**:
+   - Test onboarding tour (react-joyride) with purple #6B5BFF styling
+   - Verify tooltips (react-tooltip) with gray #F0F0F0 background, 12px radius
+   - Check CodeBlock component displays with Prism.js highlighting (Consolas 14px)
+   - Test cookie consent banner (localStorage persistence)
+   - Verify homepage gradient (#F8FAFF to #E8EFFF) and stats badges
+   - Test testimonials section and FAQ accordion
+   - Test export CSV functionality
+   - Verify logout functionality
+
+#### 2. Production Testing:
 - [ ] User registration and authentication
-- [ ] Stripe test payments (use test cards)
+- [ ] Stripe live payments (use real test cards)
 - [ ] Email delivery (welcome, scan complete, receipts)
 - [ ] API key validation and storage
 - [ ] Scan functionality with real APIs
@@ -167,7 +206,12 @@ All tables have RLS enabled with user-specific access:
 - [ ] Check analytics tracking (PostHog events, Sentry errors)
 - [ ] Test API key validation in Settings
 - [ ] Verify scan functionality with real API calls
-- [ ] Test onboarding tour for new users
+- [ ] Test onboarding tour for new users (purple steps, tooltip integration)
+- [ ] Verify CodeBlock syntax highlighting in dashboard
+- [ ] Test all 7 dashboard features with real scan data
+- [ ] Verify cookie consent banner functionality
+- [ ] Check competitor traffic analysis (Google Trends integration)
+- [ ] Test trending pages discovery (DuckDuckGo Search integration)
 - [ ] Verify logout functionality
 
 ## Security Considerations

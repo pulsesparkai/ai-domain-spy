@@ -5,6 +5,7 @@ import { Sidebar, SidebarContent, SidebarProvider, SidebarTrigger } from "@/comp
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PaywallOverlay } from "@/components/PaywallOverlay";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { SampleDataScript } from "@/components/SampleDataScript";
 import { BarChart3, Brain, TrendingUp, Users, Search, Target, Globe, ArrowUp, ArrowDown } from "lucide-react";
 import { analytics } from "@/lib/analytics";
 import { Tooltip } from 'react-tooltip';
@@ -549,8 +550,15 @@ const Dashboard = () => {
               </div>
             </div>
 
+            {/* Development Tools - Only show in dev mode */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mb-8">
+                <SampleDataScript />
+              </div>
+            )}
+
             <PaywallOverlay>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="scan-results grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
                   <AIVisibilityScore scanData={latestScan?.results} />
                 </div>
