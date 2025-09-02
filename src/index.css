@@ -207,4 +207,40 @@ All colors MUST be HSL.
   html {
     scroll-behavior: smooth;
   }
+
+  /* Mobile responsive styles */
+  @media (max-width: 768px) {
+    .sidebar-desktop {
+      display: none;
+    }
+    
+    .sidebar-mobile {
+      display: block;
+    }
+    
+    .main-content {
+      margin-left: 0;
+    }
+  }
+
+  @media (min-width: 769px) {
+    .sidebar-desktop {
+      display: block;
+    }
+    
+    .sidebar-mobile {
+      display: none;
+    }
+  }
+
+  /* Progress bar animation */
+  .progress-bar {
+    background: linear-gradient(90deg, hsl(var(--accent)) 0%, hsl(var(--primary)) 100%);
+    animation: progress-animate 2s ease-in-out infinite;
+  }
+
+  @keyframes progress-animate {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+  }
 }
