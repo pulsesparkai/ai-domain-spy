@@ -24,15 +24,40 @@ const HeroSection = () => {
         }}
       />
       
+      {/* Dashboard Screenshot Overlay */}
+      <div className="absolute right-8 top-1/2 transform -translate-y-1/2 hidden lg:block">
+        <div className="w-80 h-48 bg-card/80 backdrop-blur-sm rounded-xl shadow-hero border border-border/50">
+          <div className="p-4">
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="w-3 h-3 bg-destructive rounded-full"></div>
+              <div className="w-3 h-3 bg-warning rounded-full"></div>
+              <div className="w-3 h-3 bg-success rounded-full"></div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-3 bg-primary/20 rounded"></div>
+              <div className="h-3 bg-accent/20 rounded w-3/4"></div>
+              <div className="h-3 bg-muted rounded w-1/2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
+        <div className="text-center lg:text-left lg:max-w-2xl">
+          {/* Stats Badges */}
+          <div className="flex flex-wrap justify-center lg:justify-start gap-3 mb-6">
+            <span className="stats-badge">98% Citation Accuracy</span>
+            <span className="stats-badge">500K+ Queries Tracked</span>
+            <span className="stats-badge">Real-time Monitoring</span>
+          </div>
+          
           {/* Main Heading */}
-          <h1 className="text-h1 text-foreground font-semibold mb-6 max-w-4xl mx-auto">
+          <h1 className="text-h1 text-foreground font-semibold mb-6">
             Optimize Your AI Search Presence
           </h1>
           
           {/* Subtitle */}
-          <p className="text-body text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <p className="text-body text-muted-foreground mb-8 max-w-xl">
             Track visibility, citations, and sentiment across leading LLMs – trusted by marketers and brands
           </p>
 

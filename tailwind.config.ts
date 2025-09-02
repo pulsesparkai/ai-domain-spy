@@ -64,6 +64,26 @@ export default {
 				},
 				success: 'hsl(var(--success))',
 				warning: 'hsl(var(--warning))',
+				button: {
+					primary: 'hsl(var(--button-primary))',
+					'primary-hover': 'hsl(var(--button-primary-hover))',
+					focus: 'hsl(var(--button-focus))'
+				},
+				'input-border': 'hsl(var(--input-border))',
+				'input-focus': 'hsl(var(--input-focus))',
+				'code-bg': 'hsl(var(--code-bg))',
+				'code-keyword': 'hsl(var(--code-keyword))',
+				'code-string': 'hsl(var(--code-string))',
+				'stats-success': {
+					bg: 'hsl(var(--stats-success-bg))',
+					text: 'hsl(var(--stats-success-text))'
+				},
+				solution: {
+					marketing: 'hsl(var(--solution-marketing))',
+					product: 'hsl(var(--solution-product))',
+					support: 'hsl(var(--solution-support))',
+					data: 'hsl(var(--solution-data))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
