@@ -15,11 +15,11 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 RESEND_API_KEY=re_...
 ```
 
-#### API Keys (User-provided via Settings)
-- Users configure their own API keys via the Settings page
-- Keys are stored securely in Supabase user metadata
-- Perplexity: `user.user_metadata.api_keys.perplexity`
-- OpenAI: `user.user_metadata.api_keys.openai`
+#### Analytics & Monitoring
+```
+VITE_POSTHOG_KEY=phc_...
+VITE_SENTRY_DSN=https://...@o...ingest.sentry.io/...
+```
 
 #### Supabase (Database & Auth)
 ```
@@ -27,6 +27,12 @@ SUPABASE_URL=https://yourproject.supabase.co
 SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
+
+#### API Keys (User-provided via Settings)
+- Users configure their own API keys via the Settings page
+- Keys are stored securely in Supabase user metadata
+- Perplexity: `user.user_metadata.api_keys.perplexity`
+- OpenAI: `user.user_metadata.api_keys.openai`
 
 ## Deployment Instructions
 
@@ -99,7 +105,55 @@ All tables have RLS enabled with user-specific access:
 - [ ] Vercel analytics for performance
 - [ ] Stripe dashboard for payment tracking
 - [ ] Resend dashboard for email delivery
+- [ ] PostHog dashboard for user analytics
+- [ ] Sentry dashboard for error monitoring
 - [ ] Console logs for error tracking
+
+## Post-Deployment Steps
+
+### 1. Supabase Configuration
+1. **Verify RLS Policies**: Ensure all tables have proper RLS enabled
+   ```sql
+   -- Check RLS status
+   SELECT schemaname, tablename, rowsecurity 
+   FROM pg_tables 
+   WHERE schemaname = 'public';
+   ```
+
+2. **Test Authentication Flow**:
+   - Verify email confirmation (if enabled)
+   - Test password reset flow
+   - Check redirect URLs in Supabase Auth settings
+
+3. **Webhook Verification**:
+   - Test Stripe webhooks with test payments
+   - Verify webhook endpoints respond correctly
+   - Check webhook signature validation
+
+### 2. DNS Configuration
+1. **Custom Domain Setup** (app.pulsespark.ai):
+   ```
+   Type: CNAME
+   Name: app
+   Value: cname.vercel-dns.com
+   ```
+
+2. **Verify SSL Certificate**: Ensure HTTPS is working correctly
+
+### 3. Environment Variables Checklist
+- [ ] All Stripe keys configured
+- [ ] Resend API key working
+- [ ] PostHog tracking active
+- [ ] Sentry error reporting enabled
+- [ ] Supabase URLs and keys correct
+
+### 4. Testing in Production
+- [ ] Complete user registration flow
+- [ ] Test payment processing with real cards
+- [ ] Verify email delivery
+- [ ] Check analytics tracking
+- [ ] Test API key validation
+- [ ] Verify scan functionality
 
 ## Security Considerations
 

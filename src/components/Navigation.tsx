@@ -1,10 +1,24 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Menu, X, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { UserProfileDropdown } from "./UserProfileDropdown";
+import { analytics } from "@/lib/analytics";
 
 const Navigation = () => {
-  const { user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      analytics.track('user_logout', { user_id: user?.id });
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card shadow-nav">
@@ -49,14 +63,25 @@ const Navigation = () => {
           {/* Auth Buttons / User Menu */}
           <div className="flex items-center space-x-4">
             {user ? (
-              <>
+              <div className="flex items-center gap-4">
                 <Link to="/dashboard">
                   <Button variant="ghost" className="text-foreground hover:text-primary">
                     Dashboard
                   </Button>
                 </Link>
-                <UserProfileDropdown />
-              </>
+                <Link to="/settings" className="settings-link">
+                  <Button variant="ghost">Settings</Button>
+                </Link>
+                <Button
+                  onClick={handleSignOut}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </Button>
+              </div>
             ) : (
               <>
                 <Link to="/auth">

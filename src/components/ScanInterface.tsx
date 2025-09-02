@@ -15,6 +15,7 @@ import { useMockData } from "@/hooks/useMockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { lazy, Suspense } from "react";
+import { analytics } from "@/lib/analytics";
 
 // Lazy load Recharts components
 const LazyPieChart = lazy(() => import("recharts").then(module => ({ default: module.PieChart })));
@@ -86,13 +87,11 @@ const ScanInterface = () => {
 
     try {
       // Track analytics event
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'scan_run', {
-          event_category: 'engagement',
-          event_label: scanType,
-          value: queries.length
-        });
-      }
+      analytics.track('scan_run', {
+        scan_type: scanType,
+        query_count: queries.length,
+        user_id: user.id
+      });
 
       // Check if user has required API keys
       const hasPerplexity = user.user_metadata?.api_keys?.perplexity;
@@ -188,7 +187,7 @@ const ScanInterface = () => {
       <div className="space-y-6">
         <ScanProgressBar progress={progress} isVisible={isScanning} />
         
-        <Card>
+        <Card className="scan-interface">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               AI Visibility Scan
@@ -214,7 +213,7 @@ const ScanInterface = () => {
                     onChange={(e) => updateQuery(index, e.target.value)}
                     placeholder="Enter search query..."
                     className={cn(
-                      "rounded-lg",
+                      "rounded-lg query-input",
                       errors.includes(`Query ${index + 1} is required`) && "border-destructive"
                     )}
                   />
@@ -240,7 +239,7 @@ const ScanInterface = () => {
               <Label>Scan Type</Label>
               <Select value={scanType} onValueChange={setScanType}>
                 <SelectTrigger className={cn(
-                  "rounded-lg bg-card",
+                  "rounded-lg bg-card scan-type-select",
                   !scanType && errors.includes("Scan type is required") && "border-destructive"
                 )}>
                   <SelectValue placeholder="Select scan type" />
@@ -266,7 +265,7 @@ const ScanInterface = () => {
             <Button 
               onClick={handleScan} 
               disabled={isScanning}
-              className="w-full"
+              className="w-full start-scan-button"
               aria-label="Run AI Scan"
             >
               {isScanning ? "Scanning..." : "Start Scan"}

@@ -1,18 +1,28 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PaywallOverlay } from "@/components/PaywallOverlay";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { BarChart3, Brain, TrendingUp, Users, Search, Target, Globe } from "lucide-react";
+import { analytics } from "@/lib/analytics";
+import { Tooltip } from 'react-tooltip';
+import 'react-tooltip/dist/react-tooltip.css';
 
 // Mock components for the 7 dashboard features
 const AIVisibilityScore = () => (
-  <Card className="shadow-card">
+  <Card className="shadow-card visibility-score">
     <CardHeader>
       <CardTitle className="text-h3 flex items-center gap-2">
         <Brain className="w-5 h-5 text-accent" />
         AI Visibility Score
+        <span 
+          data-tooltip-id="visibility-score-tooltip"
+          className="cursor-help text-muted-foreground"
+        >
+          ℹ️
+        </span>
       </CardTitle>
     </CardHeader>
     <CardContent>
@@ -24,15 +34,24 @@ const AIVisibilityScore = () => (
         <p className="text-muted-foreground">Excellent visibility across AI platforms</p>
       </div>
     </CardContent>
+    <Tooltip id="visibility-score-tooltip" place="top">
+      Composite metric based on citations, mentions, and ranking across AI platforms like Perplexity, ChatGPT, and Claude.
+    </Tooltip>
   </Card>
 );
 
 const CitationsTracking = () => (
-  <Card className="shadow-card">
+  <Card className="shadow-card citations-tracking">
     <CardHeader>
       <CardTitle className="text-h3 flex items-center gap-2">
         <BarChart3 className="w-5 h-5 text-accent" />
         Citations Tracking
+        <span 
+          data-tooltip-id="citations-tooltip"
+          className="cursor-help text-muted-foreground"
+        >
+          ℹ️
+        </span>
       </CardTitle>
     </CardHeader>
     <CardContent>
@@ -51,6 +70,9 @@ const CitationsTracking = () => (
         </div>
       </div>
     </CardContent>
+    <Tooltip id="citations-tooltip" place="top">
+      Number of times your content or website is referenced by AI platforms when answering queries.
+    </Tooltip>
   </Card>
 );
 
@@ -231,10 +253,20 @@ const AppSidebar = () => {
 const Dashboard = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
+    } else if (user) {
+      // Track page view
+      analytics.page('Dashboard');
+      
+      // Check if this is a new user
+      const isNewUser = !localStorage.getItem(`onboarding_completed_${user.id}`);
+      if (isNewUser) {
+        setShowOnboarding(true);
+      }
     }
   }, [user, loading, navigate]);
 
@@ -283,6 +315,11 @@ const Dashboard = () => {
           </main>
         </div>
       </SidebarProvider>
+      
+      <OnboardingTour 
+        startTour={showOnboarding} 
+        onComplete={() => setShowOnboarding(false)}
+      />
     </div>
   );
 };
