@@ -9,7 +9,7 @@ interface PaywallOverlayProps {
 }
 
 export function PaywallOverlay({ children }: PaywallOverlayProps) {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
   const isTrialActive = profile?.subscription_status === 'trial' && 
@@ -17,8 +17,11 @@ export function PaywallOverlay({ children }: PaywallOverlayProps) {
     new Date(profile.trial_ends_at) > new Date();
 
   const isPro = profile?.subscription_status === 'active' && profile?.subscription_tier === 'pro';
+  
+  // Also check user metadata for subscription status
+  const isSubscribed = (user?.user_metadata as any)?.subscribed;
 
-  const hasAccess = isPro || isTrialActive;
+  const hasAccess = isPro || isTrialActive || isSubscribed;
 
   if (hasAccess) {
     return <>{children}</>;

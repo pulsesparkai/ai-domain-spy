@@ -72,9 +72,11 @@ const ScanInterface = () => {
       return;
     }
 
-    // Rate limiting check
-    const scansCount = user.user_metadata?.api_keys?.scans_count || 0;
-    if (scansCount >= 100) {
+    // Rate limiting check - only for non-subscribed users
+    const scansCount = (user.user_metadata as any)?.scans_count || 0;
+    const isSubscribed = (user.user_metadata as any)?.subscribed;
+    
+    if (!isSubscribed && scansCount >= 100) {
       showToast.error("Monthly scan limit reached (100 scans). Please upgrade your plan.");
       return;
     }
@@ -131,17 +133,16 @@ const ScanInterface = () => {
         const data = await response.json();
         setResults(data.results);
 
-        // Update scan count in user metadata
-        const newCount = scansCount + 1;
-        await supabase.auth.updateUser({
-          data: {
-            ...user.user_metadata,
-            api_keys: {
-              ...user.user_metadata?.api_keys,
+        // Update scan count in user metadata (only if not subscribed)
+        if (!isSubscribed) {
+          const newCount = scansCount + 1;
+          await supabase.auth.updateUser({
+            data: {
+              ...user.user_metadata,
               scans_count: newCount
             }
-          }
-        });
+          });
+        }
       }
       
       showToast.success("Scan completed successfully!");

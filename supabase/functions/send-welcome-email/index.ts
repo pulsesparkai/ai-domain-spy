@@ -11,57 +11,68 @@ const corsHeaders = {
 interface WelcomeEmailRequest {
   email: string;
   name: string;
+  type?: 'welcome' | 'scan-complete' | 'receipt';
+  scanUrl?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { email, name }: WelcomeEmailRequest = await req.json();
+    const { email, name, type = 'welcome', scanUrl }: WelcomeEmailRequest = await req.json();
+
+    let subject = "Welcome to PulseSpark.ai!";
+    let html = `
+      <div style="color: #1A1A1A; background: #F8FAFF; padding: 24px; font-family: Arial, sans-serif;">
+        <h1 style="color: #6B5BFF;">Thanks for joining PulseSpark.ai!</h1>
+        <p>Welcome ${name}! Start your AI visibility journey with our powerful analytics platform.</p>
+        <p>Get started by visiting your dashboard and running your first scan.</p>
+        <p>Best regards,<br>The PulseSpark.ai Team</p>
+      </div>
+    `;
+
+    if (type === 'scan-complete') {
+      subject = "Your AI Visibility Scan is Complete!";
+      html = `
+        <div style="color: #1A1A1A; background: #F8FAFF; padding: 24px; font-family: Arial, sans-serif;">
+          <h1 style="color: #6B5BFF;">Scan Complete!</h1>
+          <p>Hi ${name},</p>
+          <p>Your AI visibility scan has finished processing. View your results and insights now:</p>
+          ${scanUrl ? `<a href="${scanUrl}" style="background: #6B5BFF; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 16px 0;">View Scan Results</a>` : ''}
+          <p>Discover how your brand appears across AI platforms and get actionable insights to improve your visibility.</p>
+          <p>Best regards,<br>The PulseSpark.ai Team</p>
+        </div>
+      `;
+    } else if (type === 'receipt') {
+      subject = "Payment Confirmation - PulseSpark.ai Pro";
+      html = `
+        <div style="color: #1A1A1A; background: #F8FAFF; padding: 24px; font-family: Arial, sans-serif;">
+          <h1 style="color: #6B5BFF;">Payment Confirmed!</h1>
+          <p>Hi ${name},</p>
+          <p>Thank you for upgrading to PulseSpark.ai Pro! Your subscription is now active.</p>
+          <p>You now have access to:</p>
+          <ul style="color: #1A1A1A;">
+            <li>Advanced AI visibility scoring</li>
+            <li>Unlimited scans</li>
+            <li>Competitor analysis</li>
+            <li>Priority support</li>
+          </ul>
+          <p>Best regards,<br>The PulseSpark.ai Team</p>
+        </div>
+      `;
+    }
 
     const emailResponse = await resend.emails.send({
-      from: "PulseSpark.ai <welcome@pulsespark.ai>",
+      from: "PulseSpark.ai <no-reply@pulsespark.ai>",
       to: [email],
-      subject: "Welcome to PulseSpark.ai!",
-      html: `
-        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-          <div style="background: linear-gradient(135deg, #6B5BFF, #5A4EFF); padding: 40px 20px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to PulseSpark.ai!</h1>
-            <p style="color: white; margin: 10px 0 0 0; opacity: 0.9;">AI-powered website analytics platform</p>
-          </div>
-          <div style="padding: 40px 20px; background: white;">
-            <h2 style="color: #1A1A1A; margin: 0 0 20px 0;">Hi ${name}!</h2>
-            <p style="color: #4A4A4A; line-height: 1.6; margin: 0 0 20px 0;">
-              Thank you for joining PulseSpark.ai! You now have access to powerful AI-driven website analytics 
-              that will help you understand and optimize your web presence.
-            </p>
-            <div style="background: #F0F0F0; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #1A1A1A; margin: 0 0 15px 0;">Your 7-day free trial includes:</h3>
-              <ul style="color: #4A4A4A; margin: 0; padding-left: 20px;">
-                <li>Advanced AI visibility scoring</li>
-                <li>Real-time website monitoring</li>
-                <li>Competitor analysis</li>
-                <li>Custom reporting & alerts</li>
-              </ul>
-            </div>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${Deno.env.get("SITE_URL")}/dashboard" 
-                 style="background: #6B5BFF; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-                Get Started
-              </a>
-            </div>
-            <p style="color: #4A4A4A; line-height: 1.6; margin: 20px 0 0 0;">
-              If you have any questions, feel free to reply to this email. We're here to help!
-            </p>
-          </div>
-          <div style="background: #F9F9F9; padding: 20px; text-align: center; color: #888;">
-            <p style="margin: 0;">© 2024 PulseSpark.ai. All rights reserved.</p>
-          </div>
-        </div>
-      `,
+      subject,
+      html,
     });
+
+    console.log("Email sent successfully:", emailResponse);
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,
@@ -71,6 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
+    console.error("Error in send-welcome-email function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {

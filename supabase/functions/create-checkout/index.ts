@@ -8,49 +8,51 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Create Supabase client using the anon key for user authentication
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
 
   try {
+    // Retrieve authenticated user
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
+    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
 
+    // Check if a Stripe customer record exists for this user
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
     }
 
+    // Create a subscription checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price_data: {
-            currency: "usd",
-            product_data: { name: "PulseSpark.ai Pro Plan" },
-            unit_amount: 4900, // $49.00 in cents
-            recurring: { interval: "month" },
-          },
+          price: 'price_1ABC123', // Test price ID as requested
           quantity: 1,
         },
       ],
       mode: "subscription",
+      payment_method_types: ['card'],
       success_url: `${req.headers.get("origin")}/success`,
-      cancel_url: `${req.headers.get("origin")}/pricing`,
+      cancel_url: `${req.headers.get("origin")}/cancel`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
@@ -58,6 +60,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    console.error('Checkout error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
