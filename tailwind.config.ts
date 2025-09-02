@@ -18,6 +18,16 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				inter: ['Inter', 'sans-serif'],
+			},
+			fontSize: {
+				'body': ['16px', { lineHeight: '1.5', fontWeight: '400' }],
+				'h1': ['32px', { lineHeight: '1.2', fontWeight: '600' }],
+				'h2': ['24px', { lineHeight: '1.3', fontWeight: '600' }],
+				'h3': ['20px', { lineHeight: '1.4', fontWeight: '600' }],
+				'caption': ['14px', { lineHeight: '1.4', fontWeight: '400' }],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -52,6 +62,8 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				success: 'hsl(var(--success))',
+				warning: 'hsl(var(--warning))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

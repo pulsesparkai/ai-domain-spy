@@ -2,39 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* PulseSpark.ai Design System - All colors, gradients, fonts, animations
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* PulseSpark.ai Brand Colors */
+    --background: 240 100% 99.6%; /* #F8FAFF */
+    --foreground: 0 0% 10.2%; /* #1A1A1A */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 0 0% 10.2%; /* #1A1A1A */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 10.2%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary Purple */
+    --primary: 245 71% 67%; /* #6B5BFF */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Accent Blue */
+    --accent: 210 68% 58%; /* #4A90E2 */
+    --accent-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Secondary & Muted */
+    --secondary: 240 100% 96.3%; /* #E8EFFF */
+    --secondary-foreground: 0 0% 10.2%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 0 0% 94.1%; /* #F0F0F0 */
+    --muted-foreground: 0 0% 29.4%; /* #4A4A4A */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Utilities */
+    --destructive: 0 73% 64%; /* #FF4D4F */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --success: 120 39% 54%; /* #4CAF50 */
+    --warning: 54 100% 62%; /* #FFEB3B */
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 245 71% 67%;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(240 100% 99.6%) 0%, hsl(240 100% 96.3%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(245 71% 67%) 0%, hsl(210 68% 58%) 100%);
+
+    /* Shadows */
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-nav: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+    /* Transitions */
+    --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.5rem;
 
@@ -100,6 +119,32 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-inter;
+  }
+}
+
+@layer utilities {
+  .font-inter {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+  
+  .primary-gradient {
+    background: var(--gradient-primary);
+  }
+  
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-nav {
+    box-shadow: var(--shadow-nav);
+  }
+  
+  .transition-base {
+    transition: var(--transition-base);
   }
 }
