@@ -18,6 +18,7 @@ RESEND_API_KEY=re_...
 #### Analytics & Monitoring
 ```
 VITE_POSTHOG_KEY=phc_...
+VITE_POSTHOG_HOST=https://app.posthog.com
 VITE_SENTRY_DSN=https://...@o...ingest.sentry.io/...
 ```
 
@@ -50,7 +51,12 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 ### 3. Custom Domain Setup
 1. Add domain `app.pulsespark.ai` in Vercel
-2. Configure DNS CNAME record pointing to Vercel
+2. Configure DNS CNAME record:
+   ```
+   Type: CNAME
+   Name: app
+   Value: cname.vercel-dns.com
+   ```
 3. Enable SSL certificate
 
 ### 4. Supabase Production Setup
@@ -140,20 +146,29 @@ All tables have RLS enabled with user-specific access:
 
 2. **Verify SSL Certificate**: Ensure HTTPS is working correctly
 
+3. **Test Stripe Webhooks**: Use Stripe CLI to verify webhook delivery:
+   ```bash
+   stripe listen --forward-to your-domain.com/api/stripe/webhook
+   stripe trigger checkout.session.completed
+   ```
+
 ### 3. Environment Variables Checklist
 - [ ] All Stripe keys configured
 - [ ] Resend API key working
-- [ ] PostHog tracking active
-- [ ] Sentry error reporting enabled
+- [ ] PostHog tracking active (check dashboard for events)
+- [ ] Sentry error reporting enabled (test with intentional error)
 - [ ] Supabase URLs and keys correct
+- [ ] OpenAI and Perplexity API keys in Edge Function secrets
 
 ### 4. Testing in Production
-- [ ] Complete user registration flow
+- [ ] Complete user registration flow (with email verification if enabled)
 - [ ] Test payment processing with real cards
-- [ ] Verify email delivery
-- [ ] Check analytics tracking
-- [ ] Test API key validation
-- [ ] Verify scan functionality
+- [ ] Verify email delivery (welcome, subscription, scan results)
+- [ ] Check analytics tracking (PostHog events, Sentry errors)
+- [ ] Test API key validation in Settings
+- [ ] Verify scan functionality with real API calls
+- [ ] Test onboarding tour for new users
+- [ ] Verify logout functionality
 
 ## Security Considerations
 

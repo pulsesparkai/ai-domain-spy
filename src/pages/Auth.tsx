@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { LoadingBar } from '@/components/ui/loading-bar';
+import { Link } from 'react-router-dom';
 
 export default function Auth() {
   const { user, signIn, signUp, loading } = useAuth();
@@ -124,6 +125,15 @@ export default function Auth() {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
+                  
+                  <div className="text-center">
+                    <Link 
+                      to="/reset-password" 
+                      className="text-sm text-muted-foreground hover:text-primary"
+                    >
+                      Forgot your password?
+                    </Link>
+                  </div>
                 </form>
               </CardContent>
             </Card>

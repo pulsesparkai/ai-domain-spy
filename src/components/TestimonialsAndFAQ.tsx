@@ -71,22 +71,26 @@ export const TestimonialsSection = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="border border-border">
+            <Card key={index} className="bg-white border border-border" style={{ borderRadius: '12px' }}>
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   <div 
-                    className="w-12 h-12 rounded-full mr-4"
-                    style={{ backgroundColor: testimonial.avatar }}
+                    className="rounded-full mr-4"
+                    style={{ 
+                      backgroundColor: testimonial.avatar,
+                      width: '60px',
+                      height: '60px'
+                    }}
                   />
                   <div>
-                    <h4 className="font-semibold text-foreground">{testimonial.name}</h4>
+                    <h4 className="font-semibold" style={{ color: '#1A1A1A' }}>{testimonial.name}</h4>
                     <p className="text-sm text-muted-foreground">
                       {testimonial.role} at {testimonial.company}
                     </p>
                   </div>
                 </div>
                 
-                <p className="text-foreground mb-4" style={{ color: '#4A4A4A' }}>
+                <p className="mb-4 italic" style={{ color: '#4A4A4A', fontSize: '16px' }}>
                   "{testimonial.quote}"
                 </p>
                 
@@ -131,7 +135,7 @@ export const FAQSection = () => {
               >
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-left font-medium text-foreground">
+                    <span className="text-left font-medium" style={{ color: '#1A1A1A', fontSize: '18px' }}>
                       {faq.question}
                     </span>
                     <ChevronDown 
@@ -141,7 +145,7 @@ export const FAQSection = () => {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="leading-relaxed" style={{ color: '#4A4A4A', fontSize: '14px' }}>
                     {faq.answer}
                   </p>
                 </AccordionContent>

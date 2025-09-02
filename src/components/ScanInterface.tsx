@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipWrapper } from "@/components/TooltipWrapper";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { Info, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -213,7 +214,7 @@ const ScanInterface = () => {
                     onChange={(e) => updateQuery(index, e.target.value)}
                     placeholder="Enter search query..."
                     className={cn(
-                      "rounded-lg query-input",
+                      "rounded-lg domain-input",
                       errors.includes(`Query ${index + 1} is required`) && "border-destructive"
                     )}
                   />
@@ -274,10 +275,18 @@ const ScanInterface = () => {
         </Card>
 
         {results && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 scan-results">
             <Card>
               <CardHeader>
-                <CardTitle>Sentiment Analysis</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  Sentiment Analysis
+                  <TooltipWrapper
+                    id="sentiment-tooltip"
+                    content="Shows the emotional tone of mentions: positive, neutral, or negative sentiment across all platforms"
+                  >
+                    <Info className="w-4 h-4 text-muted-foreground" />
+                  </TooltipWrapper>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Suspense fallback={<div>Loading chart...</div>}>
@@ -303,10 +312,18 @@ const ScanInterface = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Ranking Distribution</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  AI Visibility Score
+                  <TooltipWrapper
+                    id="visibility-tooltip"
+                    content="Composite score: (primary*10 + secondary*5 + mentions*2)/total *100. Higher scores indicate better AI platform visibility"
+                  >
+                    <Info className="w-4 h-4 text-muted-foreground" />
+                  </TooltipWrapper>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-2 visibility-score">
                   <div className="flex justify-between">
                     <span>Primary Mentions</span>
                     <Badge variant="default">{results.aggregates?.primaryRank || 0}</Badge>
@@ -318,6 +335,14 @@ const ScanInterface = () => {
                   <div className="flex justify-between">
                     <span>No Ranking</span>
                     <Badge variant="outline">{results.aggregates?.noRank || 0}</Badge>
+                  </div>
+                  <div className="mt-4 p-3 bg-muted rounded-lg">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary">
+                        {results.aggregates?.visibilityScore || 0}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Visibility Score</div>
+                    </div>
                   </div>
                 </div>
               </CardContent>

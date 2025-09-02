@@ -24,21 +24,11 @@ export const OnboardingTour = ({ startTour = false, onComplete }: OnboardingTour
       disableBeacon: true,
     },
     {
-      target: '.query-input',
+      target: '.domain-input',
       content: (
         <div>
-          <h4 className="font-semibold mb-1">Enter Your Queries</h4>
-          <p>Add search terms related to your brand or business. You can add multiple queries to scan at once.</p>
-        </div>
-      ),
-      placement: 'bottom',
-    },
-    {
-      target: '.scan-type-select',
-      content: (
-        <div>
-          <h4 className="font-semibold mb-1">Choose Scan Type</h4>
-          <p>Select what type of analysis you want: brand monitoring, competitor analysis, or trend tracking.</p>
+          <h4 className="font-semibold mb-1">Enter Your Domain and Queries</h4>
+          <p>Enter your domain and queries here. Add search terms related to your brand or business to monitor your AI visibility.</p>
         </div>
       ),
       placement: 'bottom',
@@ -47,28 +37,18 @@ export const OnboardingTour = ({ startTour = false, onComplete }: OnboardingTour
       target: '.start-scan-button',
       content: (
         <div>
-          <h4 className="font-semibold mb-1">Run Your Scan</h4>
+          <h4 className="font-semibold mb-1">Click to Start Scan</h4>
           <p>Click here to start analyzing your AI visibility across platforms like Perplexity, ChatGPT, and more.</p>
         </div>
       ),
       placement: 'top',
     },
     {
-      target: '.visibility-score',
+      target: '.scan-results',
       content: (
         <div>
-          <h4 className="font-semibold mb-1">AI Visibility Score</h4>
-          <p>This composite metric shows how well your brand appears in AI search results, based on citations and mentions.</p>
-        </div>
-      ),
-      placement: 'bottom',
-    },
-    {
-      target: '.citations-tracking',
-      content: (
-        <div>
-          <h4 className="font-semibold mb-1">Track Citations</h4>
-          <p>See how many times your content is cited across different AI platforms.</p>
+          <h4 className="font-semibold mb-1">View Your Metrics</h4>
+          <p>Here you'll see your AI visibility score, citations, mentions, and detailed analytics from all platforms.</p>
         </div>
       ),
       placement: 'bottom',
@@ -77,7 +57,7 @@ export const OnboardingTour = ({ startTour = false, onComplete }: OnboardingTour
       target: '.settings-link',
       content: (
         <div>
-          <h4 className="font-semibold mb-1">Configure Settings</h4>
+          <h4 className="font-semibold mb-1">Configure API Keys</h4>
           <p>Add your API keys here to unlock the full power of AI scanning. You can also manage your subscription and export data.</p>
         </div>
       ),
