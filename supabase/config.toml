@@ -43,3 +43,18 @@ verify_jwt = true
 
 [functions.test-scan]
 verify_jwt = false
+
+[functions.perplexity-scan]
+verify_jwt = false
+
+[functions.openai-scan]
+verify_jwt = false
+
+[functions.sentiment-analysis]
+verify_jwt = false
+
+[functions.trends-analysis]
+verify_jwt = false
+
+[functions.trending-pages]
+verify_jwt = false

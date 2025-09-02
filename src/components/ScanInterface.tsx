@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TooltipWrapper } from "@/components/TooltipWrapper";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
-import { Info, Plus, Trash2 } from "lucide-react";
+import { Info, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showToast } from "@/lib/toast";
 import ScanProgressBar from "./ScanProgressBar";
@@ -215,7 +215,7 @@ const ScanInterface = () => {
                     placeholder="Enter search query..."
                     className={cn(
                       "rounded-lg domain-input",
-                      errors.includes(`Query ${index + 1} is required`) && "border-destructive"
+                      errors.includes(`Query ${index + 1} is required`) && "border-red-500 border-2"
                     )}
                   />
                   {queries.length > 1 && (
@@ -234,6 +234,19 @@ const ScanInterface = () => {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Query
               </Button>
+              {errors.length > 0 && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-600">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Please fix the following errors:</span>
+                  </div>
+                  <ul className="mt-1 text-sm text-red-600 list-disc list-inside">
+                    {errors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div>
@@ -266,10 +279,21 @@ const ScanInterface = () => {
             <Button 
               onClick={handleScan} 
               disabled={isScanning}
-              className="w-full start-scan-button"
+              className={cn(
+                "w-full start-scan-button",
+                isScanning && "opacity-50 cursor-not-allowed"
+              )}
               aria-label="Run AI Scan"
             >
-              {isScanning ? "Scanning..." : "Start Scan"}
+              {isScanning ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" 
+                       style={{ borderColor: '#4A90E2', borderTopColor: 'transparent' }}></div>
+                  Scanning...
+                </div>
+              ) : (
+                "Start Scan"
+              )}
             </Button>
           </CardContent>
         </Card>
