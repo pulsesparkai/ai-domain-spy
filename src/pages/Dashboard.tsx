@@ -1,5 +1,9 @@
+import { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PaywallOverlay } from "@/components/PaywallOverlay";
 import { BarChart3, Brain, TrendingUp, Users, Search, Target, Globe } from "lucide-react";
 
 // Mock components for the 7 dashboard features
@@ -225,6 +229,27 @@ const AppSidebar = () => {
 };
 
 const Dashboard = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SidebarProvider>
@@ -238,21 +263,23 @@ const Dashboard = () => {
               <p className="text-muted-foreground">Track your AI search presence across all platforms</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <AIVisibilityScore />
+            <PaywallOverlay>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <AIVisibilityScore />
+                </div>
+                <div>
+                  <SentimentAnalysis />
+                </div>
+                <CitationsTracking />
+                <AIRankings />
+                <PromptTrends />
+                <CompetitorTraffic />
+                <div className="lg:col-span-2">
+                  <TrendingPages />
+                </div>
               </div>
-              <div>
-                <SentimentAnalysis />
-              </div>
-              <CitationsTracking />
-              <AIRankings />
-              <PromptTrends />
-              <CompetitorTraffic />
-              <div className="lg:col-span-2">
-                <TrendingPages />
-              </div>
-            </div>
+            </PaywallOverlay>
           </main>
         </div>
       </SidebarProvider>

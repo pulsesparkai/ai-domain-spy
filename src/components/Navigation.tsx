@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserProfileDropdown } from "./UserProfileDropdown";
 
 const Navigation = () => {
+  const { user } = useAuth();
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card shadow-nav">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -22,38 +26,51 @@ const Navigation = () => {
             >
               Home
             </Link>
-            <Link 
-              to="/features" 
+            <a 
+              href="#features" 
               className="text-foreground hover:text-primary transition-base"
             >
               Features
-            </Link>
+            </a>
             <Link 
               to="/pricing" 
               className="text-foreground hover:text-primary transition-base"
             >
               Pricing
             </Link>
-            <Link 
-              to="/about" 
+            <a 
+              href="#about" 
               className="text-foreground hover:text-primary transition-base"
             >
               About
-            </Link>
+            </a>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Auth Buttons / User Menu */}
           <div className="flex items-center space-x-4">
-            <Link to="/login">
-              <Button variant="ghost" className="text-foreground hover:text-primary">
-                Log in
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button className="primary-gradient text-white hover:opacity-90 transition-base">
-                Sign up
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to="/dashboard">
+                  <Button variant="ghost" className="text-foreground hover:text-primary">
+                    Dashboard
+                  </Button>
+                </Link>
+                <UserProfileDropdown />
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="ghost" className="text-foreground hover:text-primary">
+                    Log in
+                  </Button>
+                </Link>
+                <Link to="/auth">
+                  <Button className="primary-gradient text-white hover:opacity-90 transition-base">
+                    Sign up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
