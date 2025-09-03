@@ -256,6 +256,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_login_attempts: {
+        Args: {
+          p_email?: string
+          p_fingerprint_hash?: string
+          p_ip_address?: unknown
+        }
+        Returns: Json
+      }
+      cleanup_expired_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       delete_encrypted_api_key: {
         Args: { key_name: string }
         Returns: undefined
@@ -264,6 +276,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      log_login_attempt: {
+        Args: {
+          p_email?: string
+          p_failure_reason?: string
+          p_fingerprint_hash?: string
+          p_ip_address?: unknown
+          p_success?: boolean
+          p_user_agent?: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
       refresh_table_stats: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -271,6 +295,14 @@ export type Database = {
       update_encrypted_api_keys: {
         Args: { encrypted_value: string; key_name: string }
         Returns: undefined
+      }
+      upsert_device_fingerprint: {
+        Args: {
+          p_device_info: Json
+          p_fingerprint_hash: string
+          p_user_id: string
+        }
+        Returns: string
       }
     }
     Enums: {
