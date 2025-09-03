@@ -1,6 +1,18 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { supabase } from '@/integrations/supabase/client';
 import { showToast } from '@/lib/toast';
+import { 
+  ApiResponse, 
+  ScanRequest, 
+  ScanResponse, 
+  ApiKeyValidationRequest, 
+  ApiKeyValidationResult,
+  AppError,
+  validateApiResponse,
+  ScanResponseSchema,
+  ApiKeyValidationResultSchema
+} from '@/types/api';
+import { createRequestId, type RequestId } from '@/types/branded';
 
 // API client configuration
 const API_CONFIG = {
@@ -17,10 +29,30 @@ class ApiClientError extends Error {
     message: string,
     public status?: number,
     public code?: string,
-    public details?: any
+    public details?: any,
+    public requestId?: RequestId
   ) {
     super(message);
     this.name = 'ApiClientError';
+  }
+
+  toAppError(): AppError {
+    if (this.status === 401) {
+      return { type: 'authentication', message: this.message, code: this.code || 'UNAUTHORIZED' };
+    }
+    if (this.status === 403) {
+      return { type: 'authorization', message: this.message, resource: this.code };
+    }
+    if (this.status === 429) {
+      return { type: 'rate_limit', message: this.message, retryAfter: this.details?.retryAfter };
+    }
+    if (this.status && this.status >= 400 && this.status < 500) {
+      return { type: 'validation', message: this.message, field: this.details?.field };
+    }
+    if (this.status && this.status >= 500) {
+      return { type: 'api', message: this.message, code: this.code || 'SERVER_ERROR', details: this.details };
+    }
+    return { type: 'unknown', message: this.message, originalError: this };
   }
 }
 
@@ -281,34 +313,47 @@ class ApiClient {
   }
 
   // Specific method for scan operations
-  public async performScan(data: {
-    queries: string[];
-    scanType: string;
-    targetUrl?: string;
-  }): Promise<any> {
-    return this.call({
-      method: 'POST',
-      url: `${API_CONFIG.localApiUrl}/api/scan`,
-      data,
+  public async performScan(data: ScanRequest): Promise<ScanResponse> {
+    const response = await this.callEdgeFunction(`${data.scanType}-scan`, data, {
       retryConfig: {
-        attempts: 2, // Fewer retries for scan operations
+        attempts: 1,
         delay: 2000,
-        backoff: true,
-      },
+      }
     });
+
+    const validation = validateApiResponse(ScanResponseSchema, { success: true, data: response, timestamp: new Date().toISOString() });
+    if (!validation.success) {
+      throw new ApiClientError(
+        'Invalid scan response format',
+        undefined,
+        'INVALID_RESPONSE',
+        { validationError: validation.error.type }
+      );
+    }
+
+    return validation.data;
   }
 
   // Validation methods for API keys
-  public async validateApiKeys(data: {
-    query: string;
-    openaiKey?: string;
-    perplexityKey?: string;
-  }): Promise<any> {
-    return this.callEdgeFunction('test-scan', data, {
+  public async validateApiKeys(data: ApiKeyValidationRequest): Promise<ApiKeyValidationResult> {
+    const response = await this.callEdgeFunction('test-scan', data, {
       retryConfig: {
         attempts: 1, // No retries for validation
       },
     });
+    
+    // Response from Edge Function is already the validation result
+    const validation = validateApiResponse(ApiKeyValidationResultSchema, response);
+    if (!validation.success) {
+      throw new ApiClientError(
+        'Invalid API key validation response format',
+        undefined,
+        'INVALID_RESPONSE',
+        { validationError: validation.error.type }
+      );
+    }
+
+    return validation.data;
   }
 
   // Health check

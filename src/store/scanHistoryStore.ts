@@ -1,47 +1,66 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { 
+  ScanHistoryItem, 
+  ScanHistoryState, 
+  ScanHistoryActions,
+  isScanHistoryItem
+} from '@/types/store';
+import { 
+  createScanId, 
+  createUserId,
+  type ScanId,
+  type UserId 
+} from '@/types/branded';
+import { ScanStatus, ScanType } from '@/types/api';
 
-export interface ScanResult {
-  id: string;
-  userId: string;
-  scanType: string;
-  targetUrl?: string;
-  queries: string[];
-  results?: any;
-  status: 'pending' | 'completed' | 'failed';
-  createdAt: string;
-  updatedAt: string;
-  error?: string;
-}
+// Legacy interface for backward compatibility
+export interface ScanResult extends ScanHistoryItem {}
 
-interface ScanHistoryState {
-  scans: ScanResult[];
-  currentScan: ScanResult | null;
+interface TypedScanHistoryState {
+  // Data
+  scans: ScanHistoryItem[];
+  currentScan: ScanHistoryItem | null;
+  
+  // UI State
   isLoading: boolean;
   error: string | null;
   
-  // Actions
-  addScan: (scan: Omit<ScanResult, 'id' | 'createdAt' | 'updatedAt'>) => string;
-  updateScan: (id: string, updates: Partial<ScanResult>) => void;
-  deleteScan: (id: string) => void;
+  // Filters and sorting (simplified for now)
+  filters: {
+    status?: ScanStatus[];
+    type?: ScanType[];
+  };
+  sortBy: 'createdAt' | 'updatedAt' | 'status';
+  sortOrder: 'asc' | 'desc';
+  
+  // Pagination
+  currentPage: number;
+  itemsPerPage: number;
+  totalItems: number;
+  
+  // Actions with proper types
+  addScan: (scan: Omit<ScanHistoryItem, 'id' | 'createdAt' | 'updatedAt'>) => ScanId;
+  updateScan: (id: ScanId, updates: Partial<ScanHistoryItem>) => void;
+  deleteScan: (id: ScanId) => void;
   clearHistory: () => void;
-  setCurrentScan: (scan: ScanResult | null) => void;
+  setCurrentScan: (scan: ScanHistoryItem | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   
   // Optimistic updates
-  optimisticUpdateScan: (id: string, updates: Partial<ScanResult>) => void;
-  revertOptimisticUpdate: (id: string, originalScan: ScanResult) => void;
+  optimisticUpdateScan: (id: ScanId, updates: Partial<ScanHistoryItem>) => void;
+  revertOptimisticUpdate: (id: ScanId, originalScan: ScanHistoryItem) => void;
   
   // Sync with backend
-  syncWithBackend: (scans: ScanResult[]) => void;
+  syncWithBackend: (scans: ScanHistoryItem[]) => void;
   loadFromBackend: () => Promise<void>;
 }
 
 // Store for rollback functionality
-const optimisticUpdates = new Map<string, ScanResult>();
+const optimisticUpdates = new Map<ScanId, ScanHistoryItem>();
 
-export const useScanHistoryStore = create<ScanHistoryState>()(
+export const useScanHistoryStore = create<TypedScanHistoryState>()(
   persist(
     (set, get) => ({
       scans: [],
@@ -49,20 +68,36 @@ export const useScanHistoryStore = create<ScanHistoryState>()(
       isLoading: false,
       error: null,
       
+      // Filters and sorting defaults
+      filters: {},
+      sortBy: 'createdAt' as const,
+      sortOrder: 'desc' as const,
+      
+      // Pagination defaults
+      currentPage: 1,
+      itemsPerPage: 20,
+      totalItems: 0,
+      
       addScan: (scanData) => {
-        const newScan: ScanResult = {
+        const scanId = createScanId(crypto.randomUUID());
+        const newScan: ScanHistoryItem = {
           ...scanData,
-          id: crypto.randomUUID(),
+          id: scanId,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
+        
+        // Validate the scan data
+        if (!isScanHistoryItem(newScan)) {
+          throw new Error('Invalid scan data provided');
+        }
         
         set((state) => ({
           scans: [newScan, ...state.scans],
           currentScan: newScan
         }));
         
-        return newScan.id;
+        return scanId;
       },
       
       updateScan: (id, updates) =>
