@@ -5,6 +5,7 @@ import { Menu, X, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { analytics } from "@/lib/analytics";
+import { SkipToContent } from "@/components/SkipToContent";
 
 const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,40 +23,54 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-sticky bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      <SkipToContent />
+      <nav 
+        className="fixed top-0 left-0 right-0 z-sticky bg-white shadow-sm border-b border-gray-200"
+        role="navigation"
+        aria-label="Main navigation"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link 
+            to="/" 
+            className="flex items-center space-x-2 focus-visible-ring rounded-md"
+            aria-label="PulseSpark.ai homepage"
+          >
             <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <span className="text-white font-bold text-lg">P</span>
+              <span className="text-white font-bold text-lg" aria-hidden="true">P</span>
             </div>
             <span className="text-foreground font-semibold text-xl">PulseSpark.ai</span>
           </Link>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-8" role="menubar">
             <Link 
               to="/" 
-              className="text-foreground hover:text-primary transition-base"
+              className="text-foreground hover:text-primary transition-base focus-visible-ring px-2 py-1 rounded-md"
+              role="menuitem"
             >
               Home
             </Link>
             <a 
               href="#features" 
-              className="text-foreground hover:text-primary transition-base"
+              className="text-foreground hover:text-primary transition-base focus-visible-ring px-2 py-1 rounded-md"
+              role="menuitem"
             >
               Features
             </a>
             <Link 
               to="/pricing" 
-              className="text-foreground hover:text-primary transition-base"
+              className="text-foreground hover:text-primary transition-base focus-visible-ring px-2 py-1 rounded-md"
+              role="menuitem"
             >
               Pricing
             </Link>
             <a 
               href="#about" 
-              className="text-foreground hover:text-primary transition-base"
+              className="text-foreground hover:text-primary transition-base focus-visible-ring px-2 py-1 rounded-md"
+              role="menuitem"
             >
               About
             </a>
@@ -103,12 +118,23 @@ const Navigation = () => {
           <div className="md:hidden">
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-foreground">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-foreground"
+                  aria-expanded={isMobileMenuOpen}
+                  aria-controls="mobile-menu"
+                >
                   <Menu className="h-6 w-6" />
                   <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="z-sidebar w-64 bg-white">
+              <SheetContent 
+                side="right" 
+                className="z-sidebar w-64 bg-white"
+                id="mobile-menu"
+                aria-label="Mobile navigation menu"
+              >
                 <div className="flex flex-col h-full">
                   {/* Header with close button */}
                   <div className="flex items-center justify-between p-4 border-b">
@@ -203,7 +229,8 @@ const Navigation = () => {
           </div>
         </div>
       </div>
-    </nav>
+      </nav>
+    </>
   );
 };
 

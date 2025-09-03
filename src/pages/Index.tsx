@@ -6,6 +6,8 @@ import { TestimonialsSection, FAQSection } from "@/components/TestimonialsAndFAQ
 import PricingCard from "@/components/PricingCard";
 import Footer from "@/components/Footer";
 import CookieConsent from "@/components/CookieConsent";
+import { MainContent } from "@/components/SkipToContent";
+import { KeyboardNavigationProvider } from "@/components/KeyboardNavigation";
 import { useEffect } from "react";
 import { analytics } from "@/lib/analytics";
 
@@ -16,17 +18,21 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <HeroSection />
-      <FeaturesGrid />
-      <SolutionsSection />
-      <TestimonialsSection />
-      <FAQSection />
-      <PricingCard />
-      <Footer />
-      <CookieConsent />
-    </div>
+    <KeyboardNavigationProvider>
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <MainContent>
+          <HeroSection />
+          <FeaturesGrid />
+          <SolutionsSection />
+          <TestimonialsSection />
+          <FAQSection />
+          <PricingCard />
+        </MainContent>
+        <Footer />
+        <CookieConsent />
+      </div>
+    </KeyboardNavigationProvider>
   );
 };
 

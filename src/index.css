@@ -100,6 +100,49 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  /* Focus Management & Keyboard Navigation */
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  .skip-link {
+    @apply absolute -top-10 left-4 z-50 bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium;
+    @apply focus:top-4 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Enhanced focus states for interactive elements */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2;
+  }
+
+  /* Focus trap styles */
+  .focus-trap-active {
+    @apply overflow-hidden;
+  }
+
+  .focus-trap-active [tabindex="-1"]:not(.focus-trap-ignore) {
+    pointer-events: none;
+  }
+
+  /* Interactive element indicators */
+  .interactive-element {
+    @apply cursor-pointer transition-all duration-200;
+  }
+
+  .interactive-element:hover {
+    @apply transform scale-105;
+  }
+
+  .interactive-element:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 transform scale-105;
+  }
+
   body {
     @apply bg-background text-foreground font-inter;
   }

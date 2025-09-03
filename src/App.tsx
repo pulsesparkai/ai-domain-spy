@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import DependencyLoading from "@/components/DependencyLoading";
+import { AccessibilityIndicator, AccessibilityToolbar } from "@/components/AccessibilityIndicator";
 import { Suspense, useEffect } from "react";
 import { 
   LazyIndex,
@@ -61,6 +62,8 @@ const App = () => {
                     <Route path="*" element={<LazyNotFound />} />
                   </Routes>
                 </Suspense>
+                <AccessibilityIndicator />
+                <AccessibilityToolbar />
               </BrowserRouter>
             </DependencyLoading>
           </TooltipProvider>
