@@ -8,133 +8,80 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* PulseSpark.ai Brand Colors */
-    --background: 240 100% 99.6%; /* #F8FAFF */
-    --foreground: 0 0% 10.2%; /* #1A1A1A */
+    /* PulseSpark.ai Brand Colors - Light Mode Only */
+    --background: 240, 100%, 99.6%; /* #F8FAFF */
+    --foreground: 0, 0%, 10.2%; /* #1A1A1A */
 
-    --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 0 0% 10.2%; /* #1A1A1A */
+    --card: 0, 0%, 100%; /* #FFFFFF */
+    --card-foreground: 0, 0%, 10.2%; /* #1A1A1A */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10.2%;
+    --popover: 0, 0%, 100%;
+    --popover-foreground: 0, 0%, 10.2%;
 
     /* Primary Purple */
-    --primary: 245 71% 67%; /* #6B5BFF */
-    --primary-foreground: 0 0% 100%;
+    --primary: 245, 71%, 67%; /* #6B5BFF */
+    --primary-foreground: 0, 0%, 100%;
 
     /* Accent Blue */
-    --accent: 210 68% 58%; /* #4A90E2 */
-    --accent-foreground: 0 0% 100%;
+    --accent: 210, 68%, 58%; /* #4A90E2 */
+    --accent-foreground: 0, 0%, 100%;
 
     /* Secondary & Muted */
-    --secondary: 240 100% 96.3%; /* #E8EFFF */
-    --secondary-foreground: 0 0% 10.2%;
+    --secondary: 240, 100%, 96.3%; /* #E8EFFF */
+    --secondary-foreground: 0, 0%, 10.2%;
 
-    --muted: 0 0% 94.1%; /* #F0F0F0 */
-    --muted-foreground: 0 0% 29.4%; /* #4A4A4A */
+    --muted: 0, 0%, 94.1%; /* #F0F0F0 */
+    --muted-foreground: 0, 0%, 29.4%; /* #4A4A4A */
 
     /* Utilities */
-    --destructive: 0 73% 64%; /* #FF4D4F */
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0, 73%, 64%; /* #FF4D4F */
+    --destructive-foreground: 0, 0%, 100%;
 
-    --success: 120 39% 54%; /* #4CAF50 */
-    --warning: 54 100% 62%; /* #FFEB3B */
+    --success: 120, 39%, 54%; /* #4CAF50 */
+    --warning: 54, 100%, 62%; /* #FFEB3B */
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 245 71% 67%;
+    --border: 220, 13%, 91%;
+    --input: 220, 13%, 91%;
+    --ring: 245, 71%, 67%;
+
+    /* Sidebar Colors - Consolidated with Main Theme */
+    --sidebar-background: 0, 0%, 98%;
+    --sidebar-foreground: 0, 0%, 10.2%;
+    --sidebar-primary: 245, 71%, 67%;
+    --sidebar-primary-foreground: 0, 0%, 100%;
+    --sidebar-accent: 240, 100%, 96.3%;
+    --sidebar-accent-foreground: 0, 0%, 10.2%;
+    --sidebar-border: 220, 13%, 91%;
+    --sidebar-ring: 245, 71%, 67%;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(240 100% 99.6%) 0%, hsl(240 100% 96.3%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(245 71% 67%) 0%, hsl(210 68% 58%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(240, 100%, 99.6%) 0%, hsl(240, 100%, 96.3%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(245, 71%, 67%) 0%, hsl(210, 68%, 58%) 100%);
 
     /* Shadows */
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-nav: 0 1px 3px rgba(0, 0, 0, 0.05);
     --shadow-hero: 0 10px 25px rgba(0, 0, 0, 0.15);
 
-    /* Button Colors */
-    --button-primary: 245 71% 67%; /* #6B5BFF */
-    --button-primary-hover: 245 76% 62%; /* #5A4EFF */
-    --button-focus: 210 68% 58%; /* #4A90E2 */
-
-    /* Input Colors */
-    --input-border: 0 0% 82%; /* #D1D1D1 */
-    --input-focus: 245 71% 67%; /* #6B5BFF */
-
-    /* Code Block Colors */
-    --code-bg: 0 0% 94.1%; /* #F0F0F0 */
-    --code-keyword: 245 71% 67%; /* #6B5BFF */
-    --code-string: 210 68% 58%; /* #4A90E2 */
-
     /* Stats Badge Colors */
-    --stats-success-bg: 120 60% 95%; /* #E8F5E9 */
-    --stats-success-text: 120 45% 35%; /* #388E3C */
+    --stats-success-bg: 120, 60%, 95%; /* #E8F5E9 */
+    --stats-success-text: 120, 45%, 35%; /* #388E3C */
 
     /* Solution Card Colors */
-    --solution-marketing: 4 90% 63%; /* #FF5252 */
-    --solution-product: 120 39% 54%; /* #4CAF50 */
-    --solution-support: 207 90% 54%; /* #2196F3 */
-    --solution-data: 45 100% 51%; /* #FFC107 */
+    --solution-marketing: 4, 90%, 63%; /* #FF5252 */
+    --solution-product: 120, 39%, 54%; /* #4CAF50 */
+    --solution-support: 207, 90%, 54%; /* #2196F3 */
+    --solution-data: 45, 100%, 51%; /* #FFC107 */
+
+    /* Code Block Colors */
+    --code-bg: 0, 0%, 94.1%; /* #F0F0F0 */
+    --code-keyword: 245, 71%, 67%; /* #6B5BFF */
+    --code-string: 210, 68%, 58%; /* #4A90E2 */
 
     /* Transitions */
     --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -277,13 +224,8 @@ All colors MUST be HSL.
   /* High contrast mode support */
   @media (prefers-contrast: high) {
     :root {
-      --border: 0 0% 0%;
-      --ring: 0 0% 0%;
-    }
-    
-    .dark {
-      --border: 0 0% 100%;
-      --ring: 0 0% 100%;
+      --border: 0, 0%, 0%;
+      --ring: 0, 0%, 0%;
     }
   }
 
