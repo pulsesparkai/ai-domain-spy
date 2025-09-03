@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PaywallOverlay } from "@/components/PaywallOverlay";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { SampleDataScript } from "@/components/SampleDataScript";
+import DashboardErrorBoundary from "@/components/DashboardErrorBoundary";
 import { BarChart3, Brain, TrendingUp, Users, Search, Target, Globe, ArrowUp, ArrowDown } from "lucide-react";
 import { analytics } from "@/lib/analytics";
 import { Tooltip } from 'react-tooltip';
@@ -456,6 +457,26 @@ const Dashboard = () => {
   const [startTour, setStartTour] = useState(false);
   const [latestScan, setLatestScan] = useState<any>(null);
 
+  const fetchLatestScan = async () => {
+    try {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('scans')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        setLatestScan(data[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching scan data:', error);
+      throw error; // Let error boundary handle it
+    }
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
@@ -467,25 +488,6 @@ const Dashboard = () => {
     if (user) {
       analytics.page('Dashboard', { userId: user.id });
       setStartTour(true);
-      
-      // Fetch latest scan data
-      const fetchLatestScan = async () => {
-        try {
-          const { data } = await supabase
-            .from('scans')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-          if (data && data.length > 0) {
-            setLatestScan(data[0]);
-          }
-        } catch (error) {
-          console.error('Error fetching scan data:', error);
-        }
-      };
-
       fetchLatestScan();
     }
   }, [user]);
@@ -541,8 +543,8 @@ const Dashboard = () => {
               </div>
               <div className="flex space-x-2">
                 <Button 
-                  onClick={() => navigate('/dashboard')}
-                  variant="outline"
+                  onClick={() => navigate('/scan')}
+                  variant="default"
                 >
                   Run New Scan
                 </Button>
@@ -558,21 +560,23 @@ const Dashboard = () => {
             )}
 
             <PaywallOverlay>
-              <div className="scan-results grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <AIVisibilityScore scanData={latestScan?.results} />
+              <DashboardErrorBoundary onRetry={fetchLatestScan}>
+                <div className="scan-results grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2">
+                    <AIVisibilityScore scanData={latestScan?.results} />
+                  </div>
+                  <div>
+                    <SentimentAnalysis scanData={latestScan?.results} />
+                  </div>
+                  <CitationsTracking scanData={latestScan?.results} />
+                  <AIRankings scanData={latestScan?.results} />
+                  <PromptTrends scanData={latestScan?.results} />
+                  <CompetitorTraffic scanData={latestScan?.results} />
+                  <div className="lg:col-span-2">
+                    <TrendingPages scanData={latestScan?.results} />
+                  </div>
                 </div>
-                <div>
-                  <SentimentAnalysis scanData={latestScan?.results} />
-                </div>
-                <CitationsTracking scanData={latestScan?.results} />
-                <AIRankings scanData={latestScan?.results} />
-                <PromptTrends scanData={latestScan?.results} />
-                <CompetitorTraffic scanData={latestScan?.results} />
-                <div className="lg:col-span-2">
-                  <TrendingPages scanData={latestScan?.results} />
-                </div>
-              </div>
+              </DashboardErrorBoundary>
             </PaywallOverlay>
           </main>
         </div>

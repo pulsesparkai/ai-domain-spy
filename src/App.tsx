@@ -15,6 +15,7 @@ import Success from "./pages/Success";
 import Cancel from "./pages/Cancel";
 import NotFound from "./pages/NotFound";
 import { PasswordReset } from "./components/PasswordReset";
+import Scan from "./pages/Scan";
 
 // Create QueryClient with proper configuration
 const queryClient = new QueryClient({
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/scan" element={<Scan />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/success" element={<Success />} />
