@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Info, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ValidatedInput } from "@/components/forms/ValidatedInput";
+import { useScanDefaults, useScanHistoryStore } from "@/store";
 
 interface ScanFormProps {
   queries: string[];
@@ -31,6 +32,35 @@ export const ScanForm = ({
   onTargetUrlChange,
   onSubmit
 }: ScanFormProps) => {
+  const scanDefaults = useScanDefaults();
+  const { optimisticUpdateScan, addScan } = useScanHistoryStore();
+
+  // Initialize with user preferences
+  useEffect(() => {
+    if (scanDefaults.scanType && !scanType) {
+      onScanTypeChange(scanDefaults.scanType);
+    }
+    if (scanDefaults.queries.length > 0 && queries.length === 1 && !queries[0]) {
+      onQueriesChange(scanDefaults.queries);
+    }
+  }, [scanDefaults, scanType, queries, onScanTypeChange, onQueriesChange]);
+
+  const handleOptimisticSubmit = () => {
+    // Create optimistic scan entry
+    const scanId = addScan({
+      userId: 'current-user', // Would come from auth context
+      scanType,
+      targetUrl,
+      queries: queries.filter(q => q.trim()),
+      status: 'pending'
+    });
+
+    // Trigger the actual scan
+    onSubmit();
+
+    return scanId;
+  };
+
   const addQuery = () => {
     onQueriesChange([...queries, ""]);
   };
@@ -134,7 +164,7 @@ export const ScanForm = ({
         </div>
 
         <Button 
-          onClick={onSubmit} 
+          onClick={handleOptimisticSubmit} 
           disabled={isScanning}
           className={cn(
             "w-full start-scan-button",

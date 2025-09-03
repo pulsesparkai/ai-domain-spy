@@ -11,6 +11,7 @@ import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { LazyComponentWrapper } from "@/components/dashboard/LazyComponentWrapper";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { DashboardView } from "@/components/compound/DashboardView";
+import { useStoreSync } from "@/hooks/useStoreSync";
 import 'react-tooltip/dist/react-tooltip.css';
 
 // Lazy load dashboard components for code splitting
@@ -29,6 +30,9 @@ const Dashboard = () => {
   const [startTour, setStartTour] = useState(false);
   const [latestScan, setLatestScan] = useState<any>(null);
   const [scanLoading, setScanLoading] = useState(true);
+  
+  // Initialize store sync
+  useStoreSync();
 
   const fetchLatestScan = async () => {
     try {
