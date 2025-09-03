@@ -20,8 +20,10 @@ interface DashboardViewProps {
 const DashboardViewRoot = ({ children, scanData, loading, className }: DashboardViewProps) => {
   return (
     <DashboardViewContext.Provider value={{ scanData, loading }}>
-      <div className={cn("scan-results grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6", className)}>
-        {children}
+      <div className={cn("scan-results overflow-x-auto", className)}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 min-w-fit">
+          {children}
+        </div>
       </div>
     </DashboardViewContext.Provider>
   );
@@ -37,9 +39,9 @@ interface DashboardGridItemProps {
 
 const DashboardGridItem = ({ children, span = "1", id, className }: DashboardGridItemProps) => {
   const spanClasses = {
-    "1": "",
-    "2": "lg:col-span-2",
-    "3": "lg:col-span-3"
+    "1": "min-w-[300px]",
+    "2": "min-w-[300px] xl:col-span-2",
+    "3": "min-w-[300px] xl:col-span-3"
   };
 
   return (
