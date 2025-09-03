@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      device_fingerprints: {
+        Row: {
+          created_at: string
+          device_info: Json
+          fingerprint_hash: string
+          first_seen: string
+          id: string
+          is_trusted: boolean
+          last_seen: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json
+          fingerprint_hash: string
+          first_seen?: string
+          id?: string
+          is_trusted?: boolean
+          last_seen?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json
+          fingerprint_hash?: string
+          first_seen?: string
+          id?: string
+          is_trusted?: boolean
+          last_seen?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      login_attempts: {
+        Row: {
+          attempt_time: string
+          email: string | null
+          failure_reason: string | null
+          fingerprint_hash: string | null
+          id: string
+          ip_address: unknown | null
+          location_data: Json | null
+          success: boolean
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attempt_time?: string
+          email?: string | null
+          failure_reason?: string | null
+          fingerprint_hash?: string | null
+          id?: string
+          ip_address?: unknown | null
+          location_data?: Json | null
+          success: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attempt_time?: string
+          email?: string | null
+          failure_reason?: string | null
+          fingerprint_hash?: string | null
+          id?: string
+          ip_address?: unknown | null
+          location_data?: Json | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           api_keys: Json | null
@@ -91,6 +166,87 @@ export type Database = {
           status?: string | null
           target_url?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_security_settings: {
+        Row: {
+          backup_codes: string[] | null
+          created_at: string
+          id: string
+          require_device_verification: boolean
+          session_timeout_minutes: number
+          suspicious_login_notifications: boolean
+          totp_secret: string | null
+          two_factor_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          backup_codes?: string[] | null
+          created_at?: string
+          id?: string
+          require_device_verification?: boolean
+          session_timeout_minutes?: number
+          suspicious_login_notifications?: boolean
+          totp_secret?: string | null
+          two_factor_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          backup_codes?: string[] | null
+          created_at?: string
+          id?: string
+          require_device_verification?: boolean
+          session_timeout_minutes?: number
+          suspicious_login_notifications?: boolean
+          totp_secret?: string | null
+          two_factor_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          fingerprint_hash: string | null
+          id: string
+          ip_address: unknown | null
+          is_active: boolean
+          last_activity: string
+          session_token: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          fingerprint_hash?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_activity?: string
+          session_token: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          fingerprint_hash?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean
+          last_activity?: string
+          session_token?: string
+          updated_at?: string
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
