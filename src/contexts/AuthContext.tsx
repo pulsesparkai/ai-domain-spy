@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -38,6 +38,8 @@ interface AuthContextType {
   profile: Profile | null;
   apiKeys: ApiKeys;
   loading: boolean;
+  profileLoading: boolean;
+  apiKeysLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -56,14 +58,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [apiKeys, setApiKeys] = useState<ApiKeys>({});
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [apiKeysLoading, setApiKeysLoading] = useState(false);
+  
+  // Refs for cleanup
+  const timeoutRefs = useRef<Set<NodeJS.Timeout>>(new Set());
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const retryCountRef = useRef<number>(0);
 
-  const fetchProfile = async (userId: string) => {
+  const clearTimeouts = () => {
+    timeoutRefs.current.forEach(timeoutId => clearTimeout(timeoutId));
+    timeoutRefs.current.clear();
+  };
+
+  const addTimeout = (timeoutId: NodeJS.Timeout) => {
+    timeoutRefs.current.add(timeoutId);
+    return timeoutId;
+  };
+
+  const exponentialBackoff = (attempt: number) => {
+    return Math.min(1000 * Math.pow(2, attempt), 10000); // Max 10 seconds
+  };
+
+  const fetchProfile = async (userId: string, attempt: number = 0): Promise<void> => {
+    if (attempt > 3) { // Max 3 retries
+      console.error('Max retries reached for profile fetch');
+      return;
+    }
+
+    // Cancel any existing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    abortControllerRef.current = new AbortController();
+    setProfileLoading(true);
+
     try {
       // Ensure user-specific data: filter by auth.uid() = user_id
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
+        .abortSignal(abortControllerRef.current.signal)
         .single();
       
       if (error) throw error;
@@ -79,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       
       setProfile(profileData);
+      retryCountRef.current = 0; // Reset retry count on success
 
       // Decrypt API keys if they exist
       if (profileData.encrypted_api_keys && Object.keys(profileData.encrypted_api_keys).length > 0) {
@@ -89,8 +127,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setApiKeys(data.api_keys as ApiKeys);
         }
       }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Profile fetch aborted');
+        return;
+      }
+      
+      console.error(`Error fetching profile (attempt ${attempt + 1}):`, error);
+      
+      if (attempt < 3) {
+        const delay = exponentialBackoff(attempt);
+        console.log(`Retrying profile fetch in ${delay}ms...`);
+        
+        const timeoutId = setTimeout(() => {
+          timeoutRefs.current.delete(timeoutId);
+          fetchProfile(userId, attempt + 1);
+        }, delay);
+        addTimeout(timeoutId);
+      }
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -98,6 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     encryptedKeys: Record<string, EncryptedData>, 
     userId: string
   ) => {
+    setApiKeysLoading(true);
     try {
       if (!EncryptionService.isSupported()) {
         console.warn('Encryption not supported in this browser');
@@ -118,6 +175,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: "Failed to decrypt API keys. Please re-enter them.",
         variant: "destructive",
       });
+    } finally {
+      setApiKeysLoading(false);
     }
   };
 
@@ -130,18 +189,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           // Defer profile fetch to avoid deadlock
-          setTimeout(() => {
+          const timeoutId = setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
+          addTimeout(timeoutId);
         } else {
           setProfile(null);
           setApiKeys({});
+          // Cancel any ongoing requests
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+          }
         }
         setLoading(false);
       }
@@ -152,16 +216,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           fetchProfile(session.user.id);
         }, 0);
+        addTimeout(timeoutId);
       } else {
         setApiKeys({});
       }
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeouts();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -197,6 +268,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Cancel any ongoing requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      clearTimeouts();
+      
       await supabase.auth.signOut();
       setProfile(null);
       setApiKeys({});
@@ -324,6 +401,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profile,
     apiKeys,
     loading,
+    profileLoading,
+    apiKeysLoading,
     signIn,
     signUp,
     signOut,
