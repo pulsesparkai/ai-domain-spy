@@ -12,7 +12,7 @@ import { LazyComponentWrapper } from "@/components/dashboard/LazyComponentWrappe
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { DashboardView } from "@/components/compound/DashboardView";
 import { useStoreSync } from "@/hooks/useStoreSync";
-import 'react-tooltip/dist/react-tooltip.css';
+
 
 // Lazy load dashboard components for code splitting
 const AIVisibilityScore = lazy(() => import('@/components/dashboard/AIVisibilityScore').then(module => ({ default: module.AIVisibilityScore })));

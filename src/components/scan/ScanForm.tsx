@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { EnhancedTooltip } from "@/components/ui/enhanced-tooltip";
 import { Info, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ValidatedInput } from "@/components/forms/ValidatedInput";
@@ -84,16 +84,22 @@ export const ScanForm = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           AI Visibility Scan
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="w-4 h-4 text-muted-foreground" />
-            </TooltipTrigger>
-            <TooltipContent className="bg-muted border border-input-border rounded-xl p-3 max-w-xs">
-              <p className="text-sm">
-                Track your brand mentions across AI search platforms and analyze sentiment.
-              </p>
-            </TooltipContent>
-          </Tooltip>
+          <EnhancedTooltip
+            content={
+              <div className="space-y-2">
+                <p className="font-medium">Search Query Tips:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>Use natural language questions</li>
+                  <li>Include your brand or product name</li>
+                  <li>Focus on specific use cases or features</li>
+                </ul>
+              </div>
+            }
+            side="right"
+            mobile="click"
+          >
+            <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+          </EnhancedTooltip>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

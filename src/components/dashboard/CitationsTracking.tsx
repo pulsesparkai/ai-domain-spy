@@ -1,8 +1,8 @@
 import { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3 } from 'lucide-react';
-import { Tooltip } from 'react-tooltip';
+import { BarChart3, Info } from 'lucide-react';
+import { TooltipWrapper } from '@/components/TooltipWrapper';
 
 interface CitationsTrackingProps {
   scanData?: any;
@@ -22,12 +22,12 @@ export const CitationsTracking = memo(({ scanData }: CitationsTrackingProps) => 
         <CardTitle className="text-h3 flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-accent" />
           Citations Tracking
-          <span 
-            data-tooltip-id="citations-tooltip"
-            className="cursor-help text-muted-foreground"
+          <TooltipWrapper
+            content="Shows domains that cite or mention your brand across AI platforms, with citation counts."
+            side="right"
           >
-            ℹ️
-          </span>
+            <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+          </TooltipWrapper>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -71,9 +71,6 @@ export const CitationsTracking = memo(({ scanData }: CitationsTrackingProps) => 
           </div>
         </div>
       </CardContent>
-      <Tooltip id="citations-tooltip" place="top">
-        Shows domains that cite or mention your brand across AI platforms, with citation counts.
-      </Tooltip>
     </Card>
   );
 });

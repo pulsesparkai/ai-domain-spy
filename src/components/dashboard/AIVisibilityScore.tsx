@@ -1,8 +1,8 @@
 import { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain } from 'lucide-react';
-import { Tooltip } from 'react-tooltip';
+import { Brain, Info } from 'lucide-react';
+import { TooltipWrapper } from '@/components/TooltipWrapper';
 
 interface AIVisibilityScoreProps {
   scanData?: any;
@@ -18,12 +18,12 @@ export const AIVisibilityScore = memo(({ scanData }: AIVisibilityScoreProps) => 
         <CardTitle className="text-h3 flex items-center gap-2">
           <Brain className="w-5 h-5 text-accent" />
           AI Visibility Score
-          <span 
-            data-tooltip-id="visibility-score-tooltip"
-            className="cursor-help text-muted-foreground"
+          <TooltipWrapper
+            content="Composite score: (primary*10 + secondary*5 + mentions*2)/total *100. Based on citations and rankings across Perplexity and ChatGPT."
+            side="right"
           >
-            ℹ️
-          </span>
+            <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+          </TooltipWrapper>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -44,9 +44,6 @@ export const AIVisibilityScore = memo(({ scanData }: AIVisibilityScoreProps) => 
           </p>
         </div>
       </CardContent>
-      <Tooltip id="visibility-score-tooltip" place="top">
-        Composite score: (primary*10 + secondary*5 + mentions*2)/total *100. Based on citations and rankings across Perplexity and ChatGPT.
-      </Tooltip>
     </Card>
   );
 });

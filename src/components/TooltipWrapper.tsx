@@ -1,22 +1,28 @@
 import React from 'react';
-import { Tooltip } from 'react-tooltip';
+import { EnhancedTooltip } from '@/components/ui/enhanced-tooltip';
 
 interface TooltipWrapperProps {
   children: React.ReactNode;
   content: string;
-  id: string;
+  id?: string;
+  side?: 'top' | 'right' | 'bottom' | 'left';
+  mobile?: 'hover' | 'click' | 'disabled';
 }
 
-export const TooltipWrapper = ({ children, content, id }: TooltipWrapperProps) => {
+export const TooltipWrapper = ({ 
+  children, 
+  content, 
+  id,
+  side = "top",
+  mobile = 'click'
+}: TooltipWrapperProps) => {
   return (
-    <>
-      <div data-tooltip-id={id} data-tooltip-content={content}>
-        {children}
-      </div>
-      <Tooltip
-        id={id}
-        className="bg-muted text-foreground rounded-xl text-xs py-2 px-3 max-w-xs z-dropdown"
-      />
-    </>
+    <EnhancedTooltip 
+      content={content} 
+      side={side}
+      mobile={mobile}
+    >
+      {children}
+    </EnhancedTooltip>
   );
 };
