@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LazyImage } from "@/components/LazyImage";
 import heroBackground from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
@@ -15,12 +16,14 @@ const HeroSection = () => {
   return (
     <section className="relative pt-20 pb-16 hero-gradient overflow-hidden">
       {/* Background Image Overlay */}
-      <div 
-        className="absolute inset-0 opacity-5 bg-cover bg-center"
-        style={{
-          backgroundImage: `url(${heroBackground})`,
-        }}
-      />
+      <div className="absolute inset-0 opacity-5">
+        <LazyImage
+          src={heroBackground}
+          alt="Hero background - abstract tech patterns"
+          className="w-full h-full object-cover"
+          effect="opacity"
+        />
+      </div>
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* CSS Grid Layout */}

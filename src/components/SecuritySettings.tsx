@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Shield, Smartphone, Clock, Eye, AlertTriangle, Monitor, History } from 'lucide-react';
+import { LazyImage } from '@/components/LazyImage';
 import { useEnhancedAuth } from '@/hooks/useEnhancedAuth';
 import { useDeviceVerification } from '@/hooks/useAuthSecurity';
 import { showToast } from '@/lib/toast';
@@ -166,7 +167,13 @@ export const SecuritySettings = () => {
                     <AlertDescription>
                       <div className="space-y-3">
                         <p>Scan this QR code with your authenticator app:</p>
-                        <img src={twoFactorQR} alt="2FA QR Code" className="w-48 h-48 mx-auto" />
+                        <LazyImage 
+                          src={twoFactorQR} 
+                          alt="Two-factor authentication QR code for setup" 
+                          className="w-48 h-48 mx-auto rounded-lg border border-border"
+                          width={192}
+                          height={192}
+                        />
                         <div className="space-y-2">
                           <Label htmlFor="verification-code">Enter verification code</Label>
                           <div className="flex gap-2">
