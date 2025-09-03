@@ -12,6 +12,14 @@ import { LazyComponentWrapper } from "@/components/dashboard/LazyComponentWrappe
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { DashboardView } from "@/components/compound/DashboardView";
 import { useStoreSync } from "@/hooks/useStoreSync";
+import { 
+  AIVisibilityScoreSkeleton,
+  SentimentAnalysisSkeleton,
+  CitationsTrackingSkeleton,
+  AIRankingsSkeleton,
+  TrendingPagesSkeleton,
+  DashboardCardSkeleton
+} from '@/components/ui/loading-skeletons';
 
 
 // Lazy load dashboard components for code splitting
@@ -109,7 +117,7 @@ const Dashboard = () => {
               {/* Primary/Above-the-fold content - Load immediately */}
               <DashboardView.GridItem span="2" id="visibility">
                 <DashboardView.Section>
-                  <Suspense fallback={<div className="animate-pulse bg-muted h-64 rounded"></div>}>
+                  <Suspense fallback={<AIVisibilityScoreSkeleton />}>
                     <AIVisibilityScore scanData={latestScan?.results} />
                   </Suspense>
                 </DashboardView.Section>
@@ -117,7 +125,7 @@ const Dashboard = () => {
 
               <DashboardView.GridItem id="sentiment">
                 <DashboardView.Section>
-                  <Suspense fallback={<div className="animate-pulse bg-muted h-64 rounded"></div>}>
+                  <Suspense fallback={<SentimentAnalysisSkeleton />}>
                     <SentimentAnalysis scanData={latestScan?.results} />
                   </Suspense>
                 </DashboardView.Section>
@@ -127,7 +135,7 @@ const Dashboard = () => {
               <DashboardView.GridItem id="citations">
                 <LazyComponentWrapper>
                   <DashboardView.Section>
-                    <Suspense fallback={<div className="animate-pulse bg-muted h-64 rounded"></div>}>
+                    <Suspense fallback={<CitationsTrackingSkeleton />}>
                       <CitationsTracking scanData={latestScan?.results} />
                     </Suspense>
                   </DashboardView.Section>
@@ -137,7 +145,7 @@ const Dashboard = () => {
               <DashboardView.GridItem id="rankings">
                 <LazyComponentWrapper>
                   <DashboardView.Section>
-                    <Suspense fallback={<div className="animate-pulse bg-muted h-64 rounded"></div>}>
+                    <Suspense fallback={<AIRankingsSkeleton />}>
                       <AIRankings scanData={latestScan?.results} />
                     </Suspense>
                   </DashboardView.Section>
@@ -147,7 +155,7 @@ const Dashboard = () => {
               <DashboardView.GridItem>
                 <LazyComponentWrapper>
                   <DashboardView.Section>
-                    <Suspense fallback={<div className="animate-pulse bg-muted h-64 rounded"></div>}>
+                    <Suspense fallback={<DashboardCardSkeleton chart />}>
                       <PromptTrends scanData={latestScan?.results} />
                     </Suspense>
                   </DashboardView.Section>
@@ -157,7 +165,7 @@ const Dashboard = () => {
               <DashboardView.GridItem>
                 <LazyComponentWrapper>
                   <DashboardView.Section>
-                    <Suspense fallback={<div className="animate-pulse bg-muted h-64 rounded"></div>}>
+                    <Suspense fallback={<DashboardCardSkeleton chart />}>
                       <CompetitorTraffic scanData={latestScan?.results} />
                     </Suspense>
                   </DashboardView.Section>
@@ -167,7 +175,7 @@ const Dashboard = () => {
               <DashboardView.GridItem span="2">
                 <LazyComponentWrapper>
                   <DashboardView.Section>
-                    <Suspense fallback={<div className="animate-pulse bg-muted h-64 rounded"></div>}>
+                    <Suspense fallback={<TrendingPagesSkeleton />}>
                       <TrendingPages scanData={latestScan?.results} />
                     </Suspense>
                   </DashboardView.Section>

@@ -1,112 +1,58 @@
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { 
+  AIVisibilityScoreSkeleton,
+  SentimentAnalysisSkeleton,
+  CitationsTrackingSkeleton,
+  AIRankingsSkeleton,
+  TrendingPagesSkeleton,
+  DashboardCardSkeleton
+} from '@/components/ui/loading-skeletons';
 
 export const DashboardSkeleton = () => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {/* AI Visibility Score Skeleton */}
-    <div className="lg:col-span-2">
-      <Card className="animate-pulse">
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-center space-y-4">
-            <Skeleton className="h-16 w-16 rounded-full mx-auto" />
-            <Skeleton className="h-2 w-full rounded-full" />
-            <Skeleton className="h-4 w-32 mx-auto" />
-          </div>
-        </CardContent>
-      </Card>
+  <div className="space-y-6 animate-fade-in">
+    {/* Hero stats row */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <DashboardCardSkeleton key={i} title={false} />
+      ))}
     </div>
 
-    {/* Sentiment Analysis Skeleton */}
-    <Card className="animate-pulse">
-      <CardHeader>
-        <Skeleton className="h-6 w-40" />
-      </CardHeader>
-      <CardContent>
-        <div className="h-64 flex items-center justify-center">
-          <Skeleton className="w-32 h-32 rounded-full" />
-        </div>
-      </CardContent>
-    </Card>
+    {/* Main dashboard grid */}
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* AI Visibility Score - spans 2 columns on large screens */}
+      <div className="lg:col-span-8">
+        <AIVisibilityScoreSkeleton />
+      </div>
+      
+      {/* Sentiment Analysis */}
+      <div className="lg:col-span-4">
+        <SentimentAnalysisSkeleton />
+      </div>
 
-    {/* Citations Tracking Skeleton */}
-    <Card className="animate-pulse">
-      <CardHeader>
-        <Skeleton className="h-6 w-36" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="text-center">
-            <Skeleton className="h-8 w-16 mx-auto mb-2" />
-            <Skeleton className="h-4 w-24 mx-auto" />
-          </div>
-          <div className="space-y-2">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex justify-between items-center">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-6 w-8 rounded-full" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Citations Tracking */}
+      <div className="lg:col-span-4">
+        <CitationsTrackingSkeleton />
+      </div>
 
-    {/* AI Rankings Skeleton */}
-    <Card className="animate-pulse">
-      <CardHeader>
-        <Skeleton className="h-6 w-32" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="border rounded p-3">
-              <Skeleton className="h-4 w-full mb-2" />
-              <div className="flex justify-between items-center">
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="h-6 w-12 rounded-full" />
-              </div>
-              <div className="flex justify-between items-center mt-1">
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="h-6 w-12 rounded-full" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+      {/* AI Rankings */}
+      <div className="lg:col-span-4">
+        <AIRankingsSkeleton />
+      </div>
 
-    {/* Additional sections */}
-    {[...Array(3)].map((_, i) => (
-      <Card key={i} className="animate-pulse">
-        <CardHeader>
-          <Skeleton className="h-6 w-36" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-        </CardContent>
-      </Card>
-    ))}
+      {/* Trending Pages - spans 2 columns */}
+      <div className="lg:col-span-8">
+        <TrendingPagesSkeleton />
+      </div>
+
+      {/* Additional chart components */}
+      <div className="lg:col-span-6">
+        <DashboardCardSkeleton chart />
+      </div>
+      
+      <div className="lg:col-span-6">
+        <DashboardCardSkeleton chart />
+      </div>
+    </div>
   </div>
 );
 
-export const CardSkeleton = () => (
-  <Card className="animate-pulse">
-    <CardHeader>
-      <Skeleton className="h-6 w-36" />
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-      </div>
-    </CardContent>
-  </Card>
-);
+export const CardSkeleton = DashboardCardSkeleton;
