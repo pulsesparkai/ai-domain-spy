@@ -81,11 +81,14 @@
     "react-tooltip": "^5.29.1",
     "recharts": "^3.1.2",
     "resend": "^6.0.2",
+    "rollup-plugin-visualizer": "^6.0.3",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "url-parse": "^1.5.10",
     "vaul": "^0.9.9",
+    "vite-plugin-compression": "^0.5.1",
+    "vite-plugin-pwa": "^1.0.3",
     "zod": "^3.25.76"
   },
   "devDependencies": {
