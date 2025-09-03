@@ -23,15 +23,10 @@ import {
   preloadCriticalRoutes
 } from "@/utils/lazyRoutes";
 
-// Create QueryClient with proper configuration
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 3,
-    },
-  },
-});
+// Create QueryClient with optimized configuration
+import { createOptimizedQueryClient } from '@/lib/react-query-optimization';
+
+const queryClient = createOptimizedQueryClient();
 
 console.log('QueryClient initialized:', queryClient);
 

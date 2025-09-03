@@ -12,19 +12,20 @@ export const useStoreSync = () => {
   const { syncWithBackend, setLoading, setError } = useScanHistoryStore();
   const { updatePreferences } = useUserPreferencesStore();
 
-  // Sync scan history with Supabase
+  // Sync scan history with Supabase using optimized queries
   useEffect(() => {
     if (!user) return;
 
     const loadScanHistory = async () => {
       setLoading(true);
       try {
+        // Use optimized query with proper indexing
         const { data: scans, error } = await supabase
           .from('scans')
-          .select('*')
+          .select('id, user_id, scan_type, target_url, status, created_at, updated_at, results')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(50);
+          .limit(50); // Use indexed query with limit
 
         if (error) throw error;
 
@@ -33,7 +34,7 @@ export const useStoreSync = () => {
             id: scan.id,
             userId: scan.user_id,
             scanType: scan.scan_type as "openai" | "perplexity" | "combined" | "trending",
-            targetUrl: scan.target_url,
+            targetUrl: scan.target_url || '',
             queries: (scan as any).queries || [],
             results: scan.results,
             status: scan.status as 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled',
