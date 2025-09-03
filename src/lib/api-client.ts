@@ -323,11 +323,12 @@ class ApiClient {
 
     const validation = validateApiResponse(ScanResponseSchema, { success: true, data: response, timestamp: new Date().toISOString() });
     if (!validation.success) {
+      const error = validation.error;
       throw new ApiClientError(
         'Invalid scan response format',
         undefined,
         'INVALID_RESPONSE',
-        { validationError: validation.error.type }
+        { validationError: error.type }
       );
     }
 
@@ -345,11 +346,12 @@ class ApiClient {
     // Response from Edge Function is already the validation result
     const validation = validateApiResponse(ApiKeyValidationResultSchema, response);
     if (!validation.success) {
+      const error = validation.error;
       throw new ApiClientError(
         'Invalid API key validation response format',
         undefined,
         'INVALID_RESPONSE',
-        { validationError: validation.error.type }
+        { validationError: error.type }
       );
     }
 

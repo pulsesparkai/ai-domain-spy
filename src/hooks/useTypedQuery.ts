@@ -1,6 +1,6 @@
 // Type-safe React Query hooks with runtime validation
 
-import { useQuery, useMutation, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, UseQueryOptions, UseMutationOptions, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { apiClient } from '@/lib/api-client';
 import { 
@@ -32,7 +32,8 @@ export function useTypedQuery<TData, TError = AppError>(
         const validation = validateApiResponse(schema, response);
         
         if (!validation.success) {
-          throw new Error(`Validation failed: ${validation.error.type}: ${validation.error.message}`);
+          const error = validation.error;
+          throw new Error(`Validation failed: ${error.type}: ${error.message}`);
         }
         
         return validation.data;
@@ -60,7 +61,8 @@ export function useTypedMutation<TData, TVariables, TError = AppError>(
         const validation = validateApiResponse(schema, response);
         
         if (!validation.success) {
-          throw new Error(`Validation failed: ${validation.error.type}: ${validation.error.message}`);
+          const error = validation.error;
+          throw new Error(`Validation failed: ${error.type}: ${error.message}`);
         }
         
         return validation.data;
@@ -81,40 +83,34 @@ export function useTypedMutation<TData, TVariables, TError = AppError>(
 export function useScanMutation(
   options?: Omit<UseMutationOptions<ScanResponse, AppError, ScanRequest>, 'mutationFn'>
 ) {
-  return useTypedMutation(
-    async (data: ScanRequest) => {
+  return useMutation<ScanResponse, AppError, ScanRequest>({
+    mutationFn: async (data: ScanRequest) => {
       const response = await apiClient.performScan(data);
-      return { success: true as const, data: response, timestamp: new Date().toISOString() };
+      return response;
     },
-    ScanResponseSchema,
-    {
-      ...options,
-      onError: (error) => {
-        errorHandler.handleError(error, 'Scan Operation');
-        options?.onError?.(error);
-      },
-    }
-  );
+    ...options,
+    onError: (error, variables, context) => {
+      errorHandler.handleError(error, 'Scan Operation');
+      options?.onError?.(error, variables, context);
+    },
+  });
 }
 
 // API Key validation
 export function useApiKeyValidationMutation(
   options?: Omit<UseMutationOptions<ApiKeyValidationResult, AppError, ApiKeyValidationRequest>, 'mutationFn'>
 ) {
-  return useTypedMutation(
-    async (data: ApiKeyValidationRequest) => {
+  return useMutation<ApiKeyValidationResult, AppError, ApiKeyValidationRequest>({
+    mutationFn: async (data: ApiKeyValidationRequest) => {
       const response = await apiClient.validateApiKeys(data);
       return response;
     },
-    ApiKeyValidationResultSchema,
-    {
-      ...options,
-      onError: (error) => {
-        errorHandler.handleError(error, 'API Key Validation');
-        options?.onError?.(error);
-      },
-    }
-  );
+    ...options,
+    onError: (error, variables, context) => {
+      errorHandler.handleError(error, 'API Key Validation');
+      options?.onError?.(error, variables, context);
+    },
+  });
 }
 
 // Health check query
@@ -164,7 +160,6 @@ export const queryKeys = {
  * Type-safe query invalidation helpers
  */
 export function useQueryInvalidation() {
-  const { useQueryClient } = require('@tanstack/react-query');
   const queryClient = useQueryClient();
 
   return {
@@ -180,7 +175,6 @@ export function useQueryInvalidation() {
  * Optimistic update helpers with type safety
  */
 export function useOptimisticUpdates() {
-  const { useQueryClient } = require('@tanstack/react-query');
   const queryClient = useQueryClient();
 
   return {

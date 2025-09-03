@@ -32,11 +32,11 @@ export const useStoreSync = () => {
           const formattedScans = scans.map(scan => ({
             id: scan.id,
             userId: scan.user_id,
-            scanType: scan.scan_type,
+            scanType: scan.scan_type as "openai" | "perplexity" | "combined" | "trending",
             targetUrl: scan.target_url,
-            queries: [], // Would need to be stored separately or parsed
+            queries: (scan as any).queries || [],
             results: scan.results,
-            status: scan.status as 'pending' | 'completed' | 'failed',
+            status: scan.status as 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled',
             createdAt: scan.created_at,
             updatedAt: scan.updated_at,
           }));

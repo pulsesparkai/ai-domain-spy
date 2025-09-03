@@ -11,12 +11,12 @@ import { useScanDefaults, useScanHistoryStore } from "@/store";
 
 interface ScanFormProps {
   queries: string[];
-  scanType: string;
+  scanType: "openai" | "perplexity" | "combined" | "trending" | "";
   targetUrl: string;
   isScanning: boolean;
   errors: string[];
   onQueriesChange: (queries: string[]) => void;
-  onScanTypeChange: (scanType: string) => void;
+  onScanTypeChange: (scanType: "openai" | "perplexity" | "combined" | "trending" | "") => void;
   onTargetUrlChange: (targetUrl: string) => void;
   onSubmit: () => void;
 }
@@ -38,7 +38,7 @@ export const ScanForm = ({
   // Initialize with user preferences
   useEffect(() => {
     if (scanDefaults.scanType && !scanType) {
-      onScanTypeChange(scanDefaults.scanType);
+      onScanTypeChange(scanDefaults.scanType as "openai" | "perplexity" | "combined" | "trending");
     }
     if (scanDefaults.queries.length > 0 && queries.length === 1 && !queries[0]) {
       onQueriesChange(scanDefaults.queries);
@@ -49,7 +49,7 @@ export const ScanForm = ({
     // Create optimistic scan entry
     const scanId = addScan({
       userId: 'current-user', // Would come from auth context
-      scanType,
+      scanType: scanType as "openai" | "perplexity" | "combined" | "trending",
       targetUrl,
       queries: queries.filter(q => q.trim()),
       status: 'pending'

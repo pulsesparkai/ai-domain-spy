@@ -17,7 +17,7 @@ import { performScan } from "@/lib/api-client";
 const ScanInterface = () => {
   const navigate = useNavigate();
   const [queries, setQueries] = useState<string[]>([""]);
-  const [scanType, setScanType] = useState("");
+  const [scanType, setScanType] = useState<"openai" | "perplexity" | "combined" | "trending" | "">("");
   const [targetUrl, setTargetUrl] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -133,14 +133,14 @@ const ScanInterface = () => {
           await withDependencyCheck(['supabase'], async () => {
             const data = await performScan({
               queries: queries.filter(q => q.trim()),
-              scanType,
+              scanType: scanType as "openai" | "perplexity" | "combined" | "trending",
               targetUrl
             });
             
-            setResults(data.results);
+            setResults(data.data);
             
             // Show API key warnings if some failed
-            if (data.results?.some((r: any) => r.error?.includes('Invalid'))) {
+            if (data.data?.error) {
               showToast.error("Some API keys are invalid. Check Settings for details.");
             }
           }, {
@@ -188,7 +188,7 @@ const ScanInterface = () => {
             isScanning={isScanning}
             errors={errors}
             onQueriesChange={setQueries}
-            onScanTypeChange={setScanType}
+            onScanTypeChange={(type) => setScanType(type)}
             onTargetUrlChange={setTargetUrl}
             onSubmit={handleScan}
           />

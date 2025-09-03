@@ -30,7 +30,7 @@ export const ApiKeyValidator = ({ apiKeys }: ApiKeyValidatorProps) => {
         query: 'test validation',
         perplexityKey: apiKey
       });
-      return data.apis?.perplexity?.success === true;
+      return data.perplexity?.valid === true;
     } catch (error) {
       console.error('Perplexity validation error:', error);
       return false;
@@ -43,7 +43,7 @@ export const ApiKeyValidator = ({ apiKeys }: ApiKeyValidatorProps) => {
         query: 'test validation',
         openaiKey: apiKey
       });
-      return data.apis?.openai?.success === true;
+      return data.openai?.valid === true;
     } catch (error) {
       console.error('OpenAI validation error:', error);
       return false;
