@@ -4,6 +4,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 
 serve(async (req) => {
@@ -17,6 +21,18 @@ serve(async (req) => {
     if (!apiKey) {
       throw new Error('OpenAI API key required');
     }
+
+    // Input sanitization
+    if (typeof query !== 'string' || query.length > 500) {
+      throw new Error('Invalid query format');
+    }
+
+    if (typeof apiKey !== 'string' || apiKey.length < 10 || apiKey.length > 200) {
+      throw new Error('Invalid API key format');
+    }
+
+    // Sanitize query content
+    const sanitizedQuery = query.replace(/[<>'"&]/g, '').trim();
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -33,7 +49,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: query
+            content: sanitizedQuery
           }
         ],
         max_tokens: 1000,

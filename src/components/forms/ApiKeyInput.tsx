@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Key } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { sanitizeAndValidateApiKey } from "@/lib/input-sanitizer";
 
 interface ApiKeyInputProps {
   label: string;
@@ -36,7 +37,10 @@ export const ApiKeyInput = ({
         <Input
           type={showKey ? "text" : "password"}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            const sanitizedResult = sanitizeAndValidateApiKey(e.target.value);
+            onChange(sanitizedResult.sanitizedApiKey || e.target.value);
+          }}
           placeholder={placeholder}
           className={cn(
             "pr-10",

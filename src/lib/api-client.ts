@@ -13,6 +13,8 @@ import {
   ApiKeyValidationResultSchema
 } from '@/types/api';
 import { createRequestId, type RequestId } from '@/types/branded';
+import { sanitizeApiPayload, validateScanRequest } from '@/lib/input-sanitizer';
+import { applySecurityHeaders } from '@/lib/security-headers';
 
 // API client configuration
 const API_CONFIG = {
@@ -314,20 +316,34 @@ class ApiClient {
 
   // Specific method for scan operations
   public async performScan(data: ScanRequest): Promise<ScanResponse> {
-    const response = await this.callEdgeFunction(`${data.scanType}-scan`, data, {
+    // Validate and sanitize scan request
+    const scanValidation = validateScanRequest(data);
+    if (!scanValidation.isValid) {
+      throw new ApiClientError(
+        `Invalid scan request: ${scanValidation.errors.join(', ')}`,
+        400,
+        'VALIDATION_ERROR',
+        { errors: scanValidation.errors }
+      );
+    }
+
+    // Use sanitized data
+    const sanitizedData = sanitizeApiPayload(scanValidation.sanitizedRequest);
+    
+    const response = await this.callEdgeFunction(`${data.scanType}-scan`, sanitizedData, {
       retryConfig: {
         attempts: 1,
         delay: 2000,
       }
     });
 
-    const validation = validateApiResponse(ScanResponseSchema, { success: true, data: response, timestamp: new Date().toISOString() });
-    if (validation.success) {
-      return validation.data;
+    const responseValidation = validateApiResponse(ScanResponseSchema, { success: true, data: response, timestamp: new Date().toISOString() });
+    if (responseValidation.success) {
+      return responseValidation.data;
     }
     
     // TypeScript now knows this is the error case
-    const errorResult = validation as { success: false; error: AppError };
+    const errorResult = responseValidation as { success: false; error: AppError };
     throw new ApiClientError(
       'Invalid scan response format',
       undefined,
@@ -338,7 +354,10 @@ class ApiClient {
 
   // Validation methods for API keys
   public async validateApiKeys(data: ApiKeyValidationRequest): Promise<ApiKeyValidationResult> {
-    const response = await this.callEdgeFunction('test-scan', data, {
+    // Sanitize API key data
+    const sanitizedData = sanitizeApiPayload(data);
+    
+    const response = await this.callEdgeFunction('test-scan', sanitizedData, {
       retryConfig: {
         attempts: 1, // No retries for validation
       },

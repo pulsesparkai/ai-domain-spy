@@ -4,6 +4,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 
 interface QueryBatch {
@@ -30,7 +34,31 @@ Deno.serve(async (req) => {
 
     const { batches }: { batches: QueryBatch[] } = await req.json();
 
-    console.log(`Processing ${batches.length} query batches`);
+    // Input validation
+    if (!Array.isArray(batches) || batches.length === 0) {
+      throw new Error('Invalid batches format');
+    }
+
+    // Validate each batch
+    for (const batch of batches) {
+      if (!batch.table || typeof batch.table !== 'string') {
+        throw new Error('Invalid table name');
+      }
+      if (!['select', 'insert', 'update'].includes(batch.operation)) {
+        throw new Error('Invalid operation');
+      }
+      if (!Array.isArray(batch.queries)) {
+        throw new Error('Invalid queries format');
+      }
+      
+      // Validate table name against allowed tables
+      const allowedTables = ['profiles', 'scans'];
+      if (!allowedTables.includes(batch.table)) {
+        throw new Error(`Table not allowed: ${batch.table}`);
+      }
+    }
+
+    console.log(`Processing ${batches.length} validated query batches`);
 
     const results = await Promise.all(
       batches.map(async (batch) => {

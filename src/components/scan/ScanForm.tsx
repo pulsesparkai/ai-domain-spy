@@ -8,6 +8,7 @@ import { Info, Plus, Trash2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ValidatedInput } from "@/components/forms/ValidatedInput";
 import { useScanDefaults, useScanHistoryStore } from "@/store";
+import { sanitizeAndValidateQuery, sanitizeAndValidateUrl } from "@/lib/input-sanitizer";
 
 interface ScanFormProps {
   queries: string[];
@@ -72,8 +73,9 @@ export const ScanForm = ({
   };
 
   const updateQuery = (index: number, value: string) => {
+    const sanitizedResult = sanitizeAndValidateQuery(value);
     const newQueries = [...queries];
-    newQueries[index] = value;
+    newQueries[index] = sanitizedResult.sanitizedQuery || value;
     onQueriesChange(newQueries);
   };
 
