@@ -1,0 +1,380 @@
+name: Deploy Pipeline
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run type-check
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Run tests
+        run: pnpm run test:coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run security audit
+        run: pnpm audit --audit-level moderate
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    strategy:
+      matrix:
+        environment: [staging, production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build for ${{ matrix.environment }}
+        run: |
+          if [ "${{ matrix.environment }}" = "staging" ]; then
+            pnpm run build:staging
+          else
+            pnpm run build:prod
+          fi
+
+      - name: Bundle size check
+        run: |
+          SIZE=$(du -sh dist | cut -f1)
+          echo "Bundle size: $SIZE"
+          # Fail if bundle is larger than 2MB
+          if [ $(du -s dist | cut -f1) -gt 2048 ]; then
+            echo "Bundle size exceeds 2MB limit"
+            exit 1
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.environment }}
+          path: dist/
+          retention-days: 7
+
+  lighthouse:
+    name: Lighthouse Performance Check
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-staging
+          path: dist/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.12.x
+
+      - name: Serve built app
+        run: |
+          npx serve -s dist -l 3000 &
+          sleep 5
+        
+      - name: Run Lighthouse CI
+        run: |
+          lhci autorun --upload.target=temporary-public-storage
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Comment Lighthouse results
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('.lighthouseci/lhr-*.json')) {
+              const reports = fs.readdirSync('.lighthouseci')
+                .filter(file => file.endsWith('.json'))
+                .map(file => JSON.parse(fs.readFileSync(`.lighthouseci/${file}`, 'utf8')));
+              
+              const report = reports[0];
+              const scores = {
+                performance: Math.round(report.categories.performance.score * 100),
+                accessibility: Math.round(report.categories.accessibility.score * 100),
+                'best-practices': Math.round(report.categories['best-practices'].score * 100),
+                seo: Math.round(report.categories.seo.score * 100)
+              };
+              
+              const comment = `## Lighthouse Performance Report 🚨
+              
+              | Category | Score |
+              |----------|-------|
+              | Performance | ${scores.performance}% |
+              | Accessibility | ${scores.accessibility}% |
+              | Best Practices | ${scores['best-practices']}% |
+              | SEO | ${scores.seo}% |
+              
+              ${scores.performance < 90 ? '⚠️ Performance score below 90%' : '✅ Performance looks good!'}`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/staging'
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-staging
+          path: dist/
+
+      - name: Deploy to Vercel (Staging)
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prebuilt --prod'
+          alias-domains: staging-${{ secrets.VERCEL_DOMAIN }}
+
+      - name: Store deployment info
+        run: |
+          echo "STAGING_DEPLOYMENT_URL=https://staging-${{ secrets.VERCEL_DOMAIN }}" >> $GITHUB_ENV
+          echo "STAGING_DEPLOYMENT_ID=$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_ENV
+
+      - name: Health check
+        run: |
+          sleep 30
+          curl -f ${{ env.STAGING_DEPLOYMENT_URL }}/health || exit 1
+
+      - name: Notify deployment success
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: 'Staging deployment successful: ${{ env.STAGING_DEPLOYMENT_URL }}'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, lighthouse]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-production
+          path: dist/
+
+      - name: Store previous deployment for rollback
+        id: previous
+        run: |
+          PREV_DEPLOYMENT=$(curl -s -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            "https://api.vercel.com/v6/deployments?projectId=${{ secrets.VERCEL_PROJECT_ID }}&limit=1" | \
+            jq -r '.deployments[0].uid')
+          echo "prev_deployment=$PREV_DEPLOYMENT" >> $GITHUB_OUTPUT
+
+      - name: Deploy to Vercel (Production)
+        id: deploy
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prebuilt --prod'
+          alias-domains: ${{ secrets.VERCEL_DOMAIN }}
+
+      - name: Store deployment info
+        run: |
+          echo "PROD_DEPLOYMENT_URL=https://${{ secrets.VERCEL_DOMAIN }}" >> $GITHUB_ENV
+          echo "PROD_DEPLOYMENT_ID=${{ steps.deploy.outputs.preview-url }}" >> $GITHUB_ENV
+
+      - name: Health check
+        id: health
+        run: |
+          sleep 60
+          for i in {1..5}; do
+            if curl -f ${{ env.PROD_DEPLOYMENT_URL }}/health; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Health check attempt $i failed, retrying..."
+            sleep 30
+          done
+          echo "Health check failed after 5 attempts"
+          exit 1
+
+      - name: Rollback on failure
+        if: failure() && steps.health.outcome == 'failure'
+        run: |
+          echo "Rolling back to previous deployment: ${{ steps.previous.outputs.prev_deployment }}"
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://api.vercel.com/v6/deployments/${{ steps.previous.outputs.prev_deployment }}/promote"
+
+      - name: Notify deployment success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: 'Production deployment successful: ${{ env.PROD_DEPLOYMENT_URL }}'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify deployment failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: 'Production deployment failed and rolled back. Check logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  post-deploy:
+    name: Post-deployment Tasks
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Run smoke tests
+        run: |
+          curl -f https://${{ secrets.VERCEL_DOMAIN }}/api/health
+          curl -f https://${{ secrets.VERCEL_DOMAIN }}/
+          
+      - name: Update monitoring dashboards
+        run: |
+          echo "Deployment completed at $(date)" > deployment-log.txt
+          
+      - name: Clean up old artifacts
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const oldArtifacts = artifacts.data.artifacts
+              .filter(artifact => {
+                const createdAt = new Date(artifact.created_at);
+                const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                return createdAt < weekAgo;
+              });
+            
+            for (const artifact of oldArtifacts) {
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+              });
+            }
