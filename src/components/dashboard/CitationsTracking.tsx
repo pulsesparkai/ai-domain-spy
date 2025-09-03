@@ -33,21 +33,40 @@ export const CitationsTracking = memo(({ scanData }: CitationsTrackingProps) => 
       <CardContent>
         <div className="space-y-4">
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary transition-all duration-300">
+            <div className="text-2xl sm:text-3xl font-bold text-primary transition-all duration-300">
               {totalCitations}
             </div>
-            <div className="text-sm text-muted-foreground">Total Citations</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Total Citations</div>
           </div>
-          <div className="space-y-2">
+          
+          {/* Mobile view - stacked cards */}
+          <div className="block sm:hidden space-y-2">
             {topDomains.length > 0 ? topDomains.map(([domain, count], index) => (
-              <div key={domain} className="flex justify-between items-center hover-scale">
-                <span className="text-sm truncate">{domain}</span>
-                <Badge variant={index === 0 ? "default" : "secondary"}>
+              <div key={domain} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 border border-border rounded-lg bg-card hover-scale transition-all duration-200">
+                <div className="flex-1 min-w-0 mb-2 sm:mb-0">
+                  <span className="text-sm font-medium block truncate">{domain}</span>
+                  <span className="text-xs text-muted-foreground">Rank #{index + 1}</span>
+                </div>
+                <Badge variant={index === 0 ? "success" : "secondary"} className="self-end sm:self-center">
                   {count as number}
                 </Badge>
               </div>
             )) : (
-              <p className="text-sm text-muted-foreground text-center">No citations found</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No citations found</p>
+            )}
+          </div>
+
+          {/* Desktop view - horizontal list */}
+          <div className="hidden sm:block space-y-2">
+            {topDomains.length > 0 ? topDomains.map(([domain, count], index) => (
+              <div key={domain} className="flex justify-between items-center hover-scale py-2 px-3 rounded-md hover:bg-muted/50 transition-all duration-200">
+                <span className="text-sm truncate flex-1 mr-3">{domain}</span>
+                <Badge variant={index === 0 ? "success" : "secondary"}>
+                  {count as number}
+                </Badge>
+              </div>
+            )) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No citations found</p>
             )}
           </div>
         </div>

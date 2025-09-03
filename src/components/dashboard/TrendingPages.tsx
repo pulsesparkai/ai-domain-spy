@@ -57,14 +57,19 @@ export const TrendingPages = memo(({ scanData }: TrendingPagesProps) => {
             {Object.entries(groupedPages).map(([competitor, pages]: [string, any]) => (
               <AccordionItem key={competitor} value={competitor}>
                 <AccordionTrigger className="text-sm font-medium hover-scale">
-                  {competitor} ({pages.length} pages)
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full">
+                    <span className="text-left">{competitor}</span>
+                    <span className="text-xs text-muted-foreground mt-1 sm:mt-0">
+                      {pages.length} pages
+                    </span>
+                  </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {pages.slice(0, 5).map((page: any, index: number) => (
-                      <div key={index} className="border rounded p-2 text-xs hover-scale transition-all duration-200">
-                        <div className="font-medium">{page.title}</div>
-                        <div className="text-muted-foreground mt-1">
+                      <div key={index} className="border rounded-lg p-3 text-xs sm:text-sm hover-scale transition-all duration-200 bg-card">
+                        <div className="font-medium mb-2 line-clamp-2">{page.title}</div>
+                        <div className="text-muted-foreground">
                           {new Date(page.publishedDate).toLocaleDateString()}
                         </div>
                       </div>

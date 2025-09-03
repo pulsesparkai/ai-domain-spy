@@ -187,6 +187,23 @@ All colors MUST be HSL.
     .main-content {
       margin-left: 0;
     }
+
+    /* Better mobile table handling */
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Mobile-first responsive text */
+    .text-responsive {
+      font-size: 0.875rem; /* 14px */
+    }
+
+    /* Improved mobile touch targets */
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
   }
 
   @media (min-width: 769px) {

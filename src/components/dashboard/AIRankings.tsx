@@ -27,31 +27,61 @@ export const AIRankings = memo(({ scanData }: AIRankingsProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {scanData?.results?.length > 0 ? scanData.results.map((result: any, index: number) => (
-            <div key={index} className="border rounded p-3 hover-scale transition-all duration-200">
-              <div className="font-medium text-sm mb-2">{result.query}</div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Perplexity</span>
-                <Badge 
-                  className="text-white"
-                  style={{ 
-                    backgroundColor: getRankColor(result.rankings?.perplexity)
-                  }}
-                >
-                  {result.rankings?.perplexity || 'none'}
-                </Badge>
+            <div key={index} className="border rounded-lg p-3 sm:p-4 hover-scale transition-all duration-200 bg-card">
+              <div className="font-medium text-sm sm:text-base mb-3 line-clamp-2">{result.query}</div>
+              
+              {/* Desktop view */}
+              <div className="hidden sm:grid sm:grid-cols-2 gap-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-muted-foreground">Perplexity</span>
+                  <Badge 
+                    className="text-white"
+                    style={{ 
+                      backgroundColor: getRankColor(result.rankings?.perplexity)
+                    }}
+                  >
+                    {result.rankings?.perplexity || 'none'}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium text-muted-foreground">ChatGPT</span>
+                  <Badge 
+                    className="text-white"
+                    style={{ 
+                      backgroundColor: getRankColor(result.rankings?.chatgpt)
+                    }}
+                  >
+                    {result.rankings?.chatgpt || 'none'}
+                  </Badge>
+                </div>
               </div>
-              <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-muted-foreground">ChatGPT</span>
-                <Badge 
-                  className="text-white"
-                  style={{ 
-                    backgroundColor: getRankColor(result.rankings?.chatgpt)
-                  }}
-                >
-                  {result.rankings?.chatgpt || 'none'}
-                </Badge>
+
+              {/* Mobile view - stacked */}
+              <div className="block sm:hidden space-y-2">
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-xs font-medium text-muted-foreground">Perplexity</span>
+                  <Badge 
+                    className="text-white text-xs"
+                    style={{ 
+                      backgroundColor: getRankColor(result.rankings?.perplexity)
+                    }}
+                  >
+                    {result.rankings?.perplexity || 'none'}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center py-2 border-t border-border">
+                  <span className="text-xs font-medium text-muted-foreground">ChatGPT</span>
+                  <Badge 
+                    className="text-white text-xs"
+                    style={{ 
+                      backgroundColor: getRankColor(result.rankings?.chatgpt)
+                    }}
+                  >
+                    {result.rankings?.chatgpt || 'none'}
+                  </Badge>
+                </div>
               </div>
             </div>
           )) : (
