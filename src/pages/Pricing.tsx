@@ -62,10 +62,10 @@ export default function Pricing() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Simple, Transparent Pricing
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Unlock the full power of AI-driven website analytics with our Pro plan
           </p>
         </div>
@@ -82,13 +82,13 @@ export default function Pricing() {
             )}
             
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold text-gray-900">Pro Plan</CardTitle>
-              <CardDescription className="text-gray-600">
+              <CardTitle className="text-2xl font-bold text-foreground">Pro Plan</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Everything you need for comprehensive website analytics
               </CardDescription>
               <div className="flex items-baseline justify-center mt-4">
-                <span className="text-5xl font-bold text-gray-900">$49</span>
-                <span className="text-gray-600 ml-1">/month</span>
+                <span className="text-5xl font-bold text-foreground">$49</span>
+                <span className="text-muted-foreground ml-1">/month</span>
               </div>
               {isTrialActive && (
                 <Badge className="bg-green-100 text-green-700 border-green-200 mt-2">
@@ -107,7 +107,7 @@ export default function Pricing() {
                 {features.map((feature, index) => (
                   <li key={index} className="flex items-start space-x-3">
                     <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-700">{feature}</span>
+                    <span className="text-sm text-foreground">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -135,7 +135,7 @@ export default function Pricing() {
               </div>
               
               <div className="text-center">
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   7-day free trial • Cancel anytime • No hidden fees
                 </p>
               </div>
@@ -144,7 +144,7 @@ export default function Pricing() {
         </div>
         
         <div className="text-center mt-12">
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Have questions? <a href="#" className="text-purple-600 hover:underline">Contact our team</a>
           </p>
         </div>

@@ -65,7 +65,7 @@ export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
           <div className="space-y-2 visibility-score">
             <div className="flex justify-between">
               <span>Primary Mentions</span>
-              <Badge variant="default">{results.aggregates?.primaryRank || 0}</Badge>
+              <Badge variant="success">{results.aggregates?.primaryRank || 0}</Badge>
             </div>
             <div className="flex justify-between">
               <span>Secondary Mentions</span>

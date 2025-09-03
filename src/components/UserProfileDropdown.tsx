@@ -48,8 +48,8 @@ export function UserProfileDropdown() {
         className="w-56 bg-white shadow-lg border border-gray-200"
       >
         <div className="px-3 py-2">
-          <p className="text-sm font-medium text-gray-900">{profile.full_name || 'User'}</p>
-          <p className="text-xs text-gray-500">{profile.email}</p>
+          <p className="text-sm font-medium text-foreground">{profile.full_name || 'User'}</p>
+          <p className="text-xs text-muted-foreground">{profile.email}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => navigate('/dashboard')} className="cursor-pointer">

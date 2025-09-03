@@ -72,7 +72,7 @@ export default function Auth() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-full max-w-md space-y-4">
           <LoadingBar indeterminate />
-          <p className="text-center text-gray-600">Loading...</p>
+          <p className="text-center text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -82,8 +82,8 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">PulseSpark.ai</h1>
-          <p className="text-gray-600 mt-2">AI-powered website analytics</p>
+          <h1 className="text-3xl font-bold text-foreground">PulseSpark.ai</h1>
+          <p className="text-muted-foreground mt-2">AI-powered website analytics</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">

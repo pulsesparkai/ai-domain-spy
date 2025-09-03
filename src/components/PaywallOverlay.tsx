@@ -47,7 +47,7 @@ export function PaywallOverlay({ children }: PaywallOverlayProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <div className="space-y-2 text-sm text-gray-600">
+            <div className="space-y-2 text-sm text-muted-foreground">
               <p>• AI-powered insights and recommendations</p>
               <p>• Advanced competitor analysis</p>
               <p>• Custom reports and alerts</p>
@@ -60,7 +60,7 @@ export function PaywallOverlay({ children }: PaywallOverlayProps) {
               <Zap className="w-4 h-4 mr-2" />
               Upgrade to Pro - $49/month
             </Button>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               7-day free trial • Cancel anytime
             </p>
           </CardContent>

@@ -26,7 +26,7 @@ export default function Success() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Your subscription has been activated and you now have access to all Pro features.
           </p>
           <div className="space-y-2">

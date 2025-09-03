@@ -30,19 +30,21 @@ All colors MUST be HSL.
     --secondary: 240, 100%, 96.3%; /* #E8EFFF */
     --secondary-foreground: 0, 0%, 10.2%;
 
-    --muted: 0, 0%, 94.1%; /* #F0F0F0 */
-    --muted-foreground: 0, 0%, 29.4%; /* #4A4A4A */
+    --muted: 0, 0%, 96%; /* #F5F5F5 */
+    --muted-foreground: 0, 0%, 40%; /* #666666 - Better contrast */
 
     /* Utilities */
     --destructive: 0, 73%, 64%; /* #FF4D4F */
     --destructive-foreground: 0, 0%, 100%;
 
-    --success: 120, 39%, 54%; /* #4CAF50 */
-    --warning: 54, 100%, 62%; /* #FFEB3B */
+    --success: 120, 45%, 35%; /* #2E7D32 - Darker green for better contrast */
+    --success-foreground: 0, 0%, 100%; /* White text on dark green */
+    --warning: 45, 100%, 40%; /* #CC8500 - Darker orange */
+    --warning-foreground: 0, 0%, 100%; /* White text on dark orange */
 
-    --border: 220, 13%, 91%;
-    --input: 220, 13%, 91%;
-    --ring: 245, 71%, 67%;
+    --border: 220, 13%, 85%; /* #DADADA - Slightly darker */
+    --input: 220, 13%, 85%; /* #DADADA - Better border visibility */
+    --ring: 245, 71%, 67%; /* Focus ring color */
 
     /* Sidebar Colors - Consolidated with Main Theme */
     --sidebar-background: 0, 0%, 98%;
@@ -63,9 +65,9 @@ All colors MUST be HSL.
     --shadow-nav: 0 1px 3px rgba(0, 0, 0, 0.05);
     --shadow-hero: 0 10px 25px rgba(0, 0, 0, 0.15);
 
-    /* Stats Badge Colors */
-    --stats-success-bg: 120, 60%, 95%; /* #E8F5E9 */
-    --stats-success-text: 120, 45%, 35%; /* #388E3C */
+    /* Stats Badge Colors - Better contrast */
+    --stats-success-bg: 120, 50%, 25%; /* #1B5E20 - Much darker for better contrast */
+    --stats-success-text: 0, 0%, 100%; /* White text */
 
     /* Solution Card Colors */
     --solution-marketing: 4, 90%, 63%; /* #FF5252 */
@@ -146,7 +148,8 @@ All colors MUST be HSL.
     padding: 8px 20px;
     border-radius: 20px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600; /* Increased font weight for better readability */
+    border: 1px solid hsl(var(--stats-success-bg));
   }
 
   .code-block {
@@ -297,9 +300,13 @@ All colors MUST be HSL.
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible,
-  a:focus-visible {
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  [role="link"]:focus-visible,
+  [tabindex]:focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
+    transition: outline 0.2s ease;
   }
 
   /* Ensure minimum touch target size (44px) for mobile */
@@ -312,5 +319,30 @@ All colors MUST be HSL.
       min-height: 44px;
       min-width: 44px;
     }
+  }
+
+  /* Disabled states */
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  /* Improved contrast for interactive states */
+  button:hover:not(:disabled),
+  [role="button"]:hover:not([aria-disabled="true"]) {
+    filter: brightness(0.95);
+    transition: filter 0.2s ease;
+  }
+
+  button:active:not(:disabled),
+  [role="button"]:active:not([aria-disabled="true"]) {
+    filter: brightness(0.9);
+    transform: translateY(1px);
+    transition: all 0.1s ease;
   }
 }
