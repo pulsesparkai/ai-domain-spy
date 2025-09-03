@@ -230,7 +230,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
         {/* Mobile menu overlay */}
         {mobileMenuOpen && (
           <div 
-            className="fixed inset-0 z-50 md:hidden"
+            className="fixed inset-0 z-sidebar md:hidden"
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-menu-title"
@@ -276,7 +276,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
                   
                   {/* Search results */}
                   {searchResults.length > 0 && (
-                    <Card className="absolute top-full left-0 right-0 mt-2 z-10">
+                    <Card className="absolute top-full left-0 right-0 mt-2 z-dropdown">
                       <CardContent className="p-2">
                         <ul role="listbox" aria-label="Search results">
                           {searchResults.map((result, index) => (
@@ -352,7 +352,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
               
               {/* Search results dropdown */}
               {searchResults.length > 0 && (
-                <Card className="absolute top-full left-0 right-0 mt-2 z-50">
+                <Card className="absolute top-full left-0 right-0 mt-2 z-dropdown">
                   <CardContent className="p-2">
                     <ul role="listbox" aria-label="Search results">
                       {searchResults.map((result, index) => (

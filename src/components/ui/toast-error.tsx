@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const toastErrorVariants = cva(
-  "fixed top-4 right-4 z-50 flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg animate-in slide-in-from-top-2 fade-in-0 duration-300",
+  "fixed top-4 right-4 z-notification flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg animate-in slide-in-from-top-2 fade-in-0 duration-300",
   {
     variants: {
       variant: {

@@ -48,7 +48,7 @@ export const SessionTimeoutHandler = () => {
 
   if (isTimedOut) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-modal">
         <Card className="w-full max-w-md mx-4">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-600">
@@ -89,7 +89,7 @@ export const SessionTimeoutHandler = () => {
 
   if (showWarning) {
     return (
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-4 right-4 z-notification">
         <Alert className="w-80 bg-yellow-50 border-yellow-200">
           <Clock className="h-4 w-4" />
           <AlertDescription>
@@ -148,7 +148,7 @@ export const SecurityStatusIndicator = () => {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-40">
+    <div className="fixed bottom-4 right-4 z-notification">
       <Card className="w-64">
         <CardContent className="p-3">
           <div className="flex items-center gap-2">

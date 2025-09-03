@@ -82,14 +82,14 @@ export function Sidebar({ children, className }: SidebarProps) {
         {/* Mobile backdrop */}
         {openMobile && (
           <div 
-            className="fixed inset-0 z-40 bg-black/50"
+            className="fixed inset-0 z-sidebar bg-black/50"
             onClick={() => setOpenMobile(false)}
           />
         )}
         
         {/* Mobile sidebar */}
         <div className={cn(
-          "fixed left-0 top-0 z-50 h-full w-64 bg-background border-r transform transition-transform duration-300 ease-in-out",
+          "fixed left-0 top-0 z-sidebar h-full w-64 bg-background border-r transform transition-transform duration-300 ease-in-out",
           openMobile ? "translate-x-0" : "-translate-x-full",
           className
         )}>

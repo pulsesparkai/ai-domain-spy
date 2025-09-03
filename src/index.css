@@ -81,6 +81,14 @@ All colors MUST be HSL.
     /* Transitions */
     --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
+    /* Z-Index System */
+    --z-base: 0;
+    --z-sticky: 10;
+    --z-dropdown: 20;
+    --z-sidebar: 30;
+    --z-modal: 40;
+    --z-notification: 50;
+
     --radius: 0.5rem;
   }
 }
@@ -123,6 +131,14 @@ All colors MUST be HSL.
   .transition-base {
     transition: var(--transition-base);
   }
+
+  /* Z-Index Utilities */
+  .z-base { z-index: var(--z-base); }
+  .z-sticky { z-index: var(--z-sticky); }
+  .z-dropdown { z-index: var(--z-dropdown); }
+  .z-sidebar { z-index: var(--z-sidebar); }
+  .z-modal { z-index: var(--z-modal); }
+  .z-notification { z-index: var(--z-notification); }
 
   .stats-badge {
     background: hsl(var(--stats-success-bg));

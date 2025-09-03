@@ -22,7 +22,7 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-gray-200">
+    <nav className="fixed top-0 left-0 right-0 z-sticky bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -108,7 +108,7 @@ const Navigation = () => {
                   <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="z-50 w-64 bg-white">
+              <SheetContent side="right" className="z-sidebar w-64 bg-white">
                 <div className="flex flex-col h-full">
                   {/* Header with close button */}
                   <div className="flex items-center justify-between p-4 border-b">
