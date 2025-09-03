@@ -2,6 +2,8 @@
 
 import { AppError, exhaustiveErrorCheck, assertNever } from '@/types/api';
 import { showToast } from '@/lib/toast';
+import { logger } from '@/lib/logger';
+import { kpiTracker } from '@/lib/kpi-tracker';
 
 /**
  * Centralized error handler that provides consistent error handling
@@ -52,21 +54,23 @@ export class ErrorHandler {
   }
 
   private handleNetworkError(error: AppError & { type: 'network' }, context: string): void {
-    console.error(`${context}Network error:`, error);
+    logger.error(`${context}Network error`, context, error);
+    kpiTracker.trackError('network_error', 'medium', { context, error: error.message });
     showToast.error('Network connection failed. Please check your internet connection.');
   }
 
   private handleValidationError(error: AppError & { type: 'validation' }, context: string): void {
-    console.error(`${context}Validation error:`, error);
+    logger.error(`${context}Validation error`, context, error);
+    kpiTracker.trackError('validation_error', 'low', { context, field: error.field });
     const fieldMessage = error.field ? ` (Field: ${error.field})` : '';
     showToast.error(`Invalid data provided${fieldMessage}: ${error.message}`);
   }
 
   private handleAuthenticationError(error: AppError & { type: 'authentication' }, context: string): void {
-    console.error(`${context}Authentication error:`, error);
+    logger.error(`${context}Authentication error`, context, error);
+    kpiTracker.trackError('authentication_error', 'high', { context });
     showToast.error('Authentication failed. Please sign in again.');
     
-    // Redirect to login after a short delay
     setTimeout(() => {
       if (typeof window !== 'undefined') {
         window.location.href = '/auth';
@@ -75,13 +79,15 @@ export class ErrorHandler {
   }
 
   private handleAuthorizationError(error: AppError & { type: 'authorization' }, context: string): void {
-    console.error(`${context}Authorization error:`, error);
+    logger.error(`${context}Authorization error`, context, error);
+    kpiTracker.trackError('authorization_error', 'high', { context, resource: error.resource });
     const resourceMessage = error.resource ? ` for ${error.resource}` : '';
     showToast.error(`Access denied${resourceMessage}. Please contact support if this persists.`);
   }
 
   private handleRateLimitError(error: AppError & { type: 'rate_limit' }, context: string): void {
-    console.error(`${context}Rate limit error:`, error);
+    logger.warn(`${context}Rate limit error`, context, error);
+    kpiTracker.trackError('rate_limit_error', 'medium', { context, retryAfter: error.retryAfter });
     const retryMessage = error.retryAfter 
       ? ` Please try again in ${error.retryAfter} seconds.`
       : ' Please try again later.';
@@ -89,12 +95,14 @@ export class ErrorHandler {
   }
 
   private handleApiError(error: AppError & { type: 'api' }, context: string): void {
-    console.error(`${context}API error:`, error);
+    logger.error(`${context}API error`, context, error);
+    kpiTracker.trackError('api_error', 'medium', { context, code: error.code });
     showToast.error(`Server error: ${error.message} (Code: ${error.code})`);
   }
 
   private handleUnknownError(error: AppError & { type: 'unknown' }, context: string): void {
-    console.error(`${context}Unknown error:`, error, error.originalError);
+    logger.fatal(`${context}Unknown error`, context, error, error.originalError as Error);
+    kpiTracker.trackError('unknown_error', 'critical', { context });
     showToast.error('An unexpected error occurred. Please try again.');
   }
 
