@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lazy, Suspense } from "react";
 import { analytics } from "@/lib/analytics";
 import { useNavigate } from "react-router-dom";
+import { useSupabaseReady, withDependencyCheck } from "@/lib/dependency-hooks";
 
 // Lazy load Recharts components
 const LazyPieChart = lazy(() => import("recharts").then(module => ({ default: module.PieChart })));
@@ -36,6 +37,7 @@ const ScanInterface = () => {
   
   const { devMode, mockScanResults } = useMockData();
   const { user, session, apiKeys } = useAuth();
+  const { isReady: supabaseReady, error: supabaseError } = useSupabaseReady();
 
   const handleRetry = () => {
     setResults(null);
@@ -87,6 +89,11 @@ const ScanInterface = () => {
       return;
     }
 
+    if (!supabaseReady) {
+      showToast.error("Database connection not ready. Please wait and try again.");
+      return;
+    }
+
     // Rate limiting check - only for non-subscribed users
     const scansCount = (user.user_metadata as any)?.scans_count || 0;
     const isSubscribed = (user.user_metadata as any)?.subscribed;
@@ -126,40 +133,51 @@ const ScanInterface = () => {
         
         setResults(mockScanResults);
       } else {
-        // Real API call using Express server
-        const token = session?.access_token;
-        const response = await fetch('http://localhost:3001/api/scan', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            queries: queries.filter(q => q.trim()),
-            scanType,
-            targetUrl
-          })
-        });
+        // Real API call using dependency validation
+        try {
+          await withDependencyCheck(['supabase'], async () => {
+            const token = session?.access_token;
+            const response = await fetch('http://localhost:3001/api/scan', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                queries: queries.filter(q => q.trim()),
+                scanType,
+                targetUrl
+              })
+            });
 
-        if (response.status === 429) {
-          throw new Error('Monthly scan limit reached');
-        }
+            if (response.status === 429) {
+              throw new Error('Monthly scan limit reached');
+            }
 
-        if (response.status === 401) {
-          throw new Error('Invalid API key. Please check your API keys in Settings.');
-        }
+            if (response.status === 401) {
+              throw new Error('Invalid API key. Please check your API keys in Settings.');
+            }
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.error || 'Scan failed');
-        }
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => null);
+              throw new Error(errorData?.error || 'Scan failed');
+            }
 
-        const data = await response.json();
-        setResults(data.results);
-        
-        // Show API key warnings if some failed
-        if (data.results.some((r: any) => r.error?.includes('Invalid'))) {
-          showToast.error("Some API keys are invalid. Check Settings for details.");
+            const data = await response.json();
+            setResults(data.results);
+            
+            // Show API key warnings if some failed
+            if (data.results.some((r: any) => r.error?.includes('Invalid'))) {
+              showToast.error("Some API keys are invalid. Check Settings for details.");
+            }
+          }, {
+            timeout: 10000,
+            fallback: () => {
+              throw new Error('Database connection failed - scan cannot proceed');
+            }
+          });
+        } catch (dependencyError) {
+          throw dependencyError;
         }
 
         // Update scan count in user metadata (only if not subscribed)
