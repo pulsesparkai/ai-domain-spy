@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { validateApiKeys } from '@/lib/api-client';
 
 interface ApiKeyValidatorProps {
   apiKeys: {
@@ -25,23 +26,11 @@ export const ApiKeyValidator = ({ apiKeys }: ApiKeyValidatorProps) => {
 
   const validatePerplexity = async (apiKey: string): Promise<boolean> => {
     try {
-      // Use our test-scan edge function for validation
-      const response = await fetch(`${process.env.SUPABASE_URL || 'https://ljhcqubwczhtwrfpploa.supabase.co'}/functions/v1/test-scan`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: 'test validation',
-          perplexityKey: apiKey
-        }),
+      const data = await validateApiKeys({
+        query: 'test validation',
+        perplexityKey: apiKey
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.apis?.perplexity?.success === true;
-      }
-      return false;
+      return data.apis?.perplexity?.success === true;
     } catch (error) {
       console.error('Perplexity validation error:', error);
       return false;
@@ -50,23 +39,11 @@ export const ApiKeyValidator = ({ apiKeys }: ApiKeyValidatorProps) => {
 
   const validateOpenAI = async (apiKey: string): Promise<boolean> => {
     try {
-      // Use our test-scan edge function for validation
-      const response = await fetch(`${process.env.SUPABASE_URL || 'https://ljhcqubwczhtwrfpploa.supabase.co'}/functions/v1/test-scan`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: 'test validation',
-          openaiKey: apiKey
-        }),
+      const data = await validateApiKeys({
+        query: 'test validation',
+        openaiKey: apiKey
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.apis?.openai?.success === true;
-      }
-      return false;
+      return data.apis?.openai?.success === true;
     } catch (error) {
       console.error('OpenAI validation error:', error);
       return false;

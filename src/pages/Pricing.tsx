@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Check, Zap } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { LoadingBar } from '@/components/ui/loading-bar';
+import { callEdgeFunction } from '@/lib/api-client';
 
 export default function Pricing() {
   const { user, profile } = useAuth();
@@ -25,13 +25,7 @@ export default function Pricing() {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        headers: {
-          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-      });
-
-      if (error) throw error;
+      const data = await callEdgeFunction('create-checkout');
 
       // Open Stripe checkout in a new tab
       window.open(data.url, '_blank');

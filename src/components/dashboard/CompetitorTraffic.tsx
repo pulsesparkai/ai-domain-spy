@@ -1,7 +1,7 @@
 import { memo, useEffect, useState, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { callEdgeFunction } from '@/lib/api-client';
 import { lazy } from 'react';
 
 // Lazy load Recharts components
@@ -41,8 +41,9 @@ export const CompetitorTraffic = memo(({ scanData }: CompetitorTrafficProps) => 
           .map(domain => domain.replace(/^www\./, ''));
 
         if (competitors.length > 0) {
-          const { data } = await supabase.functions.invoke('trends-analysis', {
-            body: { competitors, timeframe: 'month' }
+          const data = await callEdgeFunction('trends-analysis', {
+            competitors,
+            timeframe: 'month'
           });
 
           if (data?.trendsData) {

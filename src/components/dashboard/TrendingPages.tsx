@@ -2,7 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Globe } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { callEdgeFunction } from '@/lib/api-client';
 
 interface TrendingPagesProps {
   scanData?: any;
@@ -18,8 +18,9 @@ export const TrendingPages = memo(({ scanData }: TrendingPagesProps) => {
           .slice(0, 3);
 
         if (competitors.length > 0) {
-          const { data } = await supabase.functions.invoke('trending-pages', {
-            body: { competitors, days: 30 }
+          const data = await callEdgeFunction('trending-pages', {
+            competitors,
+            days: 30
           });
 
           if (data?.pages) {
