@@ -1,28 +1,21 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Info } from "lucide-react";
 import { TooltipWrapper } from "@/components/TooltipWrapper";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-
-// Lazy load Recharts components
-const LazyPieChart = lazy(() => import("recharts").then(module => ({ default: module.PieChart })));
+import { LazyPieChart } from "@/components/lazy/LazyChartComponents";
 
 interface ResultsDisplayProps {
   results: any;
 }
 
 export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
-  const sentimentColors = {
-    positive: "#4CAF50",
-    neutral: "#9E9E9E", 
-    negative: "#F44336"
-  };
+  const sentimentColors = ["#4CAF50", "#9E9E9E", "#F44336"];
 
   const sentimentData = results?.aggregates?.sentimentBreakdown ? [
-    { name: 'Positive', value: results.aggregates.sentimentBreakdown.positive, color: sentimentColors.positive },
-    { name: 'Neutral', value: results.aggregates.sentimentBreakdown.neutral, color: sentimentColors.neutral },
-    { name: 'Negative', value: results.aggregates.sentimentBreakdown.negative, color: sentimentColors.negative },
+    { name: 'Positive', value: results.aggregates.sentimentBreakdown.positive },
+    { name: 'Neutral', value: results.aggregates.sentimentBreakdown.neutral },
+    { name: 'Negative', value: results.aggregates.sentimentBreakdown.negative },
   ] : [];
 
   if (!results) {
@@ -44,24 +37,13 @@ export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<div>Loading chart...</div>}>
-            <ResponsiveContainer width="100%" height={200}>
-              <LazyPieChart>
-                <Pie
-                  data={sentimentData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {sentimentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-              </LazyPieChart>
-            </ResponsiveContainer>
-          </Suspense>
+          <LazyPieChart
+            data={sentimentData}
+            dataKey="value"
+            nameKey="name"
+            height={200}
+            colors={sentimentColors}
+          />
         </CardContent>
       </Card>
 
