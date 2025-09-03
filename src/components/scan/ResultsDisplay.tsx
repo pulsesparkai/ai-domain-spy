@@ -36,14 +36,16 @@ export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
             </TooltipWrapper>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <LazyPieChart
-            data={sentimentData}
-            dataKey="value"
-            nameKey="name"
-            height={200}
-            colors={sentimentColors}
-          />
+        <CardContent className="overflow-hidden">
+          <div className="w-full">
+            <LazyPieChart
+              data={sentimentData}
+              dataKey="value"
+              nameKey="name"
+              height={200}
+              colors={sentimentColors}
+            />
+          </div>
         </CardContent>
       </Card>
 

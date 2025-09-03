@@ -27,16 +27,18 @@ export const SentimentAnalysis = memo(({ scanData }: SentimentAnalysisProps) => 
           Sentiment Analysis
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-hidden">
         {total > 0 ? (
           <div className="space-y-4">
-            <LazyPieChart
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              height={300}
-              colors={colors}
-            />
+            <div className="w-full">
+              <LazyPieChart
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                height={300}
+                colors={colors}
+              />
+            </div>
             <div className="flex justify-center space-x-4 mt-4">
               {data.map((entry, index) => (
                 <div key={entry.name} className="flex items-center hover-scale">

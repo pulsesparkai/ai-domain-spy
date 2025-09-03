@@ -10,9 +10,11 @@ interface CompetitorTrafficProps {
 
 export const CompetitorTraffic = memo(({ scanData }: CompetitorTrafficProps) => {
   const [trafficData, setTrafficData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchTraffic = async () => {
+      setIsLoading(true);
       try {
         // Extract competitors from scan data
         const competitors = Object.keys(scanData?.aggregates?.citationDomains || {})
@@ -31,6 +33,8 @@ export const CompetitorTraffic = memo(({ scanData }: CompetitorTrafficProps) => 
         }
       } catch (error) {
         console.error('Error fetching traffic data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -47,15 +51,19 @@ export const CompetitorTraffic = memo(({ scanData }: CompetitorTrafficProps) => 
           Competitor Traffic
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        {trafficData.length > 0 ? (
-          <LazyBarChart
-            data={trafficData}
-            dataKey="interestScore"
-            xAxisKey="competitor"
-            height={300}
-            color="#4A90E2"
-          />
+      <CardContent className="overflow-hidden">
+        {isLoading ? (
+          <BarChartSkeleton />
+        ) : trafficData.length > 0 ? (
+          <div className="w-full">
+            <LazyBarChart
+              data={trafficData}
+              dataKey="interestScore"
+              xAxisKey="competitor"
+              height={300}
+              color="hsl(var(--primary))"
+            />
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground text-center">
             No competitor traffic data available

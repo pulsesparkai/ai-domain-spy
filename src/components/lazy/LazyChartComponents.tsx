@@ -4,21 +4,25 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 // Chart skeleton components
 const BarChartSkeleton = () => (
-  <div className="h-64 flex flex-col space-y-2">
-    <div className="flex-1 flex items-end space-x-2">
-      <Skeleton className="w-8 h-32" />
-      <Skeleton className="w-8 h-24" />
-      <Skeleton className="w-8 h-40" />
-      <Skeleton className="w-8 h-28" />
-      <Skeleton className="w-8 h-36" />
+  <div className="w-full overflow-hidden">
+    <div className="h-64 flex flex-col space-y-2 p-2">
+      <div className="flex-1 flex items-end space-x-2 justify-center">
+        <Skeleton className="w-8 h-32 rounded-sm" />
+        <Skeleton className="w-8 h-24 rounded-sm" />
+        <Skeleton className="w-8 h-40 rounded-sm" />
+        <Skeleton className="w-8 h-28 rounded-sm" />
+        <Skeleton className="w-8 h-36 rounded-sm" />
+      </div>
+      <Skeleton className="h-4 w-full rounded" />
     </div>
-    <Skeleton className="h-4 w-full" />
   </div>
 );
 
 const PieChartSkeleton = () => (
-  <div className="h-64 flex items-center justify-center">
-    <Skeleton className="w-48 h-48 rounded-full" />
+  <div className="w-full overflow-hidden">
+    <div className="h-64 flex items-center justify-center p-4">
+      <Skeleton className="w-40 h-40 sm:w-48 sm:h-48 rounded-full" />
+    </div>
   </div>
 );
 
@@ -72,15 +76,37 @@ export const LazyBarChart = ({
       default: ({ data, dataKey, xAxisKey, height, color }: LazyBarChartProps) => {
         const { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } = module;
         return (
-          <ResponsiveContainer width="100%" height={height}>
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey={xAxisKey} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey={dataKey} fill={color} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="w-full overflow-hidden">
+            <ResponsiveContainer width="100%" height={height}>
+              <BarChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis 
+                  dataKey={xAxisKey} 
+                  fontSize={12}
+                  tick={{ fontSize: 12 }}
+                  interval={0}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  className="hidden sm:block"
+                />
+                <YAxis 
+                  fontSize={12}
+                  tick={{ fontSize: 12 }}
+                  width={40}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    fontSize: '12px',
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                />
+                <Bar dataKey={dataKey} fill={color} radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         );
       }
     }))
@@ -111,25 +137,39 @@ export const LazyPieChart = ({
     import('recharts').then(module => ({
       default: ({ data, dataKey, nameKey, height, colors }: LazyPieChartProps) => {
         const { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } = module;
+        const isMobile = window.innerWidth < 768;
+        const outerRadius = isMobile ? 60 : 80;
+        
         return (
-          <ResponsiveContainer width="100%" height={height}>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey={dataKey}
-                nameKey={nameKey}
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="w-full overflow-hidden">
+            <ResponsiveContainer width="100%" height={height}>
+              <PieChart margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={outerRadius}
+                  fill="#8884d8"
+                  dataKey={dataKey}
+                  nameKey={nameKey}
+                  label={!isMobile}
+                  labelLine={false}
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    fontSize: '12px',
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         );
       }
     }))
