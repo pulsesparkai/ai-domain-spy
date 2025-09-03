@@ -33,7 +33,7 @@ export const AIVisibilityScore = memo(({ scanData }: AIVisibilityScoreProps) => 
           </div>
           <div className="w-full bg-secondary rounded-full h-2 mb-4">
             <div 
-              className="h-2 rounded-full transition-all duration-500 bg-gradient-to-r from-primary to-primary/70" 
+              className="h-2 rounded-full transition-all duration-500 bg-primary" 
               style={{ 
                 width: `${score}%`
               }}

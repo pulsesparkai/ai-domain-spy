@@ -98,7 +98,7 @@ const PricingCard = () => {
                 </ul>
 
                 <Button 
-                  className={`w-full ${plan.popular ? 'primary-gradient text-white' : 'border-border'}`}
+                  className="w-full"
                   variant={plan.popular ? "default" : "outline"}
                 >
                   {plan.name === "Enterprise" ? "Contact Sales" : "Get Started"}

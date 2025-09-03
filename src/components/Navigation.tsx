@@ -27,7 +27,7 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 primary-gradient rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
               <span className="text-white font-bold text-lg">P</span>
             </div>
             <span className="text-foreground font-semibold text-xl">PulseSpark.ai</span>
@@ -91,7 +91,7 @@ const Navigation = () => {
                   </Button>
                 </Link>
                 <Link to="/auth">
-                  <Button className="primary-gradient text-white hover:opacity-90 transition-base">
+                  <Button>
                     Sign up
                   </Button>
                 </Link>
@@ -190,7 +190,7 @@ const Navigation = () => {
                           </Button>
                         </Link>
                         <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                          <Button className="w-full primary-gradient text-white hover:opacity-90 transition-base">
+                          <Button className="w-full">
                             Sign up
                           </Button>
                         </Link>

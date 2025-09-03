@@ -55,7 +55,7 @@ const Signup = () => {
       <Card className="w-full max-w-md shadow-card">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-8 h-8 primary-gradient rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
               <span className="text-white font-bold text-lg">P</span>
             </div>
             <span className="text-foreground font-semibold text-xl">PulseSpark.ai</span>
@@ -181,7 +181,7 @@ const Signup = () => {
 
             <Button 
               type="submit" 
-              className="w-full h-10 primary-gradient text-white hover:opacity-90 transition-base"
+              className="w-full"
               disabled={!formData.acceptTerms}
             >
               Create Account
