@@ -19,14 +19,11 @@ const LoadingBar = React.forwardRef<HTMLDivElement, LoadingBarProps>(
       >
         <div
           className={cn(
-            "h-full rounded-full bg-[#4A90E2] transition-all duration-300 ease-out",
-            indeterminate && "animate-pulse"
+            "h-full rounded-full bg-accent transition-all duration-300 ease-out",
+            indeterminate && "animate-pulse bg-gradient-to-r from-accent via-primary to-accent"
           )}
           style={{
-            width: indeterminate ? "100%" : `${Math.min(100, Math.max(0, progress))}%`,
-            background: indeterminate 
-              ? "linear-gradient(90deg, #4A90E2 0%, #6B9EFF 50%, #4A90E2 100%)"
-              : "#4A90E2"
+            width: indeterminate ? "100%" : `${Math.min(100, Math.max(0, progress))}%`
           }}
         />
       </div>

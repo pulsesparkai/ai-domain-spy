@@ -41,7 +41,7 @@ export const SentimentAnalysis = memo(({ scanData }: SentimentAnalysisProps) => 
               {data.map((entry, index) => (
                 <div key={entry.name} className="flex items-center hover-scale">
                   <div
-                    className="w-3 h-3 rounded-full mr-2"
+                    className="w-3 h-3 rounded-full mr-2 bg-primary"
                     style={{ backgroundColor: colors[index] }}
                   ></div>
                   <span className="text-sm">{entry.name}: {entry.value}</span>

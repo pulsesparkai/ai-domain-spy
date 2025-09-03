@@ -15,15 +15,7 @@ export const TooltipWrapper = ({ children, content, id }: TooltipWrapperProps) =
       </div>
       <Tooltip
         id={id}
-        style={{
-          backgroundColor: '#F0F0F0',
-          color: '#1A1A1A',
-          borderRadius: '12px',
-          fontSize: '12px',
-          padding: '8px 12px',
-          maxWidth: '300px',
-          zIndex: 1000,
-        }}
+        className="bg-muted text-foreground rounded-xl text-xs py-2 px-3 max-w-xs z-50"
       />
     </>
   );

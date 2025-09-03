@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 interface VirtualScrollProps<T> {
   items: T[];
@@ -41,7 +42,7 @@ export function VirtualScroll<T>({
   if (items.length === 0) {
     return (
       <div 
-        className={className}
+        className={cn(className, "flex items-center justify-center h-full text-muted-foreground")}
         style={{ height }}
       >
         <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -53,21 +54,20 @@ export function VirtualScroll<T>({
 
   return (
     <div 
-      className={className}
-      style={{ height, overflow: 'auto' }}
+      className={cn(className, "overflow-auto")}
+      style={{ height }}
       onScroll={handleScroll}
     >
-      <div style={{ height: totalHeight, position: 'relative' }}>
+      <div className="relative" style={{ height: totalHeight }}>
         {visibleItems.map((item, index) => {
           const actualIndex = Math.max(0, visibleStart - overscan) + index;
           return (
             <div
               key={actualIndex}
+              className="absolute w-full"
               style={{
-                position: 'absolute',
                 top: actualIndex * itemHeight,
                 height: itemHeight,
-                width: '100%',
               }}
             >
               {renderItem({ index: actualIndex, item })}

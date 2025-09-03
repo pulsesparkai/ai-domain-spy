@@ -71,7 +71,7 @@ export const TestimonialsSection = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="bg-white border border-border" style={{ borderRadius: '12px' }}>
+            <Card key={index} className="bg-white border border-border rounded-xl">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   <div 
@@ -83,14 +83,14 @@ export const TestimonialsSection = () => {
                     }}
                   />
                   <div>
-                    <h4 className="font-semibold" style={{ color: '#1A1A1A' }}>{testimonial.name}</h4>
+                    <h4 className="font-semibold text-foreground">{testimonial.name}</h4>
                     <p className="text-sm text-muted-foreground">
                       {testimonial.role} at {testimonial.company}
                     </p>
                   </div>
                 </div>
                 
-                <p className="mb-4 italic" style={{ color: '#4A4A4A', fontSize: '16px' }}>
+                <p className="mb-4 italic text-muted-foreground text-base">
                   "{testimonial.quote}"
                 </p>
                 
@@ -98,8 +98,7 @@ export const TestimonialsSection = () => {
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <Star 
                       key={i} 
-                      className="w-4 h-4 fill-current" 
-                      style={{ color: '#FFEB3B' }}
+                      className="w-4 h-4 fill-current text-warning"
                     />
                   ))}
                 </div>
@@ -135,17 +134,16 @@ export const FAQSection = () => {
               >
                 <AccordionTrigger className="hover:no-underline py-4">
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-left font-medium" style={{ color: '#1A1A1A', fontSize: '18px' }}>
+                    <span className="text-left font-medium text-foreground text-lg">
                       {faq.question}
                     </span>
                     <ChevronDown 
-                      className="w-5 h-5 ml-4 transition-transform" 
-                      style={{ color: '#6B5BFF' }}
+                      className="w-5 h-5 ml-4 transition-transform text-primary"
                     />
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
-                  <p className="leading-relaxed" style={{ color: '#4A4A4A', fontSize: '14px' }}>
+                  <p className="leading-relaxed text-muted-foreground text-sm">
                     {faq.answer}
                   </p>
                 </AccordionContent>

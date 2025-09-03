@@ -34,9 +34,9 @@ export const AIRankings = memo(({ scanData }: AIRankingsProps) => {
               <div className="flex justify-between items-center">
                 <span className="text-xs text-muted-foreground">Perplexity</span>
                 <Badge 
+                  className="text-white"
                   style={{ 
-                    backgroundColor: getRankColor(result.rankings?.perplexity),
-                    color: 'white'
+                    backgroundColor: getRankColor(result.rankings?.perplexity)
                   }}
                 >
                   {result.rankings?.perplexity || 'none'}
@@ -45,9 +45,9 @@ export const AIRankings = memo(({ scanData }: AIRankingsProps) => {
               <div className="flex justify-between items-center mt-1">
                 <span className="text-xs text-muted-foreground">ChatGPT</span>
                 <Badge 
+                  className="text-white"
                   style={{ 
-                    backgroundColor: getRankColor(result.rankings?.chatgpt),
-                    color: 'white'
+                    backgroundColor: getRankColor(result.rankings?.chatgpt)
                   }}
                 >
                   {result.rankings?.chatgpt || 'none'}

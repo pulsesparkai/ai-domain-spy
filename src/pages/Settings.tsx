@@ -158,7 +158,7 @@ export default function Settings() {
                       Email cannot be changed from here
                     </p>
                   </div>
-                  <Button onClick={handleProfileUpdate} style={{ backgroundColor: '#6B5BFF' }}>
+                  <Button onClick={handleProfileUpdate} className="bg-primary hover:bg-primary/90">
                     <Save className="w-4 h-4 mr-2" />
                     Save Profile
                   </Button>
@@ -307,7 +307,7 @@ export default function Settings() {
 
                   <ApiKeyValidator apiKeys={apiKeys} />
                   
-                  <Button onClick={handleApiKeysUpdate} style={{ backgroundColor: '#6B5BFF' }}>
+                  <Button onClick={handleApiKeysUpdate} className="bg-primary hover:bg-primary/90">
                     <Save className="w-4 h-4 mr-2" />
                     Save API Keys
                   </Button>
@@ -348,8 +348,7 @@ export default function Settings() {
 
                   <Button 
                     onClick={() => toast({ title: "Coming Soon", description: "Billing management will be available soon." })}
-                    style={{ backgroundColor: '#6B5BFF' }}
-                    className="w-full"
+                    className="w-full bg-primary hover:bg-primary/90"
                   >
                     Manage Billing
                   </Button>

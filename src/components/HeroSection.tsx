@@ -16,11 +16,9 @@ const HeroSection = () => {
     <section className="relative pt-20 pb-16 hero-gradient overflow-hidden">
       {/* Background Image Overlay */}
       <div 
-        className="absolute inset-0 opacity-5"
+        className="absolute inset-0 opacity-5 bg-cover bg-center"
         style={{
           backgroundImage: `url(${heroBackground})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
         }}
       />
       

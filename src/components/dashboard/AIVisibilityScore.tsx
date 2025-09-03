@@ -28,15 +28,14 @@ export const AIVisibilityScore = memo(({ scanData }: AIVisibilityScoreProps) => 
       </CardHeader>
       <CardContent>
         <div className="text-center">
-          <div className="text-5xl font-bold mb-2 transition-all duration-500" style={{ color }}>
+          <div className="text-5xl font-bold mb-2 transition-all duration-500 text-primary">
             {score}
           </div>
           <div className="w-full bg-secondary rounded-full h-2 mb-4">
             <div 
-              className="h-2 rounded-full transition-all duration-500" 
+              className="h-2 rounded-full transition-all duration-500 bg-gradient-to-r from-primary to-primary/70" 
               style={{ 
-                width: `${score}%`,
-                background: `linear-gradient(90deg, ${color} 0%, ${color}AA 100%)`
+                width: `${score}%`
               }}
             ></div>
           </div>
