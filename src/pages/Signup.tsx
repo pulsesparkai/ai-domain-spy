@@ -15,9 +15,28 @@ const Signup = () => {
     confirmPassword: "",
     acceptTerms: false
   });
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Clear previous errors
+    setErrors({});
+    
+    // Basic validation
+    const newErrors: {[key: string]: string} = {};
+    if (!formData.firstName) newErrors.firstName = "First name is required";
+    if (!formData.lastName) newErrors.lastName = "Last name is required";
+    if (!formData.email) newErrors.email = "Email is required";
+    if (!formData.password) newErrors.password = "Password is required";
+    if (!formData.confirmPassword) newErrors.confirmPassword = "Please confirm your password";
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "Passwords don't match";
+    if (!formData.acceptTerms) newErrors.acceptTerms = "You must accept the terms";
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
     // Handle signup logic
     console.log("Signup:", formData);
   };
@@ -45,93 +64,124 @@ const Signup = () => {
           <p className="text-muted-foreground">Start optimizing your AI search presence</p>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First name</Label>
+                <Label htmlFor="firstName" className="block text-sm font-medium mb-2">
+                  First name
+                </Label>
                 <Input
                   id="firstName"
                   placeholder="John"
                   value={formData.firstName}
                   onChange={(e) => handleInputChange("firstName", e.target.value)}
-                  className="border-border"
+                  className={`h-10 border-border ${errors.firstName ? 'border-destructive' : ''}`}
                   required
                 />
+                {errors.firstName && (
+                  <p className="text-sm text-destructive mt-1">{errors.firstName}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last name</Label>
+                <Label htmlFor="lastName" className="block text-sm font-medium mb-2">
+                  Last name
+                </Label>
                 <Input
                   id="lastName"
                   placeholder="Doe"
                   value={formData.lastName}
                   onChange={(e) => handleInputChange("lastName", e.target.value)}
-                  className="border-border"
+                  className={`h-10 border-border ${errors.lastName ? 'border-destructive' : ''}`}
                   required
                 />
+                {errors.lastName && (
+                  <p className="text-sm text-destructive mt-1">{errors.lastName}</p>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="block text-sm font-medium mb-2">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="john@company.com"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
-                className="border-border"
+                className={`h-10 border-border ${errors.email ? 'border-destructive' : ''}`}
                 required
               />
+              {errors.email && (
+                <p className="text-sm text-destructive mt-1">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="block text-sm font-medium mb-2">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="Create a strong password"
                 value={formData.password}
                 onChange={(e) => handleInputChange("password", e.target.value)}
-                className="border-border"
+                className={`h-10 border-border ${errors.password ? 'border-destructive' : ''}`}
                 required
               />
+              {errors.password && (
+                <p className="text-sm text-destructive mt-1">{errors.password}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+                Confirm password
+              </Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                className="border-border"
+                className={`h-10 border-border ${errors.confirmPassword ? 'border-destructive' : ''}`}
                 required
               />
+              {errors.confirmPassword && (
+                <p className="text-sm text-destructive mt-1">{errors.confirmPassword}</p>
+              )}
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="terms"
-                checked={formData.acceptTerms}
-                onCheckedChange={(checked) => handleInputChange("acceptTerms", checked as boolean)}
-              />
-              <Label htmlFor="terms" className="text-sm text-muted-foreground">
-                I agree to the{" "}
-                <Link to="/terms" className="text-accent hover:underline">
-                  Terms of Service
-                </Link>{" "}
-                and{" "}
-                <Link to="/privacy" className="text-accent hover:underline">
-                  Privacy Policy
-                </Link>
-              </Label>
+            <div className="space-y-2">
+              <div className="flex items-start space-x-3">
+                <Checkbox 
+                  id="terms"
+                  checked={formData.acceptTerms}
+                  onCheckedChange={(checked) => handleInputChange("acceptTerms", checked as boolean)}
+                  className="mt-1"
+                />
+                <Label htmlFor="terms" className="text-sm text-muted-foreground leading-5">
+                  I agree to the{" "}
+                  <Link to="/terms" className="text-accent hover:underline">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy" className="text-accent hover:underline">
+                    Privacy Policy
+                  </Link>
+                </Label>
+              </div>
+              {errors.acceptTerms && (
+                <p className="text-sm text-destructive mt-1">{errors.acceptTerms}</p>
+              )}
             </div>
 
             <Button 
               type="submit" 
-              className="w-full primary-gradient text-white hover:opacity-90 transition-base"
+              className="w-full h-10 primary-gradient text-white hover:opacity-90 transition-base"
               disabled={!formData.acceptTerms}
             >
               Create Account
@@ -150,7 +200,7 @@ const Signup = () => {
           <Button 
             onClick={handleGoogleSignup}
             variant="outline" 
-            className="w-full border-border hover:bg-accent/10"
+            className="w-full h-10 border-border hover:bg-accent/10"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

@@ -8,9 +8,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Clear previous errors
+    setErrors({});
+    
+    // Basic validation
+    const newErrors: {email?: string; password?: string} = {};
+    if (!email) newErrors.email = "Email is required";
+    if (!password) newErrors.password = "Password is required";
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    
     // Handle login logic
     console.log("Login:", { email, password });
   };
@@ -34,37 +48,47 @@ const Login = () => {
           <p className="text-muted-foreground">Sign in to your account to continue</p>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="block text-sm font-medium mb-2">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border-border"
+                className={`h-10 border-border ${errors.email ? 'border-destructive' : ''}`}
                 required
               />
+              {errors.email && (
+                <p className="text-sm text-destructive mt-1">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="block text-sm font-medium mb-2">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border-border"
+                className={`h-10 border-border ${errors.password ? 'border-destructive' : ''}`}
                 required
               />
+              {errors.password && (
+                <p className="text-sm text-destructive mt-1">{errors.password}</p>
+              )}
             </div>
 
             <Button 
               type="submit" 
-              className="w-full primary-gradient text-white hover:opacity-90 transition-base"
+              className="w-full h-10 primary-gradient text-white hover:opacity-90 transition-base"
             >
               Sign In
             </Button>
@@ -82,7 +106,7 @@ const Login = () => {
           <Button 
             onClick={handleGoogleLogin}
             variant="outline" 
-            className="w-full border-border hover:bg-accent/10"
+            className="w-full h-10 border-border hover:bg-accent/10"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
