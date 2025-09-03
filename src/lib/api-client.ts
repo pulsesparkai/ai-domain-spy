@@ -322,17 +322,18 @@ class ApiClient {
     });
 
     const validation = validateApiResponse(ScanResponseSchema, { success: true, data: response, timestamp: new Date().toISOString() });
-    if (!validation.success) {
-      const error = validation.error;
-      throw new ApiClientError(
-        'Invalid scan response format',
-        undefined,
-        'INVALID_RESPONSE',
-        { validationError: error.type }
-      );
+    if (validation.success) {
+      return validation.data;
     }
-
-    return validation.data;
+    
+    // TypeScript now knows this is the error case
+    const errorResult = validation as { success: false; error: AppError };
+    throw new ApiClientError(
+      'Invalid scan response format',
+      undefined,
+      'INVALID_RESPONSE',
+      { validationError: errorResult.error.type }
+    );
   }
 
   // Validation methods for API keys
@@ -345,17 +346,18 @@ class ApiClient {
     
     // Response from Edge Function is already the validation result
     const validation = validateApiResponse(ApiKeyValidationResultSchema, response);
-    if (!validation.success) {
-      const error = validation.error;
-      throw new ApiClientError(
-        'Invalid API key validation response format',
-        undefined,
-        'INVALID_RESPONSE',
-        { validationError: error.type }
-      );
+    if (validation.success) {
+      return validation.data;
     }
-
-    return validation.data;
+    
+    // TypeScript now knows this is the error case
+    const errorResult = validation as { success: false; error: AppError };
+    throw new ApiClientError(
+      'Invalid API key validation response format',
+      undefined,
+      'INVALID_RESPONSE',
+      { validationError: errorResult.error.type }
+    );
   }
 
   // Health check

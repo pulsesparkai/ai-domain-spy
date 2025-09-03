@@ -31,12 +31,13 @@ export function useTypedQuery<TData, TError = AppError>(
         const response = await queryFn();
         const validation = validateApiResponse(schema, response);
         
-        if (!validation.success) {
-          const error = validation.error;
-          throw new Error(`Validation failed: ${error.type}: ${error.message}`);
+        if (validation.success) {
+          return validation.data;
         }
         
-        return validation.data;
+        // TypeScript now knows this is the error case
+        const errorResult = validation as { success: false; error: AppError };
+        throw new Error(`Validation failed: ${errorResult.error.type}: ${errorResult.error.message}`);
       } catch (error) {
         const normalizedError = errorHandler.normalizeError(error, `Query: ${key.join('.')}`);
         throw normalizedError;
@@ -60,12 +61,13 @@ export function useTypedMutation<TData, TVariables, TError = AppError>(
         const response = await mutationFn(variables);
         const validation = validateApiResponse(schema, response);
         
-        if (!validation.success) {
-          const error = validation.error;
-          throw new Error(`Validation failed: ${error.type}: ${error.message}`);
+        if (validation.success) {
+          return validation.data;
         }
         
-        return validation.data;
+        // TypeScript now knows this is the error case
+        const errorResult = validation as { success: false; error: AppError };
+        throw new Error(`Validation failed: ${errorResult.error.type}: ${errorResult.error.message}`);
       } catch (error) {
         const normalizedError = errorHandler.normalizeError(error, 'Mutation');
         throw normalizedError;
