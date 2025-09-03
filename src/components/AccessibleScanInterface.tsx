@@ -279,7 +279,7 @@ export const AccessibleScanInterface: React.FC<AccessibleScanInterfaceProps> = (
             ref={resultsRef}
             tabIndex={-1}
             aria-labelledby="results-title"
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => handleKeyDown(e)}
           >
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">

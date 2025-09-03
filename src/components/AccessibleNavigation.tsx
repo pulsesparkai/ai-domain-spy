@@ -324,7 +324,7 @@ export const AccessibleNavigation: React.FC<AccessibleNavigationProps> = ({
       className={`
         ${variant === 'vertical' ? 'w-64 h-full' : 'w-full'}
       `}
-      onKeyDown={handleKeyDown}
+      onKeyDown={(e) => handleKeyDown(e)}
     >
       {/* Header with logo and search */}
       {(logo || showSearch) && (
