@@ -20,6 +20,8 @@ import { lazy, Suspense } from "react";
 import { analytics } from "@/lib/analytics";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseReady, withDependencyCheck } from "@/lib/dependency-hooks";
+import { getRateLimiter } from "@/lib/rate-limiter";
+import { RateLimitStatusWidget } from "@/components/RateLimitStatus";
 
 // Lazy load Recharts components
 const LazyPieChart = lazy(() => import("recharts").then(module => ({ default: module.PieChart })));
@@ -36,8 +38,12 @@ const ScanInterface = () => {
   const [errors, setErrors] = useState<string[]>([]);
   
   const { devMode, mockScanResults } = useMockData();
-  const { user, session, apiKeys } = useAuth();
+  const { user, session, apiKeys, profile } = useAuth();
   const { isReady: supabaseReady, error: supabaseError } = useSupabaseReady();
+  
+  // Get user tier for rate limiting
+  const userTier = profile?.subscription_status === 'active' ? 'paid' : 'free';
+  const rateLimiter = getRateLimiter(userTier, 'scan');
 
   const handleRetry = () => {
     setResults(null);
@@ -94,12 +100,14 @@ const ScanInterface = () => {
       return;
     }
 
-    // Rate limiting check - only for non-subscribed users
-    const scansCount = (user.user_metadata as any)?.scans_count || 0;
-    const isSubscribed = (user.user_metadata as any)?.subscribed;
-    
-    if (!isSubscribed && scansCount >= 100) {
-      showToast.error("Monthly scan limit reached (100 scans). Please upgrade your plan.");
+    // Check rate limiting before proceeding
+    try {
+      const canProceed = await rateLimiter.requestToken();
+      if (!canProceed) {
+        return; // Request was queued, toast already shown
+      }
+    } catch (error) {
+      showToast.error("Rate limit exceeded. Please try again later.");
       return;
     }
 
@@ -180,16 +188,7 @@ const ScanInterface = () => {
           throw dependencyError;
         }
 
-        // Update scan count in user metadata (only if not subscribed)
-        if (!isSubscribed) {
-          const newCount = scansCount + 1;
-          await supabase.auth.updateUser({
-            data: {
-              ...user.user_metadata,
-              scans_count: newCount
-            }
-          });
-        }
+        // Rate limit success feedback is handled by the rate limiter
       }
       
       showToast.success("Scan completed successfully!");
@@ -222,6 +221,12 @@ const ScanInterface = () => {
       <TooltipProvider>
         <div className="space-y-6">
           <ScanProgressBar progress={progress} isVisible={isScanning} />
+          
+          {/* Rate Limit Status Widget */}
+          <RateLimitStatusWidget 
+            rateLimiter={rateLimiter} 
+            className="max-w-md"
+          />
           
           <Card className="scan-interface">
             <CardHeader>
