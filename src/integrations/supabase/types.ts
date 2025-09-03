@@ -108,6 +108,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      refresh_table_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_encrypted_api_keys: {
         Args: { encrypted_value: string; key_name: string }
         Returns: undefined
