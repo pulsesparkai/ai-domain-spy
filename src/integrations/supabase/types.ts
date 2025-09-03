@@ -20,6 +20,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           email: string
+          encrypted_api_keys: Json | null
           full_name: string | null
           id: string
           stripe_customer_id: string | null
@@ -34,6 +35,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           email: string
+          encrypted_api_keys?: Json | null
           full_name?: string | null
           id?: string
           stripe_customer_id?: string | null
@@ -48,6 +50,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           email?: string
+          encrypted_api_keys?: Json | null
           full_name?: string | null
           id?: string
           stripe_customer_id?: string | null
@@ -97,7 +100,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_encrypted_api_key: {
+        Args: { key_name: string }
+        Returns: undefined
+      }
+      get_encrypted_api_keys: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      update_encrypted_api_keys: {
+        Args: { encrypted_value: string; key_name: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

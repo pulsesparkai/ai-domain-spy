@@ -19,11 +19,10 @@ const DevModeToggle = () => {
     
     if (user) {
       try {
+        // Note: Dev mode is stored in localStorage, not in encrypted API keys
+        // This is intentional as it's not sensitive data
         await updateUserMetadata({
-          api_keys: {
-            ...user.user_metadata?.api_keys,
-            dev_mode: enabled
-          }
+          dev_mode: enabled
         });
       } catch (error) {
         console.error('Failed to update dev mode setting:', error);

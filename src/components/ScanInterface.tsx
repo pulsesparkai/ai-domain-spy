@@ -35,7 +35,7 @@ const ScanInterface = () => {
   const [errors, setErrors] = useState<string[]>([]);
   
   const { devMode, mockScanResults } = useMockData();
-  const { user, session } = useAuth();
+  const { user, session, apiKeys } = useAuth();
 
   const handleRetry = () => {
     setResults(null);
@@ -108,8 +108,8 @@ const ScanInterface = () => {
       });
 
       // Check if user has required API keys
-      const hasPerplexity = user.user_metadata?.api_keys?.perplexity;
-      const hasOpenAI = user.user_metadata?.api_keys?.openai;
+      const hasPerplexity = apiKeys.perplexity;
+      const hasOpenAI = apiKeys.openai;
       
       if (devMode || (!hasPerplexity && !hasOpenAI)) {
         // Mock scanning with progress for dev mode or missing API keys

@@ -13,7 +13,7 @@ import { ExportButton } from '@/components/ExportButton';
 import { ApiKeyValidator } from '@/components/ApiKeyValidator';
 
 export default function Settings() {
-  const { user, profile, updateProfile, updateUserMetadata } = useAuth();
+  const { user, profile, updateProfile, updateApiKeys, apiKeys: currentApiKeys } = useAuth();
   
   // Profile state
   const [profileData, setProfileData] = useState({
@@ -37,17 +37,17 @@ export default function Settings() {
     screaming_frog: false
   });
 
-  // Load existing API keys
+  // Load existing API keys from the new encrypted storage
   useEffect(() => {
-    if (user?.user_metadata?.api_keys) {
+    if (currentApiKeys) {
       setApiKeys({
-        openai: user.user_metadata.api_keys.openai || '',
-        perplexity: user.user_metadata.api_keys.perplexity || '',
-        google_analytics: user.user_metadata.api_keys.google_analytics || '',
-        screaming_frog: user.user_metadata.api_keys.screaming_frog || ''
+        openai: currentApiKeys.openai || '',
+        perplexity: currentApiKeys.perplexity || '',
+        google_analytics: currentApiKeys.google_analytics || '',
+        screaming_frog: currentApiKeys.screaming_frog || ''
       });
     }
-  }, [user]);
+  }, [currentApiKeys]);
 
   const handleProfileUpdate = async () => {
     if (!profile) return;
@@ -71,15 +71,10 @@ export default function Settings() {
 
   const handleApiKeysUpdate = async () => {
     try {
-      await updateUserMetadata({
-        api_keys: {
-          ...user?.user_metadata?.api_keys,
-          ...apiKeys
-        }
-      });
+      await updateApiKeys(apiKeys);
       toast({
         title: "API keys updated",
-        description: "Your API keys have been saved securely.",
+        description: "Your API keys have been encrypted and saved securely.",
       });
     } catch (error) {
       toast({
