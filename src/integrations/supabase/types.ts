@@ -92,27 +92,24 @@ export type Database = {
       optimization_scans: {
         Row: {
           analysis: Json
-          created_at: string
+          created_at: string | null
           id: string
-          updated_at: string
           url: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           analysis: Json
-          created_at?: string
+          created_at?: string | null
           id?: string
-          updated_at?: string
           url: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           analysis?: Json
-          created_at?: string
+          created_at?: string | null
           id?: string
-          updated_at?: string
           url?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
