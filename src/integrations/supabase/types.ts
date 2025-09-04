@@ -89,6 +89,33 @@ export type Database = {
         }
         Relationships: []
       }
+      optimization_scans: {
+        Row: {
+          analysis: Json
+          created_at: string
+          id: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          analysis: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          analysis?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           api_keys: Json | null

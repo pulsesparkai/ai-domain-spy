@@ -20,6 +20,7 @@ import {
   LazyCancel,
   LazyNotFound,
   LazyPasswordReset,
+  LazyPerplexityOptimization,
   RouteLoadingSkeleton,
   preloadCriticalRoutes
 } from "@/utils/lazyRoutes";
@@ -55,6 +56,7 @@ const App = () => {
                     <Route path="/scan" element={<LazyScan />} />
                     <Route path="/pricing" element={<LazyPricing />} />
                     <Route path="/settings" element={<LazySettings />} />
+                    <Route path="/perplexity-optimization" element={<LazyPerplexityOptimization />} />
                     <Route path="/success" element={<LazySuccess />} />
                     <Route path="/cancel" element={<LazyCancel />} />
                     <Route path="/reset-password" element={<LazyPasswordReset />} />
