@@ -1,7 +1,10 @@
 /**
  * Dependency Checker Utility
  * Validates that all critical dependencies are loaded before use
+ * Environment-aware and graceful handling of optional services
  */
+
+import { previewUtils, envLogger } from './environment';
 
 interface DependencyStatus {
   name: string;
@@ -113,14 +116,20 @@ class DependencyChecker {
       }
     });
 
-    // PostHog Check (Optional Analytics)
+    // PostHog Check (Optional Analytics - Environment Aware)
     this.dependencies.set('posthog', {
       name: 'PostHog Analytics',
       loaded: false,
       optional: true,
-      silent: true,
+      silent: !previewUtils.shouldEnableService('posthog'),
       checkFn: async () => {
         try {
+          // Skip if disabled in current environment
+          if (!previewUtils.shouldEnableService('posthog')) {
+            envLogger.debug('PostHog disabled in current environment');
+            return true;
+          }
+
           if (typeof window === 'undefined') {
             return true; // SSR environment, skip check
           }
@@ -169,14 +178,20 @@ class DependencyChecker {
       }
     });
 
-    // Sentry Check (Optional Error Tracking)
+    // Sentry Check (Optional Error Tracking - Environment Aware)
     this.dependencies.set('sentry', {
       name: 'Sentry Error Tracking',
       loaded: false,
       optional: true,
-      silent: true,
+      silent: !previewUtils.shouldEnableService('sentry'),
       checkFn: async () => {
         try {
+          // Skip if disabled in current environment
+          if (!previewUtils.shouldEnableService('sentry')) {
+            envLogger.debug('Sentry disabled in current environment');
+            return true;
+          }
+
           // Check if Sentry environment variables are present
           const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
           if (!sentryDsn) {
@@ -221,8 +236,8 @@ class DependencyChecker {
         // Only add to errors if dependency is not optional
         if (!dependency.optional) {
           errors.push(`${dependency.name}: ${errorMessage}`);
-        } else if (!dependency.silent && import.meta.env.VITE_POSTHOG_DEBUG === 'true') {
-          console.debug(`Optional dependency ${dependency.name} not available:`, errorMessage);
+        } else if (!dependency.silent) {
+          envLogger.debug(`Optional dependency ${dependency.name} not available:`, errorMessage);
         }
       }
     }

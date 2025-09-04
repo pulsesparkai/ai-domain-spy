@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
 import DependencyLoading from "@/components/DependencyLoading";
 import { AccessibilityIndicator, AccessibilityToolbar } from "@/components/AccessibilityIndicator";
+import { PreviewModeIndicator } from "@/components/PreviewModeIndicator";
 import { Suspense, useEffect } from "react";
 import { 
   LazyIndex,
@@ -66,6 +67,7 @@ const App = () => {
                 </Suspense>
                 <AccessibilityIndicator />
                 <AccessibilityToolbar />
+                <PreviewModeIndicator />
               </BrowserRouter>
             </DependencyLoading>
           </TooltipProvider>
