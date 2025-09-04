@@ -57,9 +57,10 @@ class RemoteTransport implements LogTransport {
   private maxBufferSize: number = 50;
   private endpoint: string;
 
-  constructor(endpoint: string = '/api/logs') {
+  constructor(endpoint: string = '') {
     this.endpoint = endpoint;
-    this.startFlushTimer();
+    // Disable logging to prevent API calls to non-existent endpoints
+    // this.startFlushTimer();
   }
 
   async log(entry: LogEntry): Promise<void> {
