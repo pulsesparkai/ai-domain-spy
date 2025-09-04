@@ -18,13 +18,19 @@ export const PromptTrends = memo(({ scanData }: PromptTrendsProps) => {
       
       try {
         // Get previous scan for comparison
-        const { data: previousScans } = await supabase
+        const query = supabase
           .from('scans')
           .select('results')
           .eq('user_id', user.id)
-          .neq('id', scanData.id)
           .order('created_at', { ascending: false })
           .limit(1);
+
+        // Only add id condition if it exists and is not undefined
+        if (scanData.id && scanData.id !== 'undefined') {
+          query.neq('id', scanData.id);
+        }
+
+        const { data: previousScans } = await query;
 
         if (previousScans && previousScans.length > 0) {
           const previousResults = previousScans[0].results as any;
