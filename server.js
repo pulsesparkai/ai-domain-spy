@@ -3,15 +3,27 @@ import cors from 'cors';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Fixed CORS settings - allow Lovable domain
+// Updated CORS settings - allow production frontend
 app.use(cors({
-  origin: [
-    'https://ai-domain-spy.lovable.app',  // Your Lovable app
-    'https://pulsespark.ai',
-    'https://app.pulsespark.ai', 
-    'http://localhost:5173',
-    'http://localhost:5174'
-  ],
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'https://app.pulsespark.ai',  // YOUR PRODUCTION FRONTEND
+      'https://ai-domain-spy.lovable.app',
+      'https://pulsespark.ai',
+      'http://localhost:5173',
+      'http://localhost:5174'
+    ];
+    
+    // Allow requests with no origin (like Postman or direct browser access)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin) || 
+        /^https:\/\/.*\.vercel\.app$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
