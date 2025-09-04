@@ -92,7 +92,7 @@ const Dashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       // Call your scan API endpoint
-      const response = await fetch('/api/scan', {
+      const response = await fetch('https://api.pulsespark.ai/api/scan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
