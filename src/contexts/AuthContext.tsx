@@ -65,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const timeoutRefs = useRef<Set<NodeJS.Timeout>>(new Set());
   const abortControllerRef = useRef<AbortController | null>(null);
   const retryCountRef = useRef<number>(0);
+  const isMountedRef = useRef<boolean>(true);
 
   const clearTimeouts = () => {
     timeoutRefs.current.forEach(timeoutId => clearTimeout(timeoutId));
@@ -81,83 +82,126 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const fetchProfile = async (userId: string, attempt: number = 0): Promise<void> => {
-    if (attempt > 3) { // Max 3 retries
-      console.error('Max retries reached for profile fetch');
+    // Safety checks
+    if (!userId || !isMountedRef.current) {
+      console.warn('fetchProfile called with invalid userId or component unmounted');
       return;
     }
 
-    // Cancel any existing request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    if (attempt > 3) { // Max 3 retries
+      console.error('Max retries reached for profile fetch');
+      setProfileLoading(false);
+      return;
     }
 
-    abortControllerRef.current = new AbortController();
-    setProfileLoading(true);
+    // Create new AbortController for this request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    
+    if (attempt === 0) {
+      setProfileLoading(true);
+    }
 
     try {
+      // Validate userId before making query
+      if (typeof userId !== 'string' || userId.trim() === '') {
+        throw new Error('Invalid user ID provided');
+      }
+
       // Ensure user-specific data: filter by auth.uid() = user_id
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
-        .abortSignal(abortControllerRef.current.signal)
-        .single();
+        .abortSignal(controller.signal)
+        .maybeSingle(); // Use maybeSingle instead of single to handle no data gracefully
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      // Check if component is still mounted before updating state
+      if (!isMountedRef.current || controller.signal.aborted) {
+        return;
+      }
+
+      if (!data) {
+        console.warn('No profile found for user:', userId);
+        setProfile(null);
+        setApiKeys({});
+        return;
+      }
       
       // Transform the data to match our Profile interface
       const profileData: Profile = {
         ...data,
-        encrypted_api_keys: data.encrypted_api_keys ? 
-          (typeof data.encrypted_api_keys === 'object' && !Array.isArray(data.encrypted_api_keys) ? 
+        encrypted_api_keys: data.encrypted_api_keys && 
+          typeof data.encrypted_api_keys === 'object' && 
+          !Array.isArray(data.encrypted_api_keys) ? 
             data.encrypted_api_keys as unknown as Record<string, EncryptedData> : 
-            null) : 
-          null
+            null
       };
       
       setProfile(profileData);
       retryCountRef.current = 0; // Reset retry count on success
 
-      // Decrypt API keys if they exist
-      if (profileData.encrypted_api_keys && Object.keys(profileData.encrypted_api_keys).length > 0) {
-        await decryptAndSetApiKeys(profileData.encrypted_api_keys, userId);
-      } else {
+      // Decrypt API keys if they exist and component is still mounted
+      if (isMountedRef.current && profileData.encrypted_api_keys && 
+          Object.keys(profileData.encrypted_api_keys).length > 0) {
+        await decryptAndSetApiKeys(profileData.encrypted_api_keys, userId, controller.signal);
+      } else if (isMountedRef.current && data.api_keys && typeof data.api_keys === 'object') {
         // Fallback to legacy api_keys if no encrypted keys exist
-        if (data.api_keys && typeof data.api_keys === 'object') {
-          setApiKeys(data.api_keys as ApiKeys);
-        }
+        setApiKeys(data.api_keys as ApiKeys);
       }
     } catch (error: any) {
-      if (error.name === 'AbortError') {
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      if (error.name === 'AbortError' || controller.signal.aborted) {
         console.log('Profile fetch aborted');
         return;
       }
       
       console.error(`Error fetching profile (attempt ${attempt + 1}):`, error);
       
-      if (attempt < 3) {
+      // Only retry if component is still mounted and not aborted
+      if (attempt < 3 && isMountedRef.current && !controller.signal.aborted) {
         const delay = exponentialBackoff(attempt);
         console.log(`Retrying profile fetch in ${delay}ms...`);
         
         const timeoutId = setTimeout(() => {
-          timeoutRefs.current.delete(timeoutId);
-          fetchProfile(userId, attempt + 1);
+          if (isMountedRef.current) {
+            timeoutRefs.current.delete(timeoutId);
+            fetchProfile(userId, attempt + 1);
+          }
         }, delay);
         addTimeout(timeoutId);
+      } else {
+        // Final attempt failed or component unmounted
+        setProfileLoading(false);
       }
-    } finally {
-      setProfileLoading(false);
     }
   };
 
   const decryptAndSetApiKeys = async (
     encryptedKeys: Record<string, EncryptedData>, 
-    userId: string
+    userId: string,
+    signal?: AbortSignal
   ) => {
+    if (!isMountedRef.current || signal?.aborted) {
+      return;
+    }
+
     setApiKeysLoading(true);
     try {
       if (!EncryptionService.isSupported()) {
         console.warn('Encryption not supported in this browser');
+        return;
+      }
+
+      if (signal?.aborted) {
         return;
       }
 
@@ -167,8 +211,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userId, 
         sessionToken
       );
-      setApiKeys(decryptedKeys);
+
+      // Check if still mounted and not aborted before updating state
+      if (isMountedRef.current && !signal?.aborted) {
+        setApiKeys(decryptedKeys);
+      }
     } catch (error) {
+      if (!isMountedRef.current || signal?.aborted) {
+        return;
+      }
+      
       console.error('Error decrypting API keys:', error);
       toast({
         title: "Error",
@@ -176,27 +228,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         variant: "destructive",
       });
     } finally {
-      setApiKeysLoading(false);
+      if (isMountedRef.current && !signal?.aborted) {
+        setApiKeysLoading(false);
+      }
     }
   };
 
   const refreshProfile = async () => {
-    if (user) {
+    if (user && user.id && isMountedRef.current) {
       await fetchProfile(user.id);
     }
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!isMountedRef.current) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
+        if (session?.user?.id) {
           // Defer profile fetch to avoid deadlock
           const timeoutId = setTimeout(() => {
-            fetchProfile(session.user.id);
+            if (isMountedRef.current && session.user?.id) {
+              fetchProfile(session.user.id);
+            }
           }, 0);
           addTimeout(timeoutId);
         } else {
@@ -205,6 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Cancel any ongoing requests
           if (abortControllerRef.current) {
             abortControllerRef.current.abort();
+            abortControllerRef.current = null;
           }
         }
         setLoading(false);
@@ -213,11 +274,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMountedRef.current) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
+      if (session?.user?.id) {
         const timeoutId = setTimeout(() => {
-          fetchProfile(session.user.id);
+          if (isMountedRef.current && session.user?.id) {
+            fetchProfile(session.user.id);
+          }
         }, 0);
         addTimeout(timeoutId);
       } else {
@@ -227,10 +292,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      isMountedRef.current = false;
       subscription.unsubscribe();
       clearTimeouts();
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+        abortControllerRef.current = null;
       }
     };
   }, []);
@@ -271,12 +338,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Cancel any ongoing requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+        abortControllerRef.current = null;
       }
       clearTimeouts();
       
       await supabase.auth.signOut();
-      setProfile(null);
-      setApiKeys({});
+      
+      if (isMountedRef.current) {
+        setProfile(null);
+        setApiKeys({});
+        setProfileLoading(false);
+        setApiKeysLoading(false);
+      }
     } catch (error) {
       console.error('Error signing out:', error);
     }
