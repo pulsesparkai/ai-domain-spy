@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,8 +92,9 @@ const Dashboard = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Call your scan API endpoint
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://pulsespark-api-3000.onrender.com'}/api/scan`, {
+      // Call your scan API endpoint using centralized API config
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.pulsespark.ai';
+      const response = await fetch(`${API_BASE_URL}/api/scan`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -183,8 +185,7 @@ const Dashboard = () => {
               <Button
                 onClick={async () => {
                   try {
-                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://pulsespark-api-3000.onrender.com'}/`);
-                    const data = await response.json();
+                    const data = await api.testConnection();
                     console.log('API Response:', data);
                     showToast.success(`API Connected! Status: ${data.status}`);
                   } catch (error) {

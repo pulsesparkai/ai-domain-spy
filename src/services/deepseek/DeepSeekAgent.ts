@@ -42,8 +42,8 @@ export class DeepSeekAgent {
   private apiEndpoint: string;
 
   constructor() {
-    // Use the correct backend API URL
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://pulsespark-api-3000.onrender.com';
+    // Use the correct backend API URL from environment variable
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.pulsespark.ai';
     this.apiEndpoint = `${baseUrl}/api/deepseek/analyze-website`;
   }
 
