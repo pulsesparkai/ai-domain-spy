@@ -1,196 +1,290 @@
-import { useEffect, useState, Suspense, lazy } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { PaywallOverlay } from "@/components/PaywallOverlay";
-import { OnboardingTour } from "@/components/OnboardingTour";
-import { SampleDataScript } from "@/components/SampleDataScript";
-import DashboardErrorBoundary from "@/components/DashboardErrorBoundary";
-import { supabase } from "@/integrations/supabase/client";
-import { analytics } from "@/lib/analytics";
-import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
-import { LazyComponentWrapper } from "@/components/dashboard/LazyComponentWrapper";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { DashboardView } from "@/components/compound/DashboardView";
-import { useStoreSync } from "@/hooks/useStoreSync";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  AIVisibilityScoreSkeleton,
-  SentimentAnalysisSkeleton,
-  CitationsTrackingSkeleton,
-  AIRankingsSkeleton,
-  TrendingPagesSkeleton,
-  DashboardCardSkeleton
-} from '@/components/ui/loading-skeletons';
-
-
-// Lazy load dashboard components for code splitting
-const AIVisibilityScore = lazy(() => import('@/components/dashboard/AIVisibilityScore').then(module => ({ default: module.AIVisibilityScore })));
-const CitationsTracking = lazy(() => import('@/components/dashboard/CitationsTracking').then(module => ({ default: module.CitationsTracking })));
-const SentimentAnalysis = lazy(() => import('@/components/dashboard/SentimentAnalysis').then(module => ({ default: module.SentimentAnalysis })));
-const AIRankings = lazy(() => import('@/components/dashboard/AIRankings').then(module => ({ default: module.AIRankings })));
-const PromptTrends = lazy(() => import('@/components/dashboard/PromptTrends').then(module => ({ default: module.PromptTrends })));
-const CompetitorTraffic = lazy(() => import('@/components/dashboard/CompetitorTraffic').then(module => ({ default: module.CompetitorTraffic })));
-const TrendingPages = lazy(() => import('@/components/dashboard/TrendingPages').then(module => ({ default: module.TrendingPages })));
-
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  Brain, 
+  BarChart3, 
+  TrendingUp, 
+  Target, 
+  Users, 
+  Globe,
+  Search,
+  Settings,
+  LogOut,
+  User,
+  Sparkles
+} from 'lucide-react';
+import { AIVisibilityScore } from '@/components/dashboard/AIVisibilityScore';
+import { CitationsTracking } from '@/components/dashboard/CitationsTracking';
+import { SentimentAnalysis } from '@/components/dashboard/SentimentAnalysis';
+import { AIRankings } from '@/components/dashboard/AIRankings';
+import { PromptTrends } from '@/components/dashboard/PromptTrends';
+import { CompetitorTraffic } from '@/components/dashboard/CompetitorTraffic';
+import { TrendingPages } from '@/components/dashboard/TrendingPages';
+import { showToast } from '@/lib/toast';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
-  const [startTour, setStartTour] = useState(false);
-  const [latestScan, setLatestScan] = useState<any>(null);
-  const [scanLoading, setScanLoading] = useState(true);
-  
-  // Initialize store sync
-  useStoreSync();
-
-  const fetchLatestScan = async () => {
-    try {
-      if (!user) return;
-      
-      setScanLoading(true);
-      const { data } = await supabase
-        .from('scans')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (data && data.length > 0) {
-        setLatestScan(data[0]);
-      }
-    } catch (error) {
-      console.error('Error fetching scan data:', error);
-      throw error; // Let error boundary handle it
-    } finally {
-      setScanLoading(false);
-    }
-  };
-
-  const handleNavigateToScan = () => {
-    navigate('/scan');
-  };
+  const [activeView, setActiveView] = useState('overview');
+  const [scanUrl, setScanUrl] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanData, setScanData] = useState(null);
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
+    checkUser();
+    loadLatestScan();
+  }, []);
+
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate('/login');
       return;
     }
-  }, [user, loading, navigate]);
+    setUserEmail(user.email || '');
+    setUserName(user.user_metadata?.full_name || user.email?.split('@')[0] || 'User');
+  };
 
-  useEffect(() => {
-    if (user) {
-      analytics.page('Dashboard', { userId: user.id });
-      setStartTour(true);
-      fetchLatestScan();
+  const loadLatestScan = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: scans, error } = await supabase
+      .from('scans')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (scans && scans.length > 0) {
+      setScanData(scans[0].results);
     }
-  }, [user]);
+  };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
 
-  if (!user) {
-    return null;
-  }
+  const runNewScan = async () => {
+    if (!scanUrl) {
+      showToast.error('Please enter a URL to scan');
+      return;
+    }
+
+    setIsScanning(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Call your scan API endpoint
+      const response = await fetch('/api/scan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
+          url: scanUrl,
+          userId: user?.id,
+          scanType: 'comprehensive'
+        })
+      });
+
+      const data = await response.json();
+      setScanData(data.results);
+      showToast.success('Scan completed successfully!');
+      
+      // Reload scan data
+      await loadLatestScan();
+    } catch (error) {
+      showToast.error('Scan failed. Please try again.');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const getUserInitial = () => {
+    return userName.charAt(0).toUpperCase();
+  };
+
+  const renderContent = () => {
+    switch(activeView) {
+      case 'citations':
+        return <CitationsTracking scanData={scanData} />;
+      case 'sentiment':
+        return <SentimentAnalysis scanData={scanData} />;
+      case 'rankings':
+        return <AIRankings scanData={scanData} />;
+      default:
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AIVisibilityScore scanData={scanData} />
+            <SentimentAnalysis scanData={scanData} />
+            <CitationsTracking scanData={scanData} />
+            <AIRankings scanData={scanData} />
+            <PromptTrends scanData={scanData} />
+            <CompetitorTraffic scanData={scanData} />
+            <TrendingPages scanData={scanData} />
+          </div>
+        );
+    }
+  };
 
   return (
-    <DashboardLayout
-      latestScan={latestScan}
-      onNavigateToScan={handleNavigateToScan}
-    >
-      {/* Development Tools - Only show in dev mode */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mb-8">
-          <SampleDataScript />
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-card border-b sticky top-0 z-50">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-6 flex-1">
+            <h1 className="text-2xl font-bold text-foreground">AI Visibility Dashboard</h1>
+            
+            {/* URL Input */}
+            <div className="flex gap-2 max-w-xl flex-1">
+              <Input
+                type="url"
+                placeholder="Enter domain to analyze (e.g., example.com)"
+                value={scanUrl}
+                onChange={(e) => setScanUrl(e.target.value)}
+                className="flex-1"
+              />
+              <Button 
+                onClick={runNewScan}
+                disabled={isScanning || !scanUrl}
+              >
+                {isScanning ? (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4 mr-2" />
+                    Run New Scan
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* User Profile Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {getUserInitial()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{userName}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {userEmail}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      )}
 
-      <PaywallOverlay>
-        <DashboardErrorBoundary onRetry={fetchLatestScan}>
-          {scanLoading ? (
-            <DashboardSkeleton />
-          ) : (
-            <DashboardView.Root scanData={latestScan?.results} loading={scanLoading}>
-              {/* Primary/Above-the-fold content - Load immediately */}
-              <DashboardView.GridItem span="2" id="visibility">
-                <DashboardView.Section>
-                  <Suspense fallback={<AIVisibilityScoreSkeleton />}>
-                    <AIVisibilityScore scanData={latestScan?.results} />
-                  </Suspense>
-                </DashboardView.Section>
-              </DashboardView.GridItem>
+        {scanData && (
+          <div className="px-6 pb-4 text-sm text-muted-foreground">
+            Last scan: {new Date(scanData.created_at || Date.now()).toLocaleDateString()}
+          </div>
+        )}
+      </header>
 
-              <DashboardView.GridItem id="sentiment">
-                <DashboardView.Section>
-                  <Suspense fallback={<SentimentAnalysisSkeleton />}>
-                    <SentimentAnalysis scanData={latestScan?.results} />
-                  </Suspense>
-                </DashboardView.Section>
-              </DashboardView.GridItem>
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-64 bg-card border-r min-h-[calc(100vh-73px)]">
+          <nav className="p-4 space-y-2">
+            <button
+              onClick={() => setActiveView('overview')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                activeView === 'overview' 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Brain className="w-5 h-5" />
+              AI Visibility
+            </button>
+            
+            <button
+              onClick={() => setActiveView('citations')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                activeView === 'citations' 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              Citations
+            </button>
+            
+            <button
+              onClick={() => setActiveView('sentiment')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                activeView === 'sentiment' 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <TrendingUp className="w-5 h-5" />
+              Sentiment
+            </button>
+            
+            <button
+              onClick={() => setActiveView('rankings')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                activeView === 'rankings' 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Target className="w-5 h-5" />
+              Rankings
+            </button>
+          </nav>
+        </aside>
 
-              {/* Below-the-fold content - Lazy load with intersection observer */}
-              <DashboardView.GridItem id="citations">
-                <LazyComponentWrapper>
-                  <DashboardView.Section>
-                    <Suspense fallback={<CitationsTrackingSkeleton />}>
-                      <CitationsTracking scanData={latestScan?.results} />
-                    </Suspense>
-                  </DashboardView.Section>
-                </LazyComponentWrapper>
-              </DashboardView.GridItem>
-
-              <DashboardView.GridItem id="rankings">
-                <LazyComponentWrapper>
-                  <DashboardView.Section>
-                    <Suspense fallback={<AIRankingsSkeleton />}>
-                      <AIRankings scanData={latestScan?.results} />
-                    </Suspense>
-                  </DashboardView.Section>
-                </LazyComponentWrapper>
-              </DashboardView.GridItem>
-
-              <DashboardView.GridItem>
-                <LazyComponentWrapper>
-                  <DashboardView.Section>
-                    <Suspense fallback={<DashboardCardSkeleton chart />}>
-                      <PromptTrends scanData={latestScan?.results} />
-                    </Suspense>
-                  </DashboardView.Section>
-                </LazyComponentWrapper>
-              </DashboardView.GridItem>
-
-              <DashboardView.GridItem>
-                <LazyComponentWrapper>
-                  <DashboardView.Section>
-                    <Suspense fallback={<DashboardCardSkeleton chart />}>
-                      <CompetitorTraffic scanData={latestScan?.results} />
-                    </Suspense>
-                  </DashboardView.Section>
-                </LazyComponentWrapper>
-              </DashboardView.GridItem>
-
-              <DashboardView.GridItem span="2">
-                <LazyComponentWrapper>
-                  <DashboardView.Section>
-                    <Suspense fallback={<TrendingPagesSkeleton />}>
-                      <TrendingPages scanData={latestScan?.results} />
-                    </Suspense>
-                  </DashboardView.Section>
-                </LazyComponentWrapper>
-              </DashboardView.GridItem>
-            </DashboardView.Root>
-          )}
-        </DashboardErrorBoundary>
-      </PaywallOverlay>
-      
-      <OnboardingTour 
-        startTour={startTour} 
-        onComplete={() => setStartTour(false)}
-      />
-    </DashboardLayout>
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          {renderContent()}
+        </main>
+      </div>
+    </div>
   );
 };
 
