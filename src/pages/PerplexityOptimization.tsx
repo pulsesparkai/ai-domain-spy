@@ -39,49 +39,43 @@ const PerplexityOptimization = () => {
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         navigate('/login');
         return;
       }
 
-      // Check if user has DeepSeek API key
+      // Check subscription status
       const { data: profile } = await supabase
         .from('profiles')
-        .select('api_keys')
-        .eq('user_id', user.id)
+        .select('subscription_status')
+        .eq('user_id', session.user.id)
         .single();
 
-      const apiKey = profile?.api_keys?.deepseek;
-      
-      if (!apiKey && !import.meta.env.VITE_DEEPSEEK_API_KEY) {
-        showToast.error('Please add your DeepSeek API key in Settings');
-        navigate('/settings');
+      if (profile?.subscription_status !== 'active' && profile?.subscription_status !== 'trial') {
+        showToast.error('Please upgrade to Pro to use AI Optimization features');
+        navigate('/pricing');
         return;
       }
 
-      const agent = new DeepSeekAgent(apiKey);
-      const result = await agent.analyzeForPerplexity(url);
+      const agent = new DeepSeekAgent();
+      const result = await agent.analyzeForPerplexity(url, session.access_token);
       
-      // Save to database (create the table if it doesn't exist)
-      try {
-        await supabase
-          .from('optimization_scans')
-          .insert({
-            user_id: user.id,
-            url,
-            analysis: result,
-            created_at: new Date().toISOString()
-          });
-      } catch (dbError) {
-        console.warn('Could not save to database - table may not exist yet:', dbError);
-      }
+      // Save to database
+      await supabase
+        .from('optimization_scans')
+        .insert({
+          user_id: session.user.id,
+          url,
+          analysis: result,
+          created_at: new Date().toISOString()
+        });
 
       setAnalysis(result);
       showToast.success('Analysis complete!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Analysis failed:', error);
-      showToast.error('Analysis failed. Please try again.');
+      showToast.error(error.message || 'Analysis failed. Please try again.');
     } finally {
       setLoading(false);
     }
