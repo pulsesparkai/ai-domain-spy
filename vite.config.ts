@@ -11,6 +11,28 @@ export default defineConfig(({ command, mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    // Security headers for development server
+    // Note: In production, these should be configured at the hosting/server level
+    headers: {
+      // Prevent clickjacking attacks
+      'X-Frame-Options': 'DENY',
+      // Enable XSS protection
+      'X-XSS-Protection': '1; mode=block',
+      // Content Security Policy for development
+      'Content-Security-Policy': [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.stripe.com https://app.posthog.com https://cdn.jsdelivr.net https://unpkg.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' data: blob: https: https://images.unsplash.com https://*.supabase.co",
+        "connect-src 'self' https://api.pulsespark.ai https://pulsespark-api.onrender.com https://api.openai.com https://api.perplexity.ai https://api.stripe.com https://app.posthog.com https://*.supabase.co wss://*.supabase.co",
+        "frame-src 'self' https://js.stripe.com https://checkout.stripe.com",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'"
+      ].join('; ')
+    }
   },
   plugins: [
     react(),
