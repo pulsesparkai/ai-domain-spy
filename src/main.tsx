@@ -3,6 +3,7 @@ import App from './App.tsx'
 import './index.css'
 import posthog from 'posthog-js'
 import * as Sentry from '@sentry/react'
+import { initializeGlobalErrorHandler } from '@/lib/global-error-handler'
 
 /**
  * Analytics and Error Tracking Configuration
@@ -22,6 +23,7 @@ const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
 const SENTRY_DEBUG = import.meta.env.VITE_SENTRY_DEBUG === 'true';
 const POSTHOG_DEBUG = import.meta.env.VITE_POSTHOG_DEBUG === 'true';
 const isDevelopment = import.meta.env.MODE === 'development';
+const isDebugMode = isDevelopment && (SENTRY_DEBUG || POSTHOG_DEBUG);
 
 // Helper function to check if a value is a valid configuration
 const isValidConfig = (value: string | undefined): boolean => {
@@ -92,5 +94,14 @@ if (isDevelopment && (SENTRY_DEBUG || POSTHOG_DEBUG)) {
   console.log('💡 Tip: These services are optional and can be configured in .env.local');
   console.groupEnd();
 }
+
+// Initialize global error handlers before rendering the app
+initializeGlobalErrorHandler({
+  enableConsoleLogging: isDebugMode,
+  enableToastNotifications: true,
+  enableSentryLogging: isValidConfig(SENTRY_DSN),
+  maxErrorsPerSession: 50,
+  cooldownPeriod: 1000,
+});
 
 createRoot(document.getElementById("root")!).render(<App />);

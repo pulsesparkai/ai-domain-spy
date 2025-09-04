@@ -9,6 +9,8 @@ import {
   type DependencyCheckResult,
   checkAllDependencies 
 } from '@/lib/dependency-checker';
+import LoadingFallback from '@/components/LoadingFallback';
+import { withAsyncErrorHandling } from '@/lib/async-error-wrapper';
 
 interface DependencyLoadingProps {
   onAllLoaded?: () => void;
@@ -39,38 +41,45 @@ export const DependencyLoading: React.FC<DependencyLoadingProps> = ({
     setLoading(true);
     setError(null);
     
-    try {
-      // Subscribe to dependency status updates
-      const unsubscribe = dependencyChecker.subscribe((result) => {
-        setStatus(result);
-        
-        // Calculate progress based on loaded dependencies
-        const totalDeps = Object.keys(result.dependencies).length;
-        const loadedDeps = Object.values(result.dependencies).filter(dep => dep.loaded).length;
-        setProgress((loadedDeps / totalDeps) * 100);
-      });
+    await withAsyncErrorHandling(
+      async () => {
+        // Subscribe to dependency status updates
+        const unsubscribe = dependencyChecker.subscribe((result) => {
+          setStatus(result);
+          
+          // Calculate progress based on loaded dependencies
+          const totalDeps = Object.keys(result.dependencies).length;
+          const loadedDeps = Object.values(result.dependencies).filter(dep => dep.loaded).length;
+          setProgress((loadedDeps / totalDeps) * 100);
+        });
 
-      // Start checking dependencies
-      const result = await dependencyChecker.waitForDependencies(timeout);
-      
-      // All dependencies loaded successfully
-      setLoading(false);
-      setProgress(100);
-      onAllLoaded?.();
-      
-      // Cleanup subscription
-      unsubscribe();
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setError(errorMessage);
-      setLoading(false);
-      
-      // Get final status
-      const finalStatus = await checkAllDependencies();
-      setStatus(finalStatus);
-      onError?.(finalStatus.errors);
-    }
+        // Start checking dependencies
+        await dependencyChecker.waitForDependencies(timeout);
+        
+        // All dependencies loaded successfully
+        setLoading(false);
+        setProgress(100);
+        onAllLoaded?.();
+        
+        // Cleanup subscription
+        unsubscribe();
+      },
+      {
+        context: 'Dependency Loading',
+        showToast: false,
+        logError: true,
+        onError: async (error) => {
+          const errorMessage = error.message || 'Unknown dependency error';
+          setError(errorMessage);
+          setLoading(false);
+          
+          // Get final status
+          const finalStatus = await checkAllDependencies();
+          setStatus(finalStatus);
+          onError?.(finalStatus.errors);
+        },
+      }
+    );
   };
 
   const handleRetry = () => {
@@ -89,124 +98,42 @@ export const DependencyLoading: React.FC<DependencyLoadingProps> = ({
 
   // If loading or checking dependencies
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md mx-4">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Loading Application</h3>
-                <p className="text-sm text-muted-foreground">
-                  Initializing dependencies...
-                </p>
-              </div>
-              
-              {showProgress && (
-                <div className="w-full space-y-2">
-                  <Progress value={progress} className="w-full" />
-                  <p className="text-xs text-center text-muted-foreground">
-                    {Math.round(progress)}% complete
-                  </p>
-                </div>
-              )}
+    const details = status ? Object.entries(status.dependencies).map(([key, dep]) => 
+      `${key}: ${dep.loaded ? 'loaded' : 'loading...'}`
+    ) : [];
 
-              {showDetails && status && (
-                <div className="w-full space-y-2">
-                  <h4 className="text-sm font-medium">Dependency Status:</h4>
-                  <div className="space-y-1">
-                    {Object.entries(status.dependencies).map(([key, dep]) => (
-                      <div key={key} className="flex items-center justify-between text-xs">
-                        <span className="capitalize">{key}</span>
-                        {dep.loaded ? (
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                        ) : (
-                          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    return (
+      <LoadingFallback
+        type="app"
+        message="Loading Application"
+        progress={progress}
+        showProgress={showProgress}
+        showDetails={showDetails}
+        details={details}
+        timeout={timeout}
+      />
     );
   }
 
   // If there's an error
   if (error) {
+    const details = status ? [
+      ...status.errors,
+      ...Object.entries(status.dependencies)
+        .filter(([, dep]) => dep.error)
+        .map(([key, dep]) => `${key}: ${dep.error}`)
+    ] : [error];
+
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md mx-4">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center space-y-4">
-              <XCircle className="h-8 w-8 text-destructive" />
-              <div className="text-center">
-                <h3 className="text-lg font-semibold">Initialization Failed</h3>
-                <p className="text-sm text-muted-foreground">
-                  Some dependencies failed to load
-                </p>
-              </div>
-
-              <Alert className="w-full">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  {error}
-                </AlertDescription>
-              </Alert>
-
-              {showDetails && status && status.errors.length > 0 && (
-                <div className="w-full space-y-2">
-                  <h4 className="text-sm font-medium">Detailed Errors:</h4>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {status.errors.map((err, index) => (
-                      <div key={index} className="text-xs text-destructive bg-destructive/10 p-2 rounded">
-                        {err}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {showDetails && status && (
-                <div className="w-full space-y-2">
-                  <h4 className="text-sm font-medium">Dependency Status:</h4>
-                  <div className="space-y-1">
-                    {Object.entries(status.dependencies).map(([key, dep]) => (
-                      <div key={key} className="flex items-center justify-between text-xs">
-                        <span className="capitalize">{key}</span>
-                        {dep.loaded ? (
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                        ) : (
-                          <XCircle className="h-3 w-3 text-destructive" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {retryable && (
-                <div className="flex space-x-2">
-                  <Button onClick={handleRetry} variant="outline" size="sm">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Retry ({retryCount})
-                  </Button>
-                  <Button 
-                    onClick={() => window.location.reload()} 
-                    variant="default" 
-                    size="sm"
-                  >
-                    Refresh Page
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <LoadingFallback
+        type="app"
+        hasError={true}
+        errorMessage="Some dependencies failed to load"
+        showDetails={showDetails}
+        details={details}
+        onRetry={retryable ? handleRetry : undefined}
+        onCancel={() => window.location.reload()}
+      />
     );
   }
 
