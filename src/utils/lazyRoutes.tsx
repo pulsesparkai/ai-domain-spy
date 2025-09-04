@@ -70,26 +70,50 @@ export const LazyPerplexityOptimization = lazy(() =>
   import(/* webpackChunkName: "route-perplexity-optimization" */ '../pages/PerplexityOptimization')
 );
 
-// Route preloading utilities
+// Route preloading utilities - using proper React patterns
 export const preloadCriticalRoutes = () => {
   // Preload routes that users are likely to visit
-  const criticalRoutes = [LazyAuth, LazyDashboard, LazyScan];
+  const criticalRoutes = [
+    () => import('../pages/Auth'),
+    () => import('../pages/Dashboard'),
+    () => import('../pages/Scan')
+  ];
   
-  criticalRoutes.forEach(route => {
+  criticalRoutes.forEach(importFn => {
     // Preload after a short delay to not block initial render
     setTimeout(() => {
-      // @ts-ignore - accessing internal properties for preloading
-      route._payload?.();
+      try {
+        importFn().catch(console.warn);
+      } catch (error) {
+        console.warn('Failed to preload route:', error);
+      }
     }, 100);
   });
 };
 
 // Preload routes on user interaction
 export const preloadOnHover = (routeName: keyof typeof routeMap) => {
-  const route = routeMap[routeName];
-  if (route) {
-    // @ts-ignore - accessing internal properties for preloading
-    route._payload?.();
+  const routePreloaders: Record<keyof typeof routeMap, () => Promise<any>> = {
+    index: () => import('../pages/Index'),
+    auth: () => import('../pages/Auth'),
+    dashboard: () => import('../pages/Dashboard'),
+    scan: () => import('../pages/Scan'),
+    pricing: () => import('../pages/Pricing'),
+    settings: () => import('../pages/Settings'),
+    success: () => import('../pages/Success'),
+    cancel: () => import('../pages/Cancel'),
+    notFound: () => import('../pages/NotFound'),
+    passwordReset: () => import('../components/PasswordReset'),
+    perplexityOptimization: () => import('../pages/PerplexityOptimization'),
+  };
+  
+  const preloader = routePreloaders[routeName];
+  if (preloader) {
+    try {
+      preloader().catch(console.warn);
+    } catch (error) {
+      console.warn(`Failed to preload route ${routeName}:`, error);
+    }
   }
 };
 
