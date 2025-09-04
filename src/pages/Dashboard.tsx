@@ -178,6 +178,25 @@ const Dashboard = () => {
                   </>
                 )}
               </Button>
+              
+              {/* API Test Button - Temporary for testing */}
+              <Button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('https://api.pulsespark.ai');
+                    const data = await response.json();
+                    console.log('API Response:', data);
+                    showToast.success(`API Connected! Status: ${data.status}`);
+                  } catch (error) {
+                    console.error('API Error:', error);
+                    showToast.error('API connection failed');
+                  }
+                }}
+                variant="outline"
+                className="ml-2"
+              >
+                Test API Connection
+              </Button>
             </div>
           </div>
 
