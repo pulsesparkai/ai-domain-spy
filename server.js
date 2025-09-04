@@ -3,15 +3,18 @@ import cors from 'cors';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Setup middleware
+// Fixed CORS settings - allow Lovable domain
 app.use(cors({
   origin: [
-    'https://ai-domain-spy.lovable.app',
-    'https://pulsespark.ai', 
-    'https://app.pulsespark.ai',
-    'http://localhost:5173'
+    'https://ai-domain-spy.lovable.app',  // Your Lovable app
+    'https://pulsespark.ai',
+    'https://app.pulsespark.ai', 
+    'http://localhost:5173',
+    'http://localhost:5174'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
