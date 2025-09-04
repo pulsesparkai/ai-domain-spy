@@ -92,7 +92,7 @@ const Dashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       // Call your scan API endpoint
-      const response = await fetch('https://pulsespark-api-3000.onrender.com/api/scan', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://pulsespark-api-3000.onrender.com'}/api/scan`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -183,7 +183,7 @@ const Dashboard = () => {
               <Button
                 onClick={async () => {
                   try {
-                    const response = await fetch('https://pulsespark-api-3000.onrender.com/');
+                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://pulsespark-api-3000.onrender.com'}/`);
                     const data = await response.json();
                     console.log('API Response:', data);
                     showToast.success(`API Connected! Status: ${data.status}`);

@@ -2,6 +2,8 @@
 const isDevelopment = import.meta.env.DEV;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://pulsespark-api-3000.onrender.com';
 
+console.log('API_BASE_URL:', API_BASE_URL); // Debug log
+
 // Remove any /api prefix from frontend routes
 export const api = {
   baseUrl: API_BASE_URL,
