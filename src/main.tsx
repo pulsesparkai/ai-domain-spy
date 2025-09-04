@@ -4,13 +4,35 @@ import './index.css'
 import posthog from 'posthog-js'
 import * as Sentry from '@sentry/react'
 
+/**
+ * Analytics and Error Tracking Configuration
+ * 
+ * This application supports optional integration with:
+ * - Sentry for error tracking and performance monitoring
+ * - PostHog for user analytics and feature flags
+ * 
+ * These services are entirely optional. The app will function normally without them.
+ * To enable, add the appropriate environment variables to your .env.local file.
+ * See .env.example for all available configuration options.
+ */
+
 // Environment variables
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
+const SENTRY_DEBUG = import.meta.env.VITE_SENTRY_DEBUG === 'true';
+const POSTHOG_DEBUG = import.meta.env.VITE_POSTHOG_DEBUG === 'true';
 const isDevelopment = import.meta.env.MODE === 'development';
 
-// Initialize Sentry conditionally
-if (SENTRY_DSN && SENTRY_DSN !== 'your_sentry_dsn_here') {
+// Helper function to check if a value is a valid configuration
+const isValidConfig = (value: string | undefined): boolean => {
+  return Boolean(value && value.trim() && !value.includes('your_') && !value.includes('phc_your_'));
+};
+
+/**
+ * Initialize Sentry Error Tracking (Optional Service)
+ * Only initializes if VITE_SENTRY_DSN is provided and valid
+ */
+if (isValidConfig(SENTRY_DSN)) {
   try {
     Sentry.init({
       dsn: SENTRY_DSN,
@@ -18,56 +40,57 @@ if (SENTRY_DSN && SENTRY_DSN !== 'your_sentry_dsn_here') {
       environment: import.meta.env.MODE,
       beforeSend(event) {
         // Don't send events in development unless explicitly enabled
-        if (isDevelopment && !import.meta.env.VITE_SENTRY_DEBUG) {
+        if (isDevelopment && !SENTRY_DEBUG) {
           return null;
         }
         return event;
       },
     });
     
-    if (isDevelopment) {
-      console.log('✅ Sentry initialized successfully');
+    if (isDevelopment && SENTRY_DEBUG) {
+      console.log('✅ Sentry error tracking enabled');
     }
   } catch (error) {
-    console.error('❌ Failed to initialize Sentry:', error);
-  }
-} else {
-  if (isDevelopment) {
-    console.warn('⚠️ Sentry not initialized: VITE_SENTRY_DSN environment variable is missing or invalid');
-    console.log('To enable Sentry, set VITE_SENTRY_DSN in your environment variables');
+    if (isDevelopment) {
+      console.warn('Failed to initialize Sentry:', error);
+    }
   }
 }
 
-// Initialize PostHog conditionally
-if (typeof window !== 'undefined' && POSTHOG_KEY && POSTHOG_KEY !== 'phc_your_posthog_key_here') {
+/**
+ * Initialize PostHog Analytics (Optional Service)
+ * Only initializes if VITE_POSTHOG_KEY is provided and valid
+ */
+if (typeof window !== 'undefined' && isValidConfig(POSTHOG_KEY)) {
   try {
-    posthog.init(POSTHOG_KEY, {
+    posthog.init(POSTHOG_KEY!, {
       api_host: 'https://app.posthog.com',
       autocapture: true,
       // Disable in development unless explicitly enabled
-      opt_out_capturing_by_default: isDevelopment && !import.meta.env.VITE_POSTHOG_DEBUG,
+      opt_out_capturing_by_default: isDevelopment && !POSTHOG_DEBUG,
       loaded: (posthog) => {
-        if (isDevelopment) {
-          console.log('✅ PostHog initialized successfully');
+        if (isDevelopment && POSTHOG_DEBUG) {
+          console.log('✅ PostHog analytics enabled');
         }
       },
     });
   } catch (error) {
-    console.error('❌ Failed to initialize PostHog:', error);
-  }
-} else {
-  if (isDevelopment && typeof window !== 'undefined') {
-    console.warn('⚠️ PostHog not initialized: VITE_POSTHOG_KEY environment variable is missing or invalid');
-    console.log('To enable PostHog analytics, set VITE_POSTHOG_KEY in your environment variables');
+    if (isDevelopment) {
+      console.warn('Failed to initialize PostHog:', error);
+    }
   }
 }
 
-// Log analytics status in development
-if (isDevelopment) {
-  console.log('📊 Analytics Services Status:');
-  console.log(`   Sentry: ${SENTRY_DSN ? '✅ Configured' : '❌ Not configured'}`);
-  console.log(`   PostHog: ${POSTHOG_KEY ? '✅ Configured' : '❌ Not configured'}`);
-  console.log('   Set VITE_SENTRY_DEBUG=true or VITE_POSTHOG_DEBUG=true to enable in development');
+/**
+ * Development Analytics Status (Optional Logging)
+ * Only shows when debug flags are enabled to reduce console noise
+ */
+if (isDevelopment && (SENTRY_DEBUG || POSTHOG_DEBUG)) {
+  console.group('📊 Analytics Services Status');
+  console.log(`Sentry: ${isValidConfig(SENTRY_DSN) ? '✅ Enabled' : '⚪ Not configured'}`);
+  console.log(`PostHog: ${isValidConfig(POSTHOG_KEY) ? '✅ Enabled' : '⚪ Not configured'}`);
+  console.log('💡 Tip: These services are optional and can be configured in .env.local');
+  console.groupEnd();
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
