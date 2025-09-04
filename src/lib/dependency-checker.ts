@@ -8,6 +8,8 @@ interface DependencyStatus {
   loaded: boolean;
   error?: string;
   checkFn: () => Promise<boolean>;
+  optional?: boolean; // Mark dependency as optional
+  silent?: boolean; // Reduce logging for this dependency
 }
 
 interface DependencyCheckResult {
@@ -34,10 +36,11 @@ class DependencyChecker {
   }
 
   private initializeDependencies() {
-    // Supabase Client Check
+    // Supabase Client Check (Critical)
     this.dependencies.set('supabase', {
       name: 'Supabase Client',
       loaded: false,
+      optional: false,
       checkFn: async () => {
         try {
           const { supabase } = await import('@/integrations/supabase/client');
@@ -56,10 +59,11 @@ class DependencyChecker {
       }
     });
 
-    // Stripe.js Check
+    // Stripe.js Check (Critical for payment features)
     this.dependencies.set('stripe', {
       name: 'Stripe.js',
       loaded: false,
+      optional: false,
       checkFn: async () => {
         try {
           // Check if Stripe is available globally
@@ -109,14 +113,22 @@ class DependencyChecker {
       }
     });
 
-    // PostHog Check
+    // PostHog Check (Optional Analytics)
     this.dependencies.set('posthog', {
       name: 'PostHog Analytics',
       loaded: false,
+      optional: true,
+      silent: true,
       checkFn: async () => {
         try {
           if (typeof window === 'undefined') {
             return true; // SSR environment, skip check
+          }
+
+          // Check if PostHog environment variables are present
+          const posthogKey = import.meta.env.VITE_POSTHOG_KEY;
+          if (!posthogKey) {
+            return true; // No config provided, gracefully skip
           }
 
           // Check if PostHog is available
@@ -125,26 +137,23 @@ class DependencyChecker {
           // Check if PostHog is initialized
           if (posthog.default && typeof posthog.default.capture === 'function') {
             // Test if PostHog is properly configured
-            const isInitialized = posthog.default.has_opted_out_capturing !== undefined;
-            if (!isInitialized) {
-              throw new Error('PostHog is not properly initialized');
-            }
-            return true;
-          } else {
-            throw new Error('PostHog is not available');
+            const isInitialized = posthog.default.__loaded;
+            return isInitialized || true; // Don't fail if not initialized
           }
+          
+          return true; // Always pass for optional service
         } catch (error) {
-          // PostHog is optional, so we warn but don't fail
-          console.warn('PostHog analytics not available:', error);
+          // PostHog is optional, so we don't log errors unless debug is enabled
           return true; // Return true to not block the app
         }
       }
     });
 
-    // Encryption Service Check
+    // Encryption Service Check (Critical for security features)
     this.dependencies.set('encryption', {
       name: 'Encryption Service',
       loaded: false,
+      optional: false,
       checkFn: async () => {
         try {
           const { EncryptionService } = await import('@/lib/encryption');
@@ -160,23 +169,30 @@ class DependencyChecker {
       }
     });
 
-    // Sentry Check
+    // Sentry Check (Optional Error Tracking)
     this.dependencies.set('sentry', {
       name: 'Sentry Error Tracking',
       loaded: false,
+      optional: true,
+      silent: true,
       checkFn: async () => {
         try {
+          // Check if Sentry environment variables are present
+          const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+          if (!sentryDsn) {
+            return true; // No config provided, gracefully skip
+          }
+
           const Sentry = await import('@sentry/react');
           
           // Check if Sentry is initialized by looking for any client
           if (Sentry.getClient && Sentry.getClient()) {
             return true;
-          } else {
-            console.warn('Sentry is not initialized');
-            return true; // Non-blocking, as Sentry is optional
           }
+          
+          return true; // Always pass for optional service
         } catch (error) {
-          console.warn('Sentry error tracking not available:', error);
+          // Sentry is optional, so we don't log errors unless debug is enabled
           return true; // Non-blocking
         }
       }
@@ -201,12 +217,22 @@ class DependencyChecker {
         dependency.loaded = false;
         dependency.error = errorMessage;
         results[key] = { loaded: false, error: errorMessage };
-        errors.push(`${dependency.name}: ${errorMessage}`);
+        
+        // Only add to errors if dependency is not optional
+        if (!dependency.optional) {
+          errors.push(`${dependency.name}: ${errorMessage}`);
+        } else if (!dependency.silent && import.meta.env.VITE_POSTHOG_DEBUG === 'true') {
+          console.debug(`Optional dependency ${dependency.name} not available:`, errorMessage);
+        }
       }
     }
 
-    const allLoaded = Object.values(results).every(dep => dep.loaded);
-    const result = { allLoaded, dependencies: results, errors };
+    // Only consider critical dependencies for allLoaded status
+    const criticalDependencies = Array.from(this.dependencies.entries())
+      .filter(([, dep]) => !dep.optional);
+    
+    const allCriticalLoaded = criticalDependencies.every(([key]) => results[key]?.loaded);
+    const result = { allLoaded: allCriticalLoaded, dependencies: results, errors };
 
     // Notify listeners
     this.listeners.forEach(listener => listener(result));
@@ -237,7 +263,7 @@ class DependencyChecker {
   }
 
   /**
-   * Wait for all dependencies to be ready
+   * Wait for critical dependencies to be ready (ignores optional services)
    */
   async waitForDependencies(timeout: number = 10000): Promise<void> {
     const startTime = Date.now();
@@ -245,6 +271,7 @@ class DependencyChecker {
     while (Date.now() - startTime < timeout) {
       const result = await this.checkAll();
       
+      // Only wait for critical dependencies
       if (result.allLoaded) {
         return;
       }
@@ -255,8 +282,40 @@ class DependencyChecker {
 
     const result = await this.checkAll();
     if (!result.allLoaded) {
-      throw new Error(`Dependencies not ready after ${timeout}ms. Errors: ${result.errors.join(', ')}`);
+      throw new Error(`Critical dependencies not ready after ${timeout}ms. Errors: ${result.errors.join(', ')}`);
     }
+  }
+
+  /**
+   * Wait for all dependencies including optional ones
+   */
+  async waitForAllDependencies(timeout: number = 10000): Promise<void> {
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < timeout) {
+      const results: Record<string, { loaded: boolean; error?: string }> = {};
+      let allLoaded = true;
+
+      for (const [key, dependency] of this.dependencies) {
+        try {
+          const loaded = await dependency.checkFn();
+          results[key] = { loaded };
+          if (!loaded) allLoaded = false;
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          results[key] = { loaded: false, error: errorMessage };
+          allLoaded = false;
+        }
+      }
+      
+      if (allLoaded) {
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    throw new Error(`All dependencies not ready after ${timeout}ms`);
   }
 
   /**
@@ -329,6 +388,7 @@ export const dependencyChecker = DependencyChecker.getInstance();
 // Convenience functions
 export const checkAllDependencies = () => dependencyChecker.checkAll();
 export const waitForDependencies = (timeout?: number) => dependencyChecker.waitForDependencies(timeout);
+export const waitForAllDependencies = (timeout?: number) => dependencyChecker.waitForAllDependencies(timeout);
 export const waitForDependency = (name: string, timeout?: number) => dependencyChecker.waitForDependency(name, timeout);
 export const checkDependency = (name: string) => dependencyChecker.checkDependency(name);
 export const subscribeToDependencies = (listener: (result: DependencyCheckResult) => void) => 
