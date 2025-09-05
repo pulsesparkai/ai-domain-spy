@@ -76,14 +76,6 @@ app.get('/api/test', (req, res) => {
     hasStripeWebhookSecret: !!STRIPE_WEBHOOK_SECRET
   });
 });
-// Health check endpoint
-  res.json({ 
-    message: "PulseSpark AI Backend", 
-    status: "running",
-    timestamp: new Date().toISOString(),
-    cors: "configured for app.pulsespark.ai"
-  });
-});
 
 // Website analysis endpoint with real Perplexity integration
 app.post('/api/analyze-website', async (req, res) => {
