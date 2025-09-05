@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
@@ -12,12 +13,20 @@ const PORT = process.env.PORT || 3000;
 // Company API keys from environment
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+
+// Initialize Stripe
+const stripe = new Stripe(STRIPE_SECRET_KEY);
 
 // Initialize Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// For Stripe webhooks, we need raw body
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 
 // CORS Configuration - THIS IS THE CRITICAL PART
 app.use(cors({
@@ -62,7 +71,9 @@ app.get('/api/test', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
     hasPerplexityKey: !!PERPLEXITY_API_KEY,
-    hasDeepSeekKey: !!DEEPSEEK_API_KEY
+    hasDeepSeekKey: !!DEEPSEEK_API_KEY,
+    hasStripeKey: !!STRIPE_SECRET_KEY,
+    hasStripeWebhookSecret: !!STRIPE_WEBHOOK_SECRET
   });
 });
 // Health check endpoint
@@ -267,6 +278,141 @@ app.post('/api/deepseek/analyze-website', async (req, res) => {
     });
   }
 });
+
+// Stripe webhook handler
+app.post('/api/stripe/webhook', async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  
+  if (!STRIPE_WEBHOOK_SECRET) {
+    console.error('STRIPE_WEBHOOK_SECRET not configured');
+    return res.status(500).json({ error: 'Webhook secret not configured' });
+  }
+  
+  try {
+    const event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+    console.log(`Received Stripe webhook: ${event.type}`);
+    
+    switch (event.type) {
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+        await updateUserSubscription(event.data.object);
+        break;
+      
+      case 'customer.subscription.deleted':
+        await cancelUserSubscription(event.data.object);
+        break;
+        
+      case 'invoice.payment_succeeded':
+        console.log('Payment succeeded for subscription:', event.data.object.subscription);
+        break;
+        
+      case 'invoice.payment_failed':
+        console.log('Payment failed for subscription:', event.data.object.subscription);
+        break;
+        
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+    
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Stripe webhook error:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Helper function to update user subscription
+async function updateUserSubscription(subscription) {
+  try {
+    console.log('Updating subscription:', subscription.id);
+    
+    // Get customer email from Stripe
+    const customer = await stripe.customers.retrieve(subscription.customer);
+    const email = customer.email;
+    
+    if (!email) {
+      console.error('No email found for customer:', subscription.customer);
+      return;
+    }
+    
+    // Determine subscription tier based on price
+    const priceId = subscription.items.data[0].price.id;
+    const price = await stripe.prices.retrieve(priceId);
+    const amount = price.unit_amount || 0;
+    
+    let subscriptionTier = 'starter';
+    let monthlyScansLimit = 50;
+    
+    if (amount >= 29900) { // $299 or more = Enterprise
+      subscriptionTier = 'enterprise';
+      monthlyScansLimit = -1; // Unlimited
+    } else if (amount >= 9900) { // $99 or more = Pro
+      subscriptionTier = 'pro';
+      monthlyScansLimit = 200;
+    } else if (amount >= 2900) { // $29 or more = Starter
+      subscriptionTier = 'starter';
+      monthlyScansLimit = 50;
+    }
+    
+    // Update user profile
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        subscription_status: subscription.status,
+        subscription_tier: subscriptionTier,
+        monthly_scans_limit: monthlyScansLimit,
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: subscription.customer,
+        billing_cycle_start: new Date(subscription.current_period_start * 1000).toISOString()
+      })
+      .eq('email', email);
+    
+    if (error) {
+      console.error('Error updating user subscription:', error);
+    } else {
+      console.log(`Successfully updated subscription for ${email} to ${subscriptionTier}`);
+    }
+    
+  } catch (error) {
+    console.error('Error in updateUserSubscription:', error);
+  }
+}
+
+// Helper function to cancel user subscription
+async function cancelUserSubscription(subscription) {
+  try {
+    console.log('Canceling subscription:', subscription.id);
+    
+    // Get customer email from Stripe
+    const customer = await stripe.customers.retrieve(subscription.customer);
+    const email = customer.email;
+    
+    if (!email) {
+      console.error('No email found for customer:', subscription.customer);
+      return;
+    }
+    
+    // Update user profile to free tier
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        subscription_status: 'canceled',
+        subscription_tier: 'free',
+        monthly_scans_limit: 100, // Free tier limit
+        stripe_subscription_id: null
+      })
+      .eq('email', email);
+    
+    if (error) {
+      console.error('Error canceling user subscription:', error);
+    } else {
+      console.log(`Successfully canceled subscription for ${email}`);
+    }
+    
+  } catch (error) {
+    console.error('Error in cancelUserSubscription:', error);
+  }
+}
 
 function generateRecommendations(score) {
   if (score < 30) {
