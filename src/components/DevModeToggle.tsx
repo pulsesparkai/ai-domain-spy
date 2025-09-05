@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export const DevModeToggle = () => {
-  const { user, updateUserMetadata } = useAuth();
+  const { user } = useAuth();
   const [isDebugMode, setIsDebugMode] = useState(() => {
     try {
       return localStorage.getItem('debug_mode') === 'true';
@@ -40,8 +40,7 @@ export const DevModeToggle = () => {
 
   useEffect(() => {
     const stored = localStorage.getItem('dev-mode');
-    const userDevMode = user?.user_metadata?.api_keys?.dev_mode;
-    setDevMode(stored === 'true' || userDevMode === true);
+    setDevMode(stored === 'true');
   }, [user]);
 
   useEffect(() => {
@@ -63,16 +62,6 @@ export const DevModeToggle = () => {
   const handleDevModeToggle = async (enabled: boolean) => {
     setDevMode(enabled);
     localStorage.setItem('dev-mode', enabled.toString());
-    
-    if (user) {
-      try {
-        await updateUserMetadata({
-          dev_mode: enabled
-        });
-      } catch (error) {
-        console.error('Failed to update dev mode setting:', error);
-      }
-    }
   };
 
   const handleClearLogs = () => {

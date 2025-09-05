@@ -115,14 +115,17 @@ export type Database = {
       }
       profiles: {
         Row: {
-          api_keys: Json | null
           avatar_url: string | null
+          billing_cycle_start: string | null
           created_at: string
           email: string
           encrypted_api_keys: Json | null
           full_name: string | null
           id: string
+          monthly_scans_limit: number | null
+          monthly_scans_used: number | null
           stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           subscription_status: string | null
           subscription_tier: string | null
           trial_ends_at: string | null
@@ -130,14 +133,17 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          api_keys?: Json | null
           avatar_url?: string | null
+          billing_cycle_start?: string | null
           created_at?: string
           email: string
           encrypted_api_keys?: Json | null
           full_name?: string | null
           id?: string
+          monthly_scans_limit?: number | null
+          monthly_scans_used?: number | null
           stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
           trial_ends_at?: string | null
@@ -145,14 +151,17 @@ export type Database = {
           user_id: string
         }
         Update: {
-          api_keys?: Json | null
           avatar_url?: string | null
+          billing_cycle_start?: string | null
           created_at?: string
           email?: string
           encrypted_api_keys?: Json | null
           full_name?: string | null
           id?: string
+          monthly_scans_limit?: number | null
+          monthly_scans_used?: number | null
           stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
           trial_ends_at?: string | null

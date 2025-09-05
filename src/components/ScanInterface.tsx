@@ -25,7 +25,7 @@ const ScanInterface = () => {
   const [errors, setErrors] = useState<string[]>([]);
   
   const { devMode, mockScanResults } = useMockData();
-  const { user, session, apiKeys, profile } = useAuth();
+  const { user, session, profile } = useAuth();
   const { isReady: supabaseReady, error: supabaseError } = useSupabaseReady();
   
   // Get user tier for rate limiting
@@ -109,21 +109,11 @@ const ScanInterface = () => {
         user_id: user.id
       });
 
-      // Check if user has required API keys
-      const hasPerplexity = apiKeys.perplexity;
-      const hasOpenAI = apiKeys.openai;
-      
-      if (devMode || (!hasPerplexity && !hasOpenAI)) {
-        // Mock scanning with progress for dev mode or missing API keys
+      if (devMode) {
+        // Mock scanning with progress for dev mode
         for (let i = 0; i <= 100; i += 20) {
           setProgress(i);
           await new Promise(resolve => setTimeout(resolve, 500));
-        }
-        
-        if (!hasPerplexity && !hasOpenAI) {
-          showToast.error("API keys required. Please add Perplexity or OpenAI keys in Settings.");
-        } else if (!hasPerplexity) {
-          showToast.error("Perplexity API key recommended for best results. Add it in Settings.");
         }
         
         setResults(mockScanResults);
@@ -138,11 +128,6 @@ const ScanInterface = () => {
             });
             
             setResults(data.data);
-            
-            // Show API key warnings if some failed
-            if (data.data?.error) {
-              showToast.error("Some API keys are invalid. Check Settings for details.");
-            }
           }, {
             timeout: 10000,
             fallback: () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,48 +6,18 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Eye, EyeOff, Save, User, Key, CreditCard } from 'lucide-react';
+import { Save, User, CreditCard } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import DevModeToggle from '@/components/DevModeToggle';
 import { ExportButton } from '@/components/ExportButton';
-import { ApiKeyValidator } from '@/components/ApiKeyValidator';
 
 export default function Settings() {
-  const { user, profile, updateProfile, updateApiKeys, apiKeys: currentApiKeys } = useAuth();
+  const { user, profile, updateProfile } = useAuth();
   
   // Profile state
   const [profileData, setProfileData] = useState({
     full_name: profile?.full_name || '',
     email: user?.email || ''
   });
-
-  // API keys state
-  const [apiKeys, setApiKeys] = useState({
-    openai: '',
-    perplexity: '',
-    google_analytics: '',
-    screaming_frog: ''
-  });
-
-  // Visibility state for API keys
-  const [showKeys, setShowKeys] = useState({
-    openai: false,
-    perplexity: false,
-    google_analytics: false,
-    screaming_frog: false
-  });
-
-  // Load existing API keys from the new encrypted storage
-  useEffect(() => {
-    if (currentApiKeys) {
-      setApiKeys({
-        openai: currentApiKeys.openai || '',
-        perplexity: currentApiKeys.perplexity || '',
-        google_analytics: currentApiKeys.google_analytics || '',
-        screaming_frog: currentApiKeys.screaming_frog || ''
-      });
-    }
-  }, [currentApiKeys]);
 
   const handleProfileUpdate = async () => {
     if (!profile) return;
@@ -69,30 +39,6 @@ export default function Settings() {
     }
   };
 
-  const handleApiKeysUpdate = async () => {
-    try {
-      await updateApiKeys(apiKeys);
-      toast({
-        title: "API keys updated",
-        description: "Your API keys have been encrypted and saved securely.",
-      });
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: "Unable to save API keys. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const toggleKeyVisibility = (key: keyof typeof showKeys) => {
-    setShowKeys(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const maskKey = (key: string) => {
-    if (!key) return '';
-    return key.length > 8 ? `${key.slice(0, 4)}...${key.slice(-4)}` : key;
-  };
 
   // Mock data for export
   const mockScanData = [
@@ -101,10 +47,10 @@ export default function Settings() {
     { query: 'marketing analytics', platform: 'Claude', sentiment: 'positive', rank: 15 }
   ];
 
-  const isSubscribed = (user?.user_metadata as any)?.subscribed || 
-    (profile?.subscription_status === 'active' && profile?.subscription_tier === 'pro');
-
-  const scansCount = (user?.user_metadata as any)?.scans_count || 0;
+  const isSubscribed = profile?.subscription_status === 'active';
+  const subscriptionTier = profile?.subscription_tier || 'free';
+  const scansUsed = profile?.monthly_scans_used || 0;
+  const scansLimit = profile?.monthly_scans_limit || 100;
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,14 +59,10 @@ export default function Settings() {
           <h1 className="text-3xl font-bold text-foreground mb-8">Settings</h1>
           
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
                 Profile
-              </TabsTrigger>
-              <TabsTrigger value="api-keys" className="flex items-center gap-2">
-                <Key className="w-4 h-4" />
-                API Keys
               </TabsTrigger>
               <TabsTrigger value="billing" className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4" />
@@ -176,13 +118,13 @@ export default function Settings() {
                   <div className="flex items-center justify-between">
                     <span>Subscription Status</span>
                     <Badge variant={isSubscribed ? 'default' : 'secondary'}>
-                      {isSubscribed ? 'Pro' : 'Free'}
+                      {isSubscribed ? subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1) : 'Free'}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Scans Used This Month</span>
                     <Badge variant="outline">
-                      {scansCount} / {isSubscribed ? '∞' : '100'}
+                      {scansUsed} / {scansLimit === 0 ? '∞' : scansLimit}
                     </Badge>
                   </div>
                   <ExportButton 
@@ -194,126 +136,6 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="api-keys" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>API Configuration</CardTitle>
-                  <CardDescription>
-                    Configure your API keys for enhanced functionality
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <DevModeToggle />
-                  
-                  {/* OpenAI API Key */}
-                  <div>
-                    <Label htmlFor="openai">OpenAI API Key</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="openai"
-                        type={showKeys.openai ? "text" : "password"}
-                        value={showKeys.openai ? apiKeys.openai : maskKey(apiKeys.openai)}
-                        onChange={(e) => setApiKeys(prev => ({ ...prev, openai: e.target.value }))}
-                        placeholder="sk-..."
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => toggleKeyVisibility('openai')}
-                      >
-                        {showKeys.openai ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Example: sk-proj-abc123...xyz789
-                    </p>
-                  </div>
-
-                  {/* Perplexity API Key */}
-                  <div>
-                    <Label htmlFor="perplexity">Perplexity API Key</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="perplexity"
-                        type={showKeys.perplexity ? "text" : "password"}
-                        value={showKeys.perplexity ? apiKeys.perplexity : maskKey(apiKeys.perplexity)}
-                        onChange={(e) => setApiKeys(prev => ({ ...prev, perplexity: e.target.value }))}
-                        placeholder="pplx-..."
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => toggleKeyVisibility('perplexity')}
-                      >
-                        {showKeys.perplexity ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Example: pplx-abc123...xyz789
-                    </p>
-                  </div>
-
-                  {/* Google Analytics API Key */}
-                  <div>
-                    <Label htmlFor="google_analytics">Google Analytics API Key</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="google_analytics"
-                        type={showKeys.google_analytics ? "text" : "password"}
-                        value={showKeys.google_analytics ? apiKeys.google_analytics : maskKey(apiKeys.google_analytics)}
-                        onChange={(e) => setApiKeys(prev => ({ ...prev, google_analytics: e.target.value }))}
-                        placeholder="AIza..."
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => toggleKeyVisibility('google_analytics')}
-                      >
-                        {showKeys.google_analytics ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Example: AIzaSyC123...xyz789
-                    </p>
-                  </div>
-
-                  {/* Screaming Frog API Key */}
-                  <div>
-                    <Label htmlFor="screaming_frog">Screaming Frog API Key</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="screaming_frog"
-                        type={showKeys.screaming_frog ? "text" : "password"}
-                        value={showKeys.screaming_frog ? apiKeys.screaming_frog : maskKey(apiKeys.screaming_frog)}
-                        onChange={(e) => setApiKeys(prev => ({ ...prev, screaming_frog: e.target.value }))}
-                        placeholder="sf-..."
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => toggleKeyVisibility('screaming_frog')}
-                      >
-                        {showKeys.screaming_frog ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Example: sf-abc123...xyz789
-                    </p>
-                  </div>
-
-                  <ApiKeyValidator apiKeys={apiKeys} />
-                  
-                  <Button onClick={handleApiKeysUpdate} className="bg-primary hover:bg-primary/90">
-                    <Save className="w-4 h-4 mr-2" />
-                    Save API Keys
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
 
             <TabsContent value="billing" className="space-y-6">
               <Card>
@@ -328,7 +150,10 @@ export default function Settings() {
                     <div>
                       <h3 className="font-semibold">Current Plan</h3>
                       <p className="text-sm text-muted-foreground">
-                        {isSubscribed ? 'Pro Plan - $49/month' : 'Free Plan'}
+                        {isSubscribed 
+                          ? `${subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)} Plan`
+                          : 'Free Plan'
+                        }
                       </p>
                     </div>
                     <Badge variant={isSubscribed ? 'default' : 'secondary'}>
@@ -339,7 +164,7 @@ export default function Settings() {
                   <div className="space-y-2">
                     <h4 className="font-medium">Features Included:</h4>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• {isSubscribed ? 'Unlimited' : 'Up to 100'} scans per month</li>
+                      <li>• {scansLimit === 0 ? 'Unlimited' : `Up to ${scansLimit}`} scans per month</li>
                       <li>• {isSubscribed ? '✓' : '✗'} Advanced AI analytics</li>
                       <li>• {isSubscribed ? '✓' : '✗'} Competitor analysis</li>
                       <li>• {isSubscribed ? '✓' : '✗'} Priority support</li>

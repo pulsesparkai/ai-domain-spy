@@ -2,19 +2,8 @@ import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { EncryptionService, EncryptedData } from '@/lib/encryption';
 
-// Extended User type - API keys now handled separately in profiles table
-interface AppUser extends User {
-  // Keep for backward compatibility, but API keys moved to encrypted profiles
-}
-
-interface ApiKeys {
-  perplexity?: string;
-  openai?: string;
-  google_analytics?: string;
-  screaming_frog?: string;
-}
+interface AppUser extends User {}
 
 interface Profile {
   id: string;
@@ -22,12 +11,14 @@ interface Profile {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
-  api_keys: any; // Legacy - being phased out
-  encrypted_api_keys: Record<string, EncryptedData> | null;
   subscription_status: string;
   subscription_tier: string | null;
-  trial_ends_at: string | null;
+  monthly_scans_used: number;
+  monthly_scans_limit: number;
+  billing_cycle_start: string | null;
   stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  trial_ends_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -36,18 +27,13 @@ interface AuthContextType {
   user: AppUser | null;
   session: Session | null;
   profile: Profile | null;
-  apiKeys: ApiKeys;
   loading: boolean;
   profileLoading: boolean;
-  apiKeysLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<Omit<Profile, 'encrypted_api_keys'>>) => Promise<void>;
-  updateApiKeys: (apiKeys: Partial<ApiKeys>) => Promise<void>;
+  updateProfile: (updates: Partial<Profile>) => Promise<void>;
   refreshProfile: () => Promise<void>;
-  // Legacy method - deprecated
-  updateUserMetadata: (metadata: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,10 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [apiKeys, setApiKeys] = useState<ApiKeys>({});
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
-  const [apiKeysLoading, setApiKeysLoading] = useState(false);
   
   // Refs for cleanup
   const timeoutRefs = useRef<Set<NodeJS.Timeout>>(new Set());
@@ -129,31 +113,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!data) {
         console.warn('No profile found for user:', userId);
         setProfile(null);
-        setApiKeys({});
         return;
       }
       
-      // Transform the data to match our Profile interface
-      const profileData: Profile = {
-        ...data,
-        encrypted_api_keys: data.encrypted_api_keys && 
-          typeof data.encrypted_api_keys === 'object' && 
-          !Array.isArray(data.encrypted_api_keys) ? 
-            data.encrypted_api_keys as unknown as Record<string, EncryptedData> : 
-            null
-      };
-      
-      setProfile(profileData);
+      setProfile(data as Profile);
       retryCountRef.current = 0; // Reset retry count on success
-
-      // Decrypt API keys if they exist and component is still mounted
-      if (isMountedRef.current && profileData.encrypted_api_keys && 
-          Object.keys(profileData.encrypted_api_keys).length > 0) {
-        await decryptAndSetApiKeys(profileData.encrypted_api_keys, userId, controller.signal);
-      } else if (isMountedRef.current && data.api_keys && typeof data.api_keys === 'object') {
-        // Fallback to legacy api_keys if no encrypted keys exist
-        setApiKeys(data.api_keys as ApiKeys);
-      }
     } catch (error: any) {
       if (!isMountedRef.current) {
         return;
@@ -185,54 +149,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const decryptAndSetApiKeys = async (
-    encryptedKeys: Record<string, EncryptedData>, 
-    userId: string,
-    signal?: AbortSignal
-  ) => {
-    if (!isMountedRef.current || signal?.aborted) {
-      return;
-    }
-
-    setApiKeysLoading(true);
-    try {
-      if (!EncryptionService.isSupported()) {
-        console.warn('Encryption not supported in this browser');
-        return;
-      }
-
-      if (signal?.aborted) {
-        return;
-      }
-
-      const sessionToken = session?.access_token;
-      const decryptedKeys = await EncryptionService.decryptApiKeys(
-        encryptedKeys, 
-        userId, 
-        sessionToken
-      );
-
-      // Check if still mounted and not aborted before updating state
-      if (isMountedRef.current && !signal?.aborted) {
-        setApiKeys(decryptedKeys);
-      }
-    } catch (error) {
-      if (!isMountedRef.current || signal?.aborted) {
-        return;
-      }
-      
-      console.error('Error decrypting API keys:', error);
-      toast({
-        title: "Error",
-        description: "Failed to decrypt API keys. Please re-enter them.",
-        variant: "destructive",
-      });
-    } finally {
-      if (isMountedRef.current && !signal?.aborted) {
-        setApiKeysLoading(false);
-      }
-    }
-  };
 
   const refreshProfile = async () => {
     if (user && user.id && isMountedRef.current) {
@@ -261,7 +177,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           addTimeout(timeoutId);
         } else {
           setProfile(null);
-          setApiKeys({});
           // Cancel any ongoing requests
           if (abortControllerRef.current) {
             abortControllerRef.current.abort();
@@ -285,8 +200,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }, 0);
         addTimeout(timeoutId);
-      } else {
-        setApiKeys({});
       }
       setLoading(false);
     });
@@ -346,16 +259,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (isMountedRef.current) {
         setProfile(null);
-        setApiKeys({});
         setProfileLoading(false);
-        setApiKeysLoading(false);
       }
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
-  const updateProfile = async (updates: Partial<Omit<Profile, 'encrypted_api_keys'>>) => {
+  const updateProfile = async (updates: Partial<Profile>) => {
     try {
       if (!user) throw new Error('No user logged in');
 
@@ -382,106 +293,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateApiKeys = async (newApiKeys: Partial<ApiKeys>) => {
-    try {
-      if (!user) throw new Error('No user logged in');
-      
-      if (!EncryptionService.isSupported()) {
-        throw new Error('Encryption not supported in this browser');
-      }
-
-      // Merge with existing API keys
-      const updatedKeys = { ...apiKeys, ...newApiKeys };
-      
-      // Filter out empty keys
-      const keysToEncrypt = Object.fromEntries(
-        Object.entries(updatedKeys).filter(([_, value]) => value && value.trim())
-      );
-
-      // Encrypt the API keys
-      const sessionToken = session?.access_token;
-      const encryptedKeys = await EncryptionService.encryptApiKeys(
-        keysToEncrypt, 
-        user.id, 
-        sessionToken
-      );
-
-      // Update in database
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          encrypted_api_keys: encryptedKeys as any, // Cast to avoid type issues with Json
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      
-      // Update local state
-      setApiKeys(updatedKeys);
-      
-      toast({
-        title: "API Keys updated",
-        description: "Your API keys have been encrypted and stored securely.",
-      });
-    } catch (error) {
-      console.error('Error updating API keys:', error);
-      toast({
-        title: "Error", 
-        description: "Failed to update API keys. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Legacy method for backward compatibility
-  const updateUserMetadata = async (metadata: any) => {
-    console.warn('updateUserMetadata is deprecated. Use updateApiKeys for API keys or updateProfile for other data.');
-    
-    // If this contains API keys, redirect to the new method
-    if (metadata.api_keys) {
-      await updateApiKeys(metadata.api_keys);
-      return;
-    }
-    
-    // For other metadata, fall back to the old method
-    try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          ...user?.user_metadata,
-          ...metadata
-        }
-      });
-      
-      if (error) throw error;
-      
-      setUser(prev => prev ? {
-        ...prev,
-        user_metadata: {
-          ...prev.user_metadata,
-          ...metadata
-        }
-      } : null);
-    } catch (error) {
-      console.error('Error updating user metadata:', error);
-      throw error;
-    }
-  };
 
   const value = {
     user,
     session,
     profile,
-    apiKeys,
     loading,
     profileLoading,
-    apiKeysLoading,
     signIn,
     signUp,
     signOut,
     updateProfile,
-    updateApiKeys,
-    updateUserMetadata,
     refreshProfile,
   };
 
