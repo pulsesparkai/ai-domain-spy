@@ -11,7 +11,7 @@ const PricingCard = () => {
     description: "Ideal for growing companies",
     features: [
       "200 domain scans per month",
-      "Advanced analytics",
+      "Advanced analytics", 
       "Priority support",
       "30-day data retention",
       "API access"
