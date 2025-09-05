@@ -104,9 +104,9 @@ const Dashboard = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Call your scan API endpoint using centralized API config
+      // Call the new analyze-website API endpoint
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.pulsespark.ai';
-      const response = await fetch(`${API_BASE_URL}/api/scan`, {
+      const response = await fetch(`${API_BASE_URL}/api/analyze-website`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,13 +114,24 @@ const Dashboard = () => {
         },
         body: JSON.stringify({
           url: scanUrl,
-          userId: user?.id,
-          scanType: 'comprehensive'
+          userId: user?.id
         })
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 403) {
+          showToast.error(errorData.error || 'Usage limit reached');
+          if (errorData.error.includes('limit reached')) {
+            navigate('/pricing');
+          }
+          return;
+        }
+        throw new Error(errorData.error || 'Analysis failed');
+      }
+
       const data = await response.json();
-      setScanData(data.results);
+      setScanData(data);
       showToast.success('Scan completed successfully!');
       
       // Reload scan data
