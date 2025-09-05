@@ -36,9 +36,11 @@ import { PromptTrends } from '@/components/dashboard/PromptTrends';
 import { CompetitorTraffic } from '@/components/dashboard/CompetitorTraffic';
 import { TrendingPages } from '@/components/dashboard/TrendingPages';
 import { showToast } from '@/lib/toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [activeView, setActiveView] = useState('overview');
   const [scanUrl, setScanUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
@@ -85,6 +87,16 @@ const Dashboard = () => {
   const runNewScan = async () => {
     if (!scanUrl) {
       showToast.error('Please enter a URL to scan');
+      return;
+    }
+
+    // Check usage limits
+    const scansUsed = profile?.monthly_scans_used || 0;
+    const scansLimit = profile?.monthly_scans_limit || 100;
+    
+    if (scansLimit !== -1 && scansUsed >= scansLimit) {
+      showToast.error('Monthly scan limit reached. Please upgrade your plan.');
+      navigate('/pricing');
       return;
     }
 
@@ -239,11 +251,41 @@ const Dashboard = () => {
           </DropdownMenu>
         </div>
 
-        {scanData && (
-          <div className="px-6 pb-4 text-sm text-muted-foreground">
-            Last scan: {new Date(scanData.created_at || Date.now()).toLocaleDateString()}
+        <div className="px-6 pb-4 flex items-center justify-between">
+          {scanData && (
+            <div className="text-sm text-muted-foreground">
+              Last scan: {new Date(scanData.created_at || Date.now()).toLocaleDateString()}
+            </div>
+          )}
+          
+          {/* Usage Tracking */}
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-muted-foreground">
+              Scans remaining this month: 
+              <span className={`ml-1 font-medium ${
+                (profile?.monthly_scans_limit || 100) - (profile?.monthly_scans_used || 0) <= 5 
+                  ? 'text-destructive' 
+                  : 'text-foreground'
+              }`}>
+                {profile?.monthly_scans_limit === -1 
+                  ? '∞' 
+                  : Math.max(0, (profile?.monthly_scans_limit || 100) - (profile?.monthly_scans_used || 0))
+                }
+              </span>
+            </div>
+            {profile?.monthly_scans_limit !== -1 && 
+             (profile?.monthly_scans_used || 0) >= (profile?.monthly_scans_limit || 100) * 0.8 && (
+              <Button 
+                onClick={() => navigate('/pricing')} 
+                size="sm" 
+                variant="outline"
+                className="text-primary border-primary hover:bg-primary/10"
+              >
+                Upgrade Plan
+              </Button>
+            )}
           </div>
-        )}
+        </div>
       </header>
 
       <div className="flex">

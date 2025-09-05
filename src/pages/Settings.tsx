@@ -51,6 +51,13 @@ export default function Settings() {
   const subscriptionTier = profile?.subscription_tier || 'free';
   const scansUsed = profile?.monthly_scans_used || 0;
   const scansLimit = profile?.monthly_scans_limit || 100;
+  
+  const getNextBillingDate = () => {
+    if (!profile?.billing_cycle_start) return 'N/A';
+    const billingStart = new Date(profile.billing_cycle_start);
+    billingStart.setMonth(billingStart.getMonth() + 1);
+    return billingStart.toLocaleDateString();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -124,9 +131,17 @@ export default function Settings() {
                   <div className="flex items-center justify-between">
                     <span>Scans Used This Month</span>
                     <Badge variant="outline">
-                      {scansUsed} / {scansLimit === 0 ? '∞' : scansLimit}
+                      {scansUsed} / {scansLimit === -1 ? '∞' : scansLimit}
                     </Badge>
                   </div>
+                  {profile?.billing_cycle_start && (
+                    <div className="flex items-center justify-between">
+                      <span>Next Billing Date</span>
+                      <span className="text-sm text-muted-foreground">
+                        {getNextBillingDate()}
+                      </span>
+                    </div>
+                  )}
                   <ExportButton 
                     data={mockScanData} 
                     filename="scan-results"
@@ -164,19 +179,31 @@ export default function Settings() {
                   <div className="space-y-2">
                     <h4 className="font-medium">Features Included:</h4>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• {scansLimit === 0 ? 'Unlimited' : `Up to ${scansLimit}`} scans per month</li>
+                      <li>• {scansLimit === -1 ? 'Unlimited' : `Up to ${scansLimit}`} scans per month</li>
                       <li>• {isSubscribed ? '✓' : '✗'} Advanced AI analytics</li>
                       <li>• {isSubscribed ? '✓' : '✗'} Competitor analysis</li>
                       <li>• {isSubscribed ? '✓' : '✗'} Priority support</li>
                     </ul>
                   </div>
 
-                  <Button 
-                    onClick={() => toast({ title: "Coming Soon", description: "Billing management will be available soon." })}
-                    className="w-full bg-primary hover:bg-primary/90"
-                  >
-                    Manage Billing
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => window.open('/pricing', '_blank')}
+                      className="flex-1"
+                      variant="outline"
+                    >
+                      {isSubscribed ? 'Change Plan' : 'Upgrade'}
+                    </Button>
+                    {isSubscribed && (
+                      <Button 
+                        onClick={() => toast({ title: "Coming Soon", description: "Subscription cancellation will be available soon." })}
+                        variant="destructive"
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
