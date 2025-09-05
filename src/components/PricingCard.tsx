@@ -6,18 +6,15 @@ import { Link } from "react-router-dom";
 const PricingCard = () => {
   const featuredPlan = {
     name: "Pro Plan",
-    price: "$49",
+    price: "$99",
     period: "/month", 
-    description: "Everything you need for comprehensive website analytics",
+    description: "Ideal for growing companies",
     features: [
-      "Advanced AI visibility scoring",
-      "Real-time website monitoring", 
-      "Competitor analysis",
-      "Custom reporting & alerts",
-      "API access for integrations",
+      "200 domain scans per month",
+      "Advanced analytics",
       "Priority support",
-      "Export capabilities",
-      "Team collaboration tools"
+      "30-day data retention",
+      "API access"
     ]
   };
 
