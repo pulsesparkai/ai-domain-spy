@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ErrorBoundary } from 'react-error-boundary';
 import { api } from '@/lib/api';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,20 @@ import { TrendingPages } from '@/components/dashboard/TrendingPages';
 import { showToast } from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import PerplexityOptimizationCard from '@/components/PerplexityOptimizationCard';
+
+function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Something went wrong</h2>
+          <pre className="text-sm bg-muted p-4 rounded mb-4 overflow-auto">{error.message}</pre>
+          <Button onClick={resetErrorBoundary}>Try again</Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -173,7 +188,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-card border-b sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-4">
@@ -346,8 +362,9 @@ const Dashboard = () => {
           {/* Rest of the dashboard content */}
           {renderContent()}
         </main>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 };
 

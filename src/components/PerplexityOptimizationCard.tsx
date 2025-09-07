@@ -21,24 +21,49 @@ const PerplexityOptimizationCard = () => {
 
     setLoading(true);
     try {
-      // Temporarily bypass the DeepSeekAgent and call the API directly for debugging
+      // Ensure URL is properly formatted
+      let formattedUrl = url.trim();
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = 'https://' + formattedUrl;
+      }
+
+      // Validate URL format
+      try {
+        new URL(formattedUrl);
+      } catch {
+        throw new Error('Please enter a valid URL');
+      }
+
       const response = await fetch('https://api.pulsespark.ai/api/analyze-website', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url: formattedUrl })
       });
+      
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
       
       const data = await response.json();
       console.log('Direct API call response:', data);
       
-      setAnalysis(data);
-      setExpanded(true);
-      showToast.success('Analysis complete!');
+      // Check if result is valid before setting
+      if (data && typeof data === 'object') {
+        setAnalysis(data);
+        setExpanded(true);
+        showToast.success('Analysis complete!');
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
       console.error('Direct API call failed:', error);
-      showToast.error('Analysis failed');
+      const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
+      showToast.error(`Analysis failed: ${errorMessage}`);
+      // Don't crash - just reset the state
+      setAnalysis(null);
+      setExpanded(false);
     } finally {
       setLoading(false);
     }

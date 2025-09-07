@@ -49,7 +49,17 @@ export class DeepSeekAgent {
 
   async analyzeForPerplexity(url: string, userToken: string): Promise<DeepSeekAnalysis> {
     try {
-      const response = await fetch(this.apiEndpoint, {
+      // Add validation
+      if (!url || typeof url !== 'string') {
+        throw new Error('Invalid URL provided');
+      }
+
+      // Create timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 30000)
+      );
+
+      const requestPromise = fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,6 +67,8 @@ export class DeepSeekAgent {
         },
         body: JSON.stringify({ url })
       });
+
+      const response = await Promise.race([requestPromise, timeoutPromise]);
 
       if (!response.ok) {
         if (response.status === 429) {
@@ -78,6 +90,12 @@ export class DeepSeekAgent {
         dataKeys: Object.keys(data)
       });
       
+      // Validate response structure
+      if (!data || typeof data !== 'object') {
+        console.error('Invalid response structure:', data);
+        return this.getMockAnalysis(url);
+      }
+      
       // Check if the data has the expected structure
       if (data.readinessScore && data.entityAnalysis && data.contentAnalysis) {
         return data;
@@ -89,8 +107,8 @@ export class DeepSeekAgent {
         return this.getMockAnalysis(url);
       }
     } catch (error) {
-      console.error('Analysis failed:', error);
-      // Return mock data for development/fallback
+      console.error('DeepSeek analysis error:', error);
+      // Return mock data instead of crashing
       return this.getMockAnalysis(url);
     }
   }
