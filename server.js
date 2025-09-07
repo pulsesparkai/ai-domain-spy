@@ -55,7 +55,7 @@ app.post('/api/deepseek/analyze-website', async (req, res) => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'deepseek-chat',
+            model: 'deepseek-v2.5',
             messages: [
               {
                 role: 'system',
@@ -103,7 +103,8 @@ app.post('/api/deepseek/analyze-website', async (req, res) => {
               }
             ],
             temperature: 0.3,
-            max_tokens: 2000
+            max_tokens: 2000,
+            stream: false
           })
         });
         
