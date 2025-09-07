@@ -81,7 +81,8 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/login');
+    showToast.success('Successfully signed out');
+    navigate('/');
   };
 
   const runNewScan = async () => {
