@@ -26,6 +26,7 @@ import {
   RouteLoadingSkeleton,
   preloadCriticalRoutes
 } from "@/utils/lazyRoutes";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // Create QueryClient with optimized configuration
 import { createOptimizedQueryClient } from '@/lib/react-query-optimization';
@@ -55,10 +56,10 @@ const App = () => {
                     <Routes>
                       <Route path="/" element={<LazyIndex />} />
                       <Route path="/auth" element={<LazyAuth />} />
-                      <Route path="/dashboard" element={<LazyDashboard />} />
-                      <Route path="/scan" element={<LazyScan />} />
+                      <Route path="/dashboard" element={<ProtectedRoute><LazyDashboard /></ProtectedRoute>} />
+                      <Route path="/scan" element={<ProtectedRoute><LazyScan /></ProtectedRoute>} />
                       <Route path="/pricing" element={<LazyPricing />} />
-                      <Route path="/settings" element={<LazySettings />} />
+                      <Route path="/settings" element={<ProtectedRoute><LazySettings /></ProtectedRoute>} />
                       
                       <Route path="/success" element={<LazySuccess />} />
                       <Route path="/cancel" element={<LazyCancel />} />
