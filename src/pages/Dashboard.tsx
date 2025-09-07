@@ -365,33 +365,31 @@ const Dashboard = () => {
         {/* Main Content */}
         <main className="flex-1 p-6">
           {/* AI Optimization Promotion Card */}
-          {!scanData && (
-            <Card className="mb-6 bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles className="w-6 h-6 text-primary" />
-                      <h3 className="text-xl font-semibold">New! Perplexity AI Optimization</h3>
-                      <Badge variant="secondary">Beta</Badge>
-                    </div>
-                    <p className="text-muted-foreground mb-4">
-                      Analyze your website against Perplexity's ranking factors and get actionable recommendations to improve your AI search visibility.
-                    </p>
-                    <Button 
-                      onClick={() => navigate('/perplexity-optimization')}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      Try AI Optimization →
-                    </Button>
+          <Card className="mb-6 bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                    <h3 className="text-xl font-semibold">New! Perplexity AI Optimization</h3>
+                    <Badge variant="secondary">Beta</Badge>
                   </div>
-                  <div className="hidden md:block">
-                    <Brain className="w-24 h-24 text-primary/20" />
-                  </div>
+                  <p className="text-muted-foreground mb-4">
+                    Analyze your website against Perplexity's ranking factors and get actionable recommendations to improve your AI search visibility.
+                  </p>
+                  <Button 
+                    onClick={() => navigate('/perplexity-optimization')}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    Try AI Optimization →
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <div className="hidden md:block">
+                  <Brain className="w-24 h-24 text-primary/20" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           
           {renderContent()}
         </main>
