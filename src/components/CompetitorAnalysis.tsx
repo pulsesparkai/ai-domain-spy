@@ -1,14 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
-export const CompetitorAnalysis = ({ domain }: { domain?: string }) => {
-  // Mock competitors - in production, fetch based on domain
+export const CompetitorAnalysis = ({ domain, score }: { domain?: string; score?: number }) => {
   const competitors = [
-    { name: 'Your Site', score: 75, change: 5, color: '#8b5cf6' },
+    { name: 'Your Site', score: score || 75, change: 5, color: '#8b5cf6' },
     { name: 'Competitor A', score: 82, change: -2, color: '#ef4444' },
     { name: 'Competitor B', score: 68, change: 3, color: '#3b82f6' },
-    { name: 'Competitor C', score: 91, change: 0, color: '#10b981' },
     { name: 'Industry Avg', score: 72, change: 1, color: '#6b7280' },
   ];
 
@@ -18,13 +16,17 @@ export const CompetitorAnalysis = ({ domain }: { domain?: string }) => {
         <CardTitle>Competitor Analysis</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={200}>
           <BarChart data={competitors}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
-            <Bar dataKey="score" fill="#8b5cf6" />
+            <Bar dataKey="score" fill="#8b5cf6">
+              {competitors.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
         
@@ -33,16 +35,13 @@ export const CompetitorAnalysis = ({ domain }: { domain?: string }) => {
             <div key={comp.name} className="flex items-center justify-between p-2 rounded hover:bg-muted">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: comp.color }} />
-                <span className="font-medium">{comp.name}</span>
+                <span className="text-sm font-medium">{comp.name}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">{comp.score}</span>
                 {comp.change > 0 && <TrendingUp className="w-4 h-4 text-green-500" />}
                 {comp.change < 0 && <TrendingDown className="w-4 h-4 text-red-500" />}
                 {comp.change === 0 && <Minus className="w-4 h-4 text-gray-500" />}
-                <span className={`text-sm ${comp.change > 0 ? 'text-green-500' : comp.change < 0 ? 'text-red-500' : 'text-gray-500'}`}>
-                  {comp.change > 0 ? '+' : ''}{comp.change}%
-                </span>
               </div>
             </div>
           ))}

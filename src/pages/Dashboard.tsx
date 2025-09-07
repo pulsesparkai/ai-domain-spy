@@ -241,7 +241,10 @@ const Dashboard = () => {
                 
                 {/* Competitor Analysis */}
                 <div className="lg:col-span-1">
-                  <CompetitorAnalysis domain={analysisData.url || scanUrl} />
+                  <CompetitorAnalysis 
+                    domain={analysisData.domain || scanUrl} 
+                    score={analysisData.readinessScore} 
+                  />
                 </div>
                 
                 {/* Platform Distribution */}
