@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
 import DependencyLoading from "@/components/DependencyLoading";
 import { AccessibilityIndicator, AccessibilityToolbar } from "@/components/AccessibilityIndicator";
@@ -40,7 +41,8 @@ const App = () => {
   }, []);
 
   return (
-    <AppErrorBoundary showReportButton>
+    <ErrorBoundary>
+      <AppErrorBoundary showReportButton>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TooltipProvider>
@@ -73,7 +75,8 @@ const App = () => {
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
-    </AppErrorBoundary>
+      </AppErrorBoundary>
+    </ErrorBoundary>
   );
 };
 
