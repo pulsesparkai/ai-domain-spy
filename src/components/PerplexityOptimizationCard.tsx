@@ -21,12 +21,23 @@ const PerplexityOptimizationCard = () => {
 
     setLoading(true);
     try {
-      // This calls the DeepSeek endpoint that analyzes the actual website
-      const result = await api.analyzeWebsite(url);
-      setAnalysis(result);
+      // Temporarily bypass the DeepSeekAgent and call the API directly for debugging
+      const response = await fetch('https://api.pulsespark.ai/api/analyze-website', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url })
+      });
+      
+      const data = await response.json();
+      console.log('Direct API call response:', data);
+      
+      setAnalysis(data);
       setExpanded(true);
       showToast.success('Analysis complete!');
     } catch (error) {
+      console.error('Direct API call failed:', error);
       showToast.error('Analysis failed');
     } finally {
       setLoading(false);

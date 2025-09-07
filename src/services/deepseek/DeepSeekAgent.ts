@@ -69,7 +69,25 @@ export class DeepSeekAgent {
       }
 
       const data = await response.json();
-      return data.analysis || data;
+      
+      // ADD DEBUGGING
+      console.log('DeepSeek API Response:', data);
+      console.log('Response structure:', {
+        hasAnalysis: !!data.analysis,
+        hasReadinessScore: !!data.readinessScore,
+        dataKeys: Object.keys(data)
+      });
+      
+      // Check if the data has the expected structure
+      if (data.readinessScore && data.entityAnalysis && data.contentAnalysis) {
+        return data;
+      } else if (data.analysis) {
+        return data.analysis;
+      } else {
+        // Log what we got instead
+        console.warn('Unexpected response format, using mock data. Got:', data);
+        return this.getMockAnalysis(url);
+      }
     } catch (error) {
       console.error('Analysis failed:', error);
       // Return mock data for development/fallback
