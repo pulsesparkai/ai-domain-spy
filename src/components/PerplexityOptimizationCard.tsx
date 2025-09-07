@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Brain, AlertCircle } from 'lucide-react';
-import { api } from '@/lib/api';
+import { DeepSeekAgent } from '@/services/deepseek';
 import { showToast } from '@/lib/toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const PerplexityOptimizationCard = () => {
   const [url, setUrl] = useState('');
@@ -21,47 +22,26 @@ const PerplexityOptimizationCard = () => {
 
     setLoading(true);
     try {
-      // Ensure URL is properly formatted
+      // Get user authentication token
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        showToast.error('Please sign in to use this feature');
+        return;
+      }
+
       let formattedUrl = url.trim();
-      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
-        formattedUrl = 'https://' + formattedUrl;
-      }
+      // Remove protocol if present, backend will handle it
+      formattedUrl = formattedUrl.replace(/^https?:\/\//, '');
 
-      // Validate URL format
-      try {
-        new URL(formattedUrl);
-      } catch {
-        throw new Error('Please enter a valid URL');
-      }
-
-      const response = await fetch('https://api.pulsespark.ai/api/analyze-website', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: formattedUrl })
-      });
+      const agent = new DeepSeekAgent();
+      const result = await agent.analyzeForPerplexity(formattedUrl, user.id);
       
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('Direct API call response:', data);
-      
-      // Check if result is valid before setting
-      if (data && typeof data === 'object') {
-        setAnalysis(data);
-        setExpanded(true);
-        showToast.success('Analysis complete!');
-      } else {
-        throw new Error('Invalid response from server');
-      }
-    } catch (error) {
-      console.error('Direct API call failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
-      showToast.error(`Analysis failed: ${errorMessage}`);
-      // Don't crash - just reset the state
+      setAnalysis(result);
+      setExpanded(true);
+      showToast.success('Analysis complete!');
+    } catch (error: any) {
+      console.error('Analysis error:', error);
+      showToast.error(error.message || 'Analysis failed');
       setAnalysis(null);
       setExpanded(false);
     } finally {
