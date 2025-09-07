@@ -42,74 +42,51 @@ export class DeepSeekAgent {
   private apiEndpoint: string;
 
   constructor() {
-    // Use the correct backend API URL from environment variable
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.pulsespark.ai';
-    this.apiEndpoint = `${baseUrl}/api/analyze-website`;
+    // Use the deepseek endpoint, not the regular analyze endpoint
+    this.apiEndpoint = `${baseUrl}/api/deepseek/analyze-website`;
   }
 
-  async analyzeForPerplexity(url: string, userToken: string): Promise<DeepSeekAnalysis> {
+  async analyzeForPerplexity(url: string, userToken?: string): Promise<DeepSeekAnalysis> {
     try {
-      // Add validation
       if (!url || typeof url !== 'string') {
         throw new Error('Invalid URL provided');
       }
 
-      // Create timeout promise
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 30000)
-      );
+      // Remove protocol and trailing slash
+      const cleanUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-      const requestPromise = fetch(this.apiEndpoint, {
+      const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userToken}`
         },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({ url: cleanUrl })
       });
 
-      const response = await Promise.race([requestPromise, timeoutPromise]);
-
       if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please try again later.');
-        }
-        if (response.status === 402) {
-          throw new Error('Please upgrade to Pro to use AI Optimization features.');
+        const errorText = await response.text();
+        console.error('API error:', response.status, errorText);
+        
+        if (response.status === 500) {
+          throw new Error('Server error. Please try again.');
         }
         throw new Error(`Analysis failed: ${response.statusText}`);
       }
 
       const data = await response.json();
-      
-      // ADD DEBUGGING
       console.log('DeepSeek API Response:', data);
-      console.log('Response structure:', {
-        hasAnalysis: !!data.analysis,
-        hasReadinessScore: !!data.readinessScore,
-        dataKeys: Object.keys(data)
-      });
       
-      // Validate response structure
-      if (!data || typeof data !== 'object') {
-        console.error('Invalid response structure:', data);
-        return this.getMockAnalysis(url);
-      }
+      // The backend returns the analysis directly
+      return data;
       
-      // Check if the data has the expected structure
-      if (data.readinessScore && data.entityAnalysis && data.contentAnalysis) {
-        return data;
-      } else if (data.analysis) {
-        return data.analysis;
-      } else {
-        // Log what we got instead
-        console.warn('Unexpected response format, using mock data. Got:', data);
-        return this.getMockAnalysis(url);
-      }
     } catch (error) {
-      console.error('DeepSeek analysis error:', error);
-      // Return mock data instead of crashing
-      return this.getMockAnalysis(url);
+      console.error('DeepSeek error:', error);
+      // Only use mock data as last resort
+      if (error instanceof Error && error.message.includes('fetch')) {
+        return this.getMockAnalysis(url);
+      }
+      throw error;
     }
   }
 
