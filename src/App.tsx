@@ -43,38 +43,38 @@ const App = () => {
   return (
     <ErrorBoundary>
       <AppErrorBoundary showReportButton>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <HotToaster position="top-right" />
-            <DependencyLoading showProgress showDetails retryable>
-              <BrowserRouter>
-                <Suspense fallback={<RouteLoadingSkeleton />}>
-                  <Routes>
-                    <Route path="/" element={<LazyIndex />} />
-                    <Route path="/auth" element={<LazyAuth />} />
-                    <Route path="/dashboard" element={<LazyDashboard />} />
-                    <Route path="/scan" element={<LazyScan />} />
-                    <Route path="/pricing" element={<LazyPricing />} />
-                    <Route path="/settings" element={<LazySettings />} />
-                    
-                    <Route path="/success" element={<LazySuccess />} />
-                    <Route path="/cancel" element={<LazyCancel />} />
-                    <Route path="/reset-password" element={<LazyPasswordReset />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<LazyNotFound />} />
-                  </Routes>
-                </Suspense>
-                <AccessibilityIndicator />
-                <AccessibilityToolbar />
-                <PreviewModeIndicator />
-              </BrowserRouter>
-            </DependencyLoading>
-          </TooltipProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <HotToaster position="top-right" />
+              <DependencyLoading showProgress showDetails retryable>
+                <BrowserRouter>
+                  <Suspense fallback={<RouteLoadingSkeleton />}>
+                    <Routes>
+                      <Route path="/" element={<LazyIndex />} />
+                      <Route path="/auth" element={<LazyAuth />} />
+                      <Route path="/dashboard" element={<LazyDashboard />} />
+                      <Route path="/scan" element={<LazyScan />} />
+                      <Route path="/pricing" element={<LazyPricing />} />
+                      <Route path="/settings" element={<LazySettings />} />
+                      
+                      <Route path="/success" element={<LazySuccess />} />
+                      <Route path="/cancel" element={<LazyCancel />} />
+                      <Route path="/reset-password" element={<LazyPasswordReset />} />
+                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                      <Route path="*" element={<LazyNotFound />} />
+                    </Routes>
+                  </Suspense>
+                  <AccessibilityIndicator />
+                  <AccessibilityToolbar />
+                  <PreviewModeIndicator />
+                </BrowserRouter>
+              </DependencyLoading>
+            </TooltipProvider>
+          </AuthProvider>
+        </QueryClientProvider>
       </AppErrorBoundary>
     </ErrorBoundary>
   );
