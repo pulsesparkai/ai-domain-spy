@@ -287,33 +287,6 @@ const Dashboard = () => {
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-6 flex-1">
             <h1 className="text-2xl font-bold text-foreground">AI Visibility Dashboard</h1>
-            
-            {/* URL Input */}
-            <div className="flex gap-2 max-w-xl flex-1">
-              <Input
-                type="url"
-                placeholder="Enter domain to analyze (e.g., example.com)"
-                value={scanUrl}
-                onChange={(e) => setScanUrl(e.target.value)}
-                className="flex-1"
-              />
-              <Button 
-                onClick={runNewScan}
-                disabled={isScanning || !scanUrl}
-              >
-                {isScanning ? (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                    Scanning...
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4 mr-2" />
-                    Run New Scan
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
 
           {/* User Profile Dropdown */}
