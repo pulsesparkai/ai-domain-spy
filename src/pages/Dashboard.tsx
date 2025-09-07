@@ -37,6 +37,7 @@ import { CompetitorTraffic } from '@/components/dashboard/CompetitorTraffic';
 import { TrendingPages } from '@/components/dashboard/TrendingPages';
 import { showToast } from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
+import PerplexityOptimizationCard from '@/components/PerplexityOptimizationCard';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -204,24 +205,6 @@ const Dashboard = () => {
                   </>
                 )}
               </Button>
-              
-              {/* API Test Button - Temporary for testing */}
-              <Button
-                onClick={async () => {
-                  try {
-                    const data = await api.testConnection();
-                    console.log('API Response:', data);
-                    showToast.success(`API Connected! Status: ${data.status}`);
-                  } catch (error) {
-                    console.error('API Error:', error);
-                    showToast.error('API connection failed');
-                  }
-                }}
-                variant="outline"
-                className="ml-2"
-              >
-                Test API Connection
-              </Button>
             </div>
           </div>
 
@@ -352,46 +335,15 @@ const Dashboard = () => {
               Rankings
             </button>
             
-            <button
-              onClick={() => navigate('/perplexity-optimization')}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-muted border-t mt-4 pt-4"
-            >
-              <Sparkles className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-primary">AI Optimization</span>
-              <Badge className="ml-auto" variant="secondary">New</Badge>
-            </button>
           </nav>
         </aside>
 
         {/* Main Content */}
         <main className="flex-1 p-6">
-          {/* AI Optimization Promotion Card */}
-          <Card className="mb-6 bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="w-6 h-6 text-primary" />
-                    <h3 className="text-xl font-semibold">New! Perplexity AI Optimization</h3>
-                    <Badge variant="secondary">Beta</Badge>
-                  </div>
-                  <p className="text-muted-foreground mb-4">
-                    Analyze your website against Perplexity's ranking factors and get actionable recommendations to improve your AI search visibility.
-                  </p>
-                  <Button 
-                    onClick={() => navigate('/perplexity-optimization')}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    Try AI Optimization →
-                  </Button>
-                </div>
-                <div className="hidden md:block">
-                  <Brain className="w-24 h-24 text-primary/20" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Primary Feature - Perplexity Optimization */}
+          <PerplexityOptimizationCard />
           
+          {/* Rest of the dashboard content */}
           {renderContent()}
         </main>
       </div>

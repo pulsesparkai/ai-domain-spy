@@ -66,9 +66,6 @@ export const LazyPasswordReset = lazy(() =>
   }))
 );
 
-export const LazyPerplexityOptimization = lazy(() => 
-  import(/* webpackChunkName: "route-perplexity-optimization" */ '../pages/PerplexityOptimization')
-);
 
 // Route preloading utilities - using proper React patterns
 export const preloadCriticalRoutes = () => {
@@ -104,7 +101,7 @@ export const preloadOnHover = (routeName: keyof typeof routeMap) => {
     cancel: () => import('../pages/Cancel'),
     notFound: () => import('../pages/NotFound'),
     passwordReset: () => import('../components/PasswordReset'),
-    perplexityOptimization: () => import('../pages/PerplexityOptimization'),
+    
   };
   
   const preloader = routePreloaders[routeName];
@@ -129,7 +126,7 @@ export const routeMap = {
   cancel: LazyCancel,
   notFound: LazyNotFound,
   passwordReset: LazyPasswordReset,
-  perplexityOptimization: LazyPerplexityOptimization,
+  
 } as const;
 
 // Export loading skeleton for routes
