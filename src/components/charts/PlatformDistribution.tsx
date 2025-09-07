@@ -2,13 +2,53 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const PlatformDistribution = ({ platformData }: any) => {
-  const data = [
-    { name: 'Reddit', value: 35, color: '#ff4500' },
-    { name: 'YouTube', value: 28, color: '#ff0000' },
-    { name: 'LinkedIn', value: 20, color: '#0077b5' },
-    { name: 'Quora', value: 12, color: '#b92b27' },
-    { name: 'News', value: 5, color: '#1a1a1a' },
-  ];
+  if (!platformData) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-center text-muted-foreground">No platform data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const data = Object.entries(platformData).map(([name, info]: any) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    value: info.found ? (info.mentions || info.videos || info.followers || info.questions || info.articles || 1) : 0,
+    color: {
+      reddit: '#ff4500',
+      youtube: '#ff0000',
+      linkedin: '#0077b5',
+      quora: '#b92b27',
+      news: '#1a1a1a'
+    }[name] || '#8b5cf6'
+  })).filter(item => item.value > 0);
+
+  if (data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Platform Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground">No platform presence detected</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
     <Card>
@@ -23,7 +63,7 @@ export const PlatformDistribution = ({ platformData }: any) => {
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              label={renderCustomizedLabel}
               outerRadius={80}
               fill="#8884d8"
               dataKey="value"
@@ -33,6 +73,7 @@ export const PlatformDistribution = ({ platformData }: any) => {
               ))}
             </Pie>
             <Tooltip />
+            <Legend />
           </PieChart>
         </ResponsiveContainer>
       </CardContent>
