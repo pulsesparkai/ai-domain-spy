@@ -1,6 +1,7 @@
 import { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -22,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    console.error('Component crashed:', error, errorInfo);
+    console.error('Component error:', error, errorInfo);
   }
 
   render() {
@@ -30,15 +31,15 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <Card className="m-4">
           <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-2">Something went wrong</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <AlertCircle className="w-5 h-5 text-destructive" />
+              <h2 className="text-lg font-semibold">Something went wrong</h2>
+            </div>
             <p className="text-sm text-muted-foreground mb-4">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
             <Button 
-              onClick={() => {
-                this.setState({ hasError: false, error: null });
-                window.location.reload();
-              }}
+              onClick={() => window.location.reload()}
               variant="outline"
             >
               Reload Page
