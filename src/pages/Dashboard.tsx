@@ -31,6 +31,11 @@ import {
   Sparkles,
   AlertCircle
 } from 'lucide-react';
+import { LoadingCard } from '@/components/LoadingCard';
+import { VisibilityChart } from '@/components/charts/VisibilityChart';
+import { CompetitorAnalysis } from '@/components/CompetitorAnalysis';
+import { PlatformDistribution } from '@/components/charts/PlatformDistribution';
+import { KeywordRankings } from '@/components/KeywordRankings';
 import { AIVisibilityScore } from '@/components/dashboard/AIVisibilityScore';
 import { CitationsTracking } from '@/components/dashboard/CitationsTracking';
 import { SentimentAnalysis } from '@/components/dashboard/SentimentAnalysis';
@@ -38,6 +43,7 @@ import { AIRankings } from '@/components/dashboard/AIRankings';
 import { PromptTrends } from '@/components/dashboard/PromptTrends';
 import { CompetitorTraffic } from '@/components/dashboard/CompetitorTraffic';
 import { TrendingPages } from '@/components/dashboard/TrendingPages';
+import PerplexityOptimizationCard from '@/components/PerplexityOptimizationCard';
 import { showToast } from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -64,6 +70,7 @@ const Dashboard = () => {
   const [scanData, setScanData] = useState(null);
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -205,14 +212,46 @@ const Dashboard = () => {
         return <AIRankings scanData={scanData} />;
       default:
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <AIVisibilityScore scanData={scanData} />
-            <SentimentAnalysis scanData={scanData} />
-            <CitationsTracking scanData={scanData} />
-            <AIRankings scanData={scanData} />
-            <PromptTrends scanData={scanData} />
-            <CompetitorTraffic scanData={scanData} />
-            <TrendingPages scanData={scanData} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {/* Perplexity Optimization Card - Full Width */}
+            <div className="lg:col-span-2 xl:col-span-3">
+              <CustomErrorBoundary>
+                <PerplexityOptimizationCard />
+              </CustomErrorBoundary>
+            </div>
+            
+            {/* Visibility Trend Chart */}
+            <div className="lg:col-span-1">
+              {loading ? <LoadingCard title="Visibility Trend" /> : <VisibilityChart data={scanData} />}
+            </div>
+            
+            {/* Competitor Analysis */}
+            <div className="lg:col-span-1">
+              {loading ? <LoadingCard title="Competitors" /> : <CompetitorAnalysis domain={scanUrl} />}
+            </div>
+            
+            {/* Platform Distribution */}
+            <div className="lg:col-span-1">
+              {loading ? <LoadingCard title="Platform Coverage" /> : <PlatformDistribution platformData={scanData?.platformPresence} />}
+            </div>
+            
+            {/* Keyword Rankings */}
+            <div className="lg:col-span-2">
+              {loading ? <LoadingCard title="Keyword Rankings" /> : <KeywordRankings />}
+            </div>
+            
+            {/* Existing components with loading states */}
+            <div className="lg:col-span-1">
+              {loading ? <LoadingCard title="AI Visibility Score" /> : <AIVisibilityScore scanData={scanData} />}
+            </div>
+            
+            <div className="lg:col-span-1">
+              {loading ? <LoadingCard title="Citations" /> : <CitationsTracking scanData={scanData} />}
+            </div>
+            
+            <div className="lg:col-span-1">
+              {loading ? <LoadingCard title="Sentiment" /> : <SentimentAnalysis scanData={scanData} />}
+            </div>
           </div>
         );
     }
@@ -387,64 +426,7 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="flex-1 p-6">
-          {/* Primary Feature - Perplexity Optimization */}
-          {scanData && (
-            <CustomErrorBoundary>
-              <Card className="mb-6">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Brain className="w-6 h-6 text-primary" />
-                    <CardTitle>Perplexity AI Optimization Suite</CardTitle>
-                    <Badge variant="secondary">Beta</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold">Perplexity Readiness Score</h3>
-                    <p className="text-sm text-muted-foreground">Based on 59 ranking patterns</p>
-                    <div className="text-3xl font-bold text-primary mt-2">
-                      {scanData?.visibility_score || scanData?.readinessScore || 75}/100
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="p-3 border rounded-lg">
-                      <div className="text-sm text-muted-foreground">Content Depth</div>
-                      <div className="text-xl font-semibold">
-                        {scanData?.contentAnalysis?.depth || Math.round((scanData?.visibility_score || 0) * 0.8)}%
-                      </div>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <div className="text-sm text-muted-foreground">Brand Authority</div>
-                      <div className="text-xl font-semibold">
-                        {scanData?.entityAnalysis?.brandStrength || scanData?.visibility_score || 70}%
-                      </div>
-                    </div>
-                    <div className="p-3 border rounded-lg">
-                      <div className="text-sm text-muted-foreground">Citations</div>
-                      <div className="text-xl font-semibold">
-                        {scanData?.citations?.reduce((sum: number, c: any) => sum + (c.count || 0), 0) || 0}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-muted/50 rounded-lg">
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4" />
-                      Optimization Recommendations
-                    </h4>
-                    <ul className="space-y-1 text-sm">
-                      <li>• Improve visibility score (currently {scanData?.visibility_score || 0}/100)</li>
-                      <li>• Create comprehensive content targeting Perplexity queries</li>
-                      <li>• Build presence across Reddit, YouTube, and LinkedIn</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            </CustomErrorBoundary>
-          )}
-          
-          {/* Rest of the dashboard content */}
+          {/* Dashboard Content */}
           {renderContent()}
         </main>
         </div>
