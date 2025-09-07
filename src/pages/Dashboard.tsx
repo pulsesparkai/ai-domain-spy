@@ -108,54 +108,84 @@ const Dashboard = () => {
       return;
     }
 
-    // Check usage limits
-    const scansUsed = profile?.monthly_scans_used || 0;
-    const scansLimit = profile?.monthly_scans_limit || 100;
-    
-    if (scansLimit !== -1 && scansUsed >= scansLimit) {
-      showToast.error('Monthly scan limit reached. Please upgrade your plan.');
-      navigate('/pricing');
-      return;
-    }
-
     setIsScanning(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        showToast.error('Please sign in to run scans');
+        navigate('/auth');
+        return;
+      }
+
+      // Check usage limits
+      const scansUsed = profile?.monthly_scans_used || 0;
+      const scansLimit = profile?.monthly_scans_limit || 100;
       
-      // Call the new analyze-website API endpoint
+      if (scansLimit !== -1 && scansUsed >= scansLimit) {
+        showToast.error('Monthly scan limit reached. Please upgrade your plan.');
+        navigate('/pricing');
+        return;
+      }
+      
+      // Format the URL properly
+      let formattedUrl = scanUrl.trim();
+      if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = formattedUrl;  // Don't add protocol, let backend handle it
+      }
+      
+      // Call the backend
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.pulsespark.ai';
       const response = await fetch(`${API_BASE_URL}/api/analyze-website`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
-        body: JSON.stringify({
-          url: scanUrl,
-          userId: user?.id
+        body: JSON.stringify({ 
+          url: formattedUrl,
+          userId: user.id
         })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 403) {
-          showToast.error(errorData.error || 'Usage limit reached');
-          if (errorData.error.includes('limit reached')) {
-            navigate('/pricing');
-          }
-          return;
-        }
-        throw new Error(errorData.error || 'Analysis failed');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `API error: ${response.status}`);
       }
 
       const data = await response.json();
-      setScanData(data);
+      
+      // Save to database with proper structure
+      const { error: saveError } = await supabase
+        .from('scans')
+        .insert({
+          user_id: user.id,
+          scan_type: 'visibility',
+          target_url: formattedUrl,
+          results: {
+            visibility_score: data.visibilityScore || data.visibility_score || 0,
+            citations: [],
+            sentiment: { positive: 0, neutral: 100, negative: 0 },
+            rankings: [],
+            prompt_trends: { gained: [], lost: [], improved: [] },
+            competitor_traffic: [],
+            trending_pages: [],
+            ...data  // Include any additional data from backend
+          },
+          status: 'completed'
+        });
+
+      if (saveError) {
+        console.error('Error saving scan:', saveError);
+        showToast.error('Failed to save scan results');
+        return;
+      }
+
+      // Reload scans to show the new one
+      await loadLatestScan();
       showToast.success('Scan completed successfully!');
       
-      // Reload scan data
-      await loadLatestScan();
-    } catch (error) {
-      showToast.error('Scan failed. Please try again.');
+    } catch (error: any) {
+      console.error('Scan error:', error);
+      showToast.error(error.message || 'Scan failed. Please try again.');
     } finally {
       setIsScanning(false);
     }
