@@ -44,7 +44,7 @@ export class DeepSeekAgent {
   constructor() {
     // Use the correct backend API URL from environment variable
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.pulsespark.ai';
-    this.apiEndpoint = `${baseUrl}/api/deepseek/analyze-website`;
+    this.apiEndpoint = `${baseUrl}/api/analyze-website`;
   }
 
   async analyzeForPerplexity(url: string, userToken: string): Promise<DeepSeekAnalysis> {

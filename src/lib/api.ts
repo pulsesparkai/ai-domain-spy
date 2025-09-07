@@ -15,7 +15,7 @@ export const api = {
 
   // Analyze website endpoint
   async analyzeWebsite(url: string) {
-    const response = await fetch(`${API_BASE_URL}/api/deepseek/analyze-website`, {
+    const response = await fetch(`${API_BASE_URL}/api/analyze-website`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
