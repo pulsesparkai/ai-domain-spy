@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Brain, AlertCircle } from 'lucide-react';
 import { DeepSeekAgent } from '@/services/deepseek';
 import { showToast } from '@/lib/toast';
-import { supabase } from '@/integrations/supabase/client';
 
 const PerplexityOptimizationCard = () => {
   const [url, setUrl] = useState('');
@@ -22,28 +21,16 @@ const PerplexityOptimizationCard = () => {
 
     setLoading(true);
     try {
-      // Get user authentication token
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        showToast.error('Please sign in to use this feature');
-        return;
-      }
-
-      let formattedUrl = url.trim();
-      // Remove protocol if present, backend will handle it
-      formattedUrl = formattedUrl.replace(/^https?:\/\//, '');
-
       const agent = new DeepSeekAgent();
-      const result = await agent.analyzeForPerplexity(formattedUrl, user.id);
+      const result = await agent.analyzeForPerplexity(url.trim());
       
+      console.log('Analysis result:', result);
       setAnalysis(result);
       setExpanded(true);
       showToast.success('Analysis complete!');
     } catch (error: any) {
       console.error('Analysis error:', error);
       showToast.error(error.message || 'Analysis failed');
-      setAnalysis(null);
-      setExpanded(false);
     } finally {
       setLoading(false);
     }
@@ -71,6 +58,7 @@ const PerplexityOptimizationCard = () => {
                 placeholder="Enter your domain (e.g., example.com)"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !loading && analyzeForPerplexity()}
                 className="flex-1"
               />
               <Button 
@@ -84,49 +72,75 @@ const PerplexityOptimizationCard = () => {
           </div>
         ) : analysis && (
           <div className="space-y-4">
-            {/* Readiness Score */}
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">Perplexity Readiness Score</h3>
-                <p className="text-sm text-muted-foreground">
-                  Based on 59 ranking patterns
-                </p>
+                <p className="text-sm text-muted-foreground">Based on 59 ranking patterns</p>
               </div>
               <div className="text-3xl font-bold text-primary">
                 {analysis.readinessScore}/100
               </div>
             </div>
 
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="p-3 border rounded-lg">
                 <div className="text-sm text-muted-foreground">Content Depth</div>
-                <div className="text-xl font-semibold">{analysis.contentAnalysis.depth}%</div>
+                <div className="text-xl font-semibold">{analysis.contentAnalysis?.depth || 0}%</div>
               </div>
               <div className="p-3 border rounded-lg">
                 <div className="text-sm text-muted-foreground">Brand Authority</div>
-                <div className="text-xl font-semibold">{analysis.entityAnalysis.brandStrength}%</div>
+                <div className="text-xl font-semibold">{analysis.entityAnalysis?.brandStrength || 0}%</div>
               </div>
               <div className="p-3 border rounded-lg">
-                <div className="text-sm text-muted-foreground">Platform Coverage</div>
-                <div className="text-xl font-semibold">
-                  {Object.values(analysis.platformPresence).filter((p: any) => p.found).length}/5
-                </div>
+                <div className="text-sm text-muted-foreground">Citations</div>
+                <div className="text-xl font-semibold">{analysis.entityAnalysis?.mentions || 0}</div>
               </div>
             </div>
 
-            {/* Critical Recommendations */}
-            {analysis.recommendations.critical.length > 0 && (
-              <div className="p-4 bg-destructive/10 rounded-lg">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  Critical Improvements Needed
-                </h4>
-                <ul className="space-y-1 text-sm">
-                  {analysis.recommendations.critical.map((rec: string, i: number) => (
-                    <li key={i}>• {rec}</li>
-                  ))}
-                </ul>
+            {/* Platform Presence */}
+            <div className="p-4 bg-muted/30 rounded-lg">
+              <h4 className="font-medium mb-3">Platform Presence</h4>
+              <div className="grid grid-cols-5 gap-2 text-sm">
+                {Object.entries(analysis.platformPresence || {}).map(([platform, data]: [string, any]) => (
+                  <div key={platform} className="text-center">
+                    <div className={`font-medium ${data.found ? 'text-green-600' : 'text-gray-400'}`}>
+                      {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                    </div>
+                    <div className="text-xs">
+                      {data.found ? '✓' : '✗'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recommendations */}
+            {analysis.recommendations && (
+              <div className="space-y-3">
+                {analysis.recommendations.critical?.length > 0 && (
+                  <div className="p-4 bg-destructive/10 rounded-lg">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-destructive" />
+                      Critical Improvements
+                    </h4>
+                    <ul className="space-y-1 text-sm">
+                      {analysis.recommendations.critical.map((rec: string, i: number) => (
+                        <li key={i}>• {rec}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {analysis.recommendations.important?.length > 0 && (
+                  <div className="p-4 bg-warning/10 rounded-lg">
+                    <h4 className="font-medium mb-2">Important Recommendations</h4>
+                    <ul className="space-y-1 text-sm">
+                      {analysis.recommendations.important.map((rec: string, i: number) => (
+                        <li key={i}>• {rec}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 
