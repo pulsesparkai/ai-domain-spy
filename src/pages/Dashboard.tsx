@@ -68,6 +68,7 @@ const Dashboard = () => {
   const [scanUrl, setScanUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [scanData, setScanData] = useState(null);
+  const [analysisData, setAnalysisData] = useState<any>(null);
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -198,6 +199,16 @@ const Dashboard = () => {
     }
   };
 
+  const handleAnalysisComplete = (data: any) => {
+    setAnalysisData({
+      ...data,
+      timestamp: new Date().toISOString()
+    });
+    // Extract domain from the analysis for other components
+    const urlInput = data.url || '';
+    setScanUrl(urlInput);
+  };
+
   const getUserInitial = () => {
     return userName.charAt(0).toUpperCase();
   };
@@ -216,42 +227,50 @@ const Dashboard = () => {
             {/* Perplexity Optimization Card - Full Width */}
             <div className="lg:col-span-2 xl:col-span-3">
               <CustomErrorBoundary>
-                <PerplexityOptimizationCard />
+                <PerplexityOptimizationCard onAnalysisComplete={handleAnalysisComplete} />
               </CustomErrorBoundary>
             </div>
             
-            {/* Visibility Trend Chart */}
-            <div className="lg:col-span-1">
-              {loading ? <LoadingCard title="Visibility Trend" /> : <VisibilityChart data={scanData} />}
-            </div>
+            {/* Show charts only after analysis */}
+            {analysisData && (
+              <>
+                {/* Visibility Trend Chart */}
+                <div className="lg:col-span-1">
+                  <VisibilityChart data={analysisData} />
+                </div>
+                
+                {/* Competitor Analysis */}
+                <div className="lg:col-span-1">
+                  <CompetitorAnalysis domain={analysisData.url || scanUrl} />
+                </div>
+                
+                {/* Platform Distribution */}
+                <div className="lg:col-span-1">
+                  <PlatformDistribution platformData={analysisData.platformPresence} />
+                </div>
+                
+                {/* Keyword Rankings */}
+                <div className="lg:col-span-2">
+                  <KeywordRankings />
+                </div>
+                
+                {/* AI Visibility Score using analysis data */}
+                <div className="lg:col-span-1">
+                  <AIVisibilityScore scanData={{
+                    aggregates: {
+                      visibilityScore: analysisData.readinessScore
+                    }
+                  }} />
+                </div>
+              </>
+            )}
             
-            {/* Competitor Analysis */}
-            <div className="lg:col-span-1">
-              {loading ? <LoadingCard title="Competitors" /> : <CompetitorAnalysis domain={scanUrl} />}
-            </div>
-            
-            {/* Platform Distribution */}
-            <div className="lg:col-span-1">
-              {loading ? <LoadingCard title="Platform Coverage" /> : <PlatformDistribution platformData={scanData?.platformPresence} />}
-            </div>
-            
-            {/* Keyword Rankings */}
-            <div className="lg:col-span-2">
-              {loading ? <LoadingCard title="Keyword Rankings" /> : <KeywordRankings />}
-            </div>
-            
-            {/* Existing components with loading states */}
-            <div className="lg:col-span-1">
-              {loading ? <LoadingCard title="AI Visibility Score" /> : <AIVisibilityScore scanData={scanData} />}
-            </div>
-            
-            <div className="lg:col-span-1">
-              {loading ? <LoadingCard title="Citations" /> : <CitationsTracking scanData={scanData} />}
-            </div>
-            
-            <div className="lg:col-span-1">
-              {loading ? <LoadingCard title="Sentiment" /> : <SentimentAnalysis scanData={scanData} />}
-            </div>
+            {/* Show placeholder when no data */}
+            {!analysisData && (
+              <div className="lg:col-span-2 xl:col-span-3 text-center py-12">
+                <p className="text-muted-foreground">Enter a domain above to see detailed analytics</p>
+              </div>
+            )}
           </div>
         );
     }
@@ -333,9 +352,9 @@ const Dashboard = () => {
         </div>
 
         <div className="px-6 pb-4 flex items-center justify-between">
-          {scanData && (
+          {(scanData || analysisData) && (
             <div className="text-sm text-muted-foreground">
-              Last scan: {new Date(scanData.created_at || Date.now()).toLocaleDateString()}
+              Last scan: {new Date(analysisData?.timestamp || scanData?.created_at || Date.now()).toLocaleDateString()}
             </div>
           )}
           
