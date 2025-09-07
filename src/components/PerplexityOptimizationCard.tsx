@@ -7,11 +7,11 @@ import { Brain, AlertCircle } from 'lucide-react';
 import { DeepSeekAgent } from '@/services/deepseek';
 import { showToast } from '@/lib/toast';
 
-interface PerplexityOptimizationCardProps {
+interface Props {
   onAnalysisComplete?: (data: any) => void;
 }
 
-const PerplexityOptimizationCard = ({ onAnalysisComplete }: PerplexityOptimizationCardProps) => {
+const PerplexityOptimizationCard = ({ onAnalysisComplete }: Props) => {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
@@ -28,16 +28,19 @@ const PerplexityOptimizationCard = ({ onAnalysisComplete }: PerplexityOptimizati
       const agent = new DeepSeekAgent();
       const result = await agent.analyzeForPerplexity(url.trim());
       
-      console.log('Analysis result:', result);
-      setAnalysis(result);
+      // Add domain to result
+      const resultWithDomain = {
+        ...result,
+        domain: url.trim()
+      };
+      
+      console.log('Analysis result:', resultWithDomain);
+      setAnalysis(resultWithDomain);
       setExpanded(true);
       
-      // Pass data back to parent with the URL included
+      // Pass data to parent
       if (onAnalysisComplete) {
-        onAnalysisComplete({
-          ...result,
-          url: url.trim()
-        });
+        onAnalysisComplete(resultWithDomain);
       }
       
       showToast.success('Analysis complete!');
