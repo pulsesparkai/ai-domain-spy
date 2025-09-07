@@ -23,6 +23,15 @@ app.get('/', (req, res) => {
   });
 });
 
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    status: 'connected',
+    message: 'API connection successful',
+    timestamp: new Date().toISOString(),
+    service: 'PulseSpark API'
+  });
+});
+
 app.post('/api/analyze-website', async (req, res) => {
   try {
     const { url } = req.body;
