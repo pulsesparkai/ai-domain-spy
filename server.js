@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import { canScrapeUrl } from './server/utils/robots-checker.js';
 import { normalizeDeepSeekResponse } from './server/transformers/deepseek-normalizer.js';
 
 dotenv.config();
@@ -36,19 +37,40 @@ app.get('/api/test', (req, res) => {
 // PulseSpark AI analysis endpoint
 app.post('/api/ai-analysis', async (req, res) => {
   try {
-    const { input, isManualContent = false } = req.body;
-    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+    const { input, isManualContent } = req.body;
     
     if (!input) {
       return res.status(400).json({ error: 'Input is required' });
     }
     
-    const domain = isManualContent ? 'Manual Content' : input.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    let domain = '';
+    let contentToAnalyze = '';
     
-    // Use PulseSpark AI (DeepSeek backend) if available
+    if (isManualContent) {
+      // User pasted content directly
+      contentToAnalyze = input;
+      domain = 'manual-input';
+      console.log('Analyzing manual content input');
+    } else {
+      // It's a URL - check robots.txt first
+      domain = input.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      
+      const canScrape = await canScrapeUrl(input);
+      if (!canScrape) {
+        return res.status(403).json({ 
+          error: 'This website does not allow automated scraping. Please use the manual content option.',
+          requiresManual: true 
+        });
+      }
+      
+      contentToAnalyze = domain;
+    }
+    
+    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+    
     if (DEEPSEEK_API_KEY) {
       try {
-        // PulseSpark AI API call (using DeepSeek backend)
+        // Call DeepSeek but identify as PulseSpark in the prompt
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -64,7 +86,8 @@ app.post('/api/ai-analysis', async (req, res) => {
               },
               {
                 role: 'user',
-                content: `Analyze ${isManualContent ? 'this content' : `the website "${input}"`} for AI search platform optimization. Return a JSON object with exactly this structure:
+                content: isManualContent ? 
+                  `Analyze this website content for AI platform optimization. Return a JSON object with exactly this structure:
 {
   "readinessScore": (number 0-100 based on overall optimization),
   "entityAnalysis": {
@@ -102,12 +125,48 @@ app.post('/api/ai-analysis', async (req, res) => {
   }
 }
 
-${isManualContent ? `Content to analyze: ${input}` : ''}`
+Content to analyze: ${contentToAnalyze}` :
+                  `Analyze the website "${domain}" for AI platform optimization. Return a JSON object with exactly this structure:
+{
+  "readinessScore": (number 0-100 based on overall optimization),
+  "entityAnalysis": {
+    "brandStrength": (number 0-100),
+    "mentions": (estimated number of brand mentions),
+    "density": (keyword density as decimal),
+    "authorityAssociations": ["array of authority signals found"],
+    "hasWikipedia": (boolean)
+  },
+  "contentAnalysis": {
+    "depth": (number 0-100 for content depth score),
+    "clusters": [
+      {"topic": "topic name", "pages": (number), "avgWords": (number)}
+    ],
+    "gaps": ["array of content gaps"],
+    "totalPages": (estimated number),
+    "avgPageLength": (estimated average words)
+  },
+  "technicalSEO": {
+    "hasSchema": (boolean),
+    "schemaTypes": ["array of schema types"],
+    "metaQuality": (number 0-100)
+  },
+  "platformPresence": {
+    "reddit": {"found": (boolean), "mentions": (number)},
+    "youtube": {"found": (boolean), "videos": (number)},
+    "linkedin": {"found": (boolean), "followers": (number)},
+    "quora": {"found": (boolean), "questions": (number)},
+    "news": {"found": (boolean), "articles": (number)}
+  },
+  "recommendations": {
+    "critical": ["array of critical improvements needed"],
+    "important": ["array of important recommendations"],
+    "nice_to_have": ["array of nice-to-have suggestions"]
+  }
+}`
               }
             ],
             temperature: 0.3,
-            max_tokens: 2000,
-            stream: false
+            max_tokens: 2000
           })
         });
         
@@ -115,24 +174,18 @@ ${isManualContent ? `Content to analyze: ${input}` : ''}`
           const data = await response.json();
           const content = data.choices[0].message.content;
           
-          // Clean the response and parse JSON
-          let cleanContent = content;
-          // Remove markdown code blocks if present
-          cleanContent = cleanContent.replace(/```json\s*/g, '');
-          cleanContent = cleanContent.replace(/```\s*/g, '');
-          cleanContent = cleanContent.trim();
+          let cleanContent = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
           
           try {
-            const pulseSparkAnalysis = JSON.parse(cleanContent);
+            const aiAnalysis = JSON.parse(cleanContent);
             console.log('PulseSpark AI analysis successful for:', domain);
             
             // Transform to normalized schema
-            const normalizedData = normalizeDeepSeekResponse(pulseSparkAnalysis, domain);
+            const normalizedData = normalizeDeepSeekResponse(aiAnalysis, domain);
             
             return res.json(normalizedData);
           } catch (parseError) {
-            console.error('Failed to parse PulseSpark AI response:', parseError);
-            // Return normalized error response
+            console.error('Failed to parse AI response:', parseError);
             return res.json(normalizeDeepSeekResponse({
               readinessScore: 0,
               error: 'Analysis parsing failed'
@@ -143,30 +196,28 @@ ${isManualContent ? `Content to analyze: ${input}` : ''}`
           console.error('PulseSpark AI API error:', response.status, errorText);
           
           if (response.status === 403) {
-            return res.status(403).json({ error: 'This website blocks automated analysis. Please use the manual content option.' });
+            return res.status(403).json({ 
+              error: 'This website blocks automated analysis. Please use the manual content option.',
+              requiresManual: true 
+            });
           }
           
           throw new Error(`PulseSpark AI API error: ${response.status}`);
         }
-      } catch (pulseSparkError) {
-        console.error('PulseSpark AI API failed:', pulseSparkError);
-        // Return fallback response
-        return res.json(normalizeDeepSeekResponse({
-          readinessScore: 50,
-          error: 'API temporarily unavailable'
-        }, domain));
+      } catch (error) {
+        console.error('AI API failed:', error);
       }
     }
     
-    // Fallback response when no API key
+    // Fallback response
     return res.json(normalizeDeepSeekResponse({
       readinessScore: 50,
-      error: 'No API key configured'
+      error: 'Analysis service temporarily unavailable'
     }, domain));
     
   } catch (error) {
-    console.error('PulseSpark AI analysis error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Analysis error:', error);
+    return res.status(500).json({ error: 'Analysis failed' });
   }
 });
 
