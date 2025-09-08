@@ -142,29 +142,9 @@ Detected structural signals:
 - Authority links: ${extractedSignals.authorityAssociations?.length || 0}
 - Brand mentions: ${extractedSignals.brandMentions?.total || 0} (density: ${extractedSignals.brandMentions?.density?.toFixed(2) || 0})
 
-Content sample: ${contentToAnalyze.substring(0, 2000)}...`;
-        } else {
-          promptContent = `Analyze the website "${domain}" for AI platform optimization with focus on Perplexity ranking signals...`;
-        }
-        
-        // Call PulseSpark AI backend service
-        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${PULSESPARK_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'deepseek-reasoner',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are PulseSpark AI, an expert SEO analyzer specializing in AI search optimization. Analyze websites or content for AI search platform optimization. Return your analysis as valid JSON only, with no markdown formatting or code blocks.'
-              },
-              {
-                role: 'user',
-                content: promptContent
-              }
+Content sample: ${contentToAnalyze.substring(0, 2000)}...
+
+Return a JSON object with the following structure:
 {
   "readinessScore": (number 0-100 based on Perplexity optimization),
   "entityAnalysis": {
@@ -204,6 +184,78 @@ Content sample: ${contentToAnalyze.substring(0, 2000)}...`;
     "quora": {"found": (boolean), "questions": (number)},
     "news": {"found": (boolean), "articles": (number)}
   },
+  "recommendations": {
+    "critical": ["array of critical improvements needed"],
+    "important": ["array of important recommendations"],
+    "nice_to_have": ["array of nice-to-have suggestions"]
+  }
+}`;
+        } else {
+          promptContent = `Analyze the website "${domain}" for AI platform optimization with focus on Perplexity ranking signals. Return a JSON object with the following structure:
+{
+  "readinessScore": (number 0-100 based on Perplexity optimization),
+  "entityAnalysis": {
+    "brandStrength": (number 0-100),
+    "mentions": (estimated number of brand mentions),
+    "density": (keyword density as decimal),
+    "authorityAssociations": ["array of authority signals found"],
+    "hasWikipedia": (boolean)
+  },
+  "contentAnalysis": {
+    "depth": (number 0-100 for content depth score),
+    "clusters": [
+      {"topic": "topic name", "pages": (number), "avgWords": (number)}
+    ],
+    "gaps": ["array of content gaps based on Perplexity preferences"],
+    "totalPages": (estimated number),
+    "avgPageLength": (estimated average words),
+    "perplexitySignals": {
+      "questionAnswering": (boolean - has Q&A format),
+      "howToContent": (boolean - has step-by-step guides),
+      "dataVisualization": (boolean - has charts/data),
+      "expertCitations": (boolean - has expert quotes),
+      "structuredContent": (boolean - has clear headings/lists),
+      "freshness": (boolean - recent/updated content),
+      "authorityMarkers": (boolean - credentials/institutional backing)
+    }
+  },
+  "technicalSEO": {
+    "hasSchema": (boolean),
+    "schemaTypes": ["array of schema types"],
+    "metaQuality": (number 0-100)
+  },
+  "platformPresence": {
+    "reddit": {"found": (boolean), "mentions": (number)},
+    "youtube": {"found": (boolean), "videos": (number)},
+    "linkedin": {"found": (boolean), "followers": (number)},
+    "quora": {"found": (boolean), "questions": (number)},
+    "news": {"found": (boolean), "articles": (number)}
+  },
+  "recommendations": {
+    "critical": ["array of critical improvements needed"],
+    "important": ["array of important recommendations"],
+    "nice_to_have": ["array of nice-to-have suggestions"]
+  }
+}`;
+        }
+        
+        // Call PulseSpark AI backend service
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${PULSESPARK_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'deepseek-reasoner',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are PulseSpark AI, an expert SEO analyzer specializing in AI search optimization. Analyze websites or content for AI search platform optimization. Return your analysis as valid JSON only, with no markdown formatting or code blocks.'
+              },
+              {
+                role: 'user',
+                content: promptContent
               }
             ],
             temperature: 0.3,
@@ -264,7 +316,7 @@ Content sample: ${contentToAnalyze.substring(0, 2000)}...`;
               requiresManual: true,
               fileType: 'api_blocked',
               suggestion: 'Copy the website content manually using the instructions provided.'
-});
+            });
           }
           
           throw new Error(`PulseSpark AI API error: ${response.status}`);
