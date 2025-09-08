@@ -257,6 +257,9 @@ function calculateReadinessScore(extractedSignals) {
   
   if (extractedSignals?.authorityAssociations?.length > 0) score += 5;
   
+  if (extractedSignals?.platformPresence?.reddit?.found) score += 5;
+  if (extractedSignals?.platformPresence?.youtube?.found) score += 5;
+  
   return Math.min(100, score);
 }
 
