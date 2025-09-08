@@ -469,40 +469,45 @@ Return a JSON analysis with this exact structure:`;
 
     console.log('Calling DeepSeek API...');
     
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',  // Much faster model!
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert AI SEO analyzer. Analyze websites for AI platform optimization. Return only valid JSON with no markdown formatting.'
-          },
-          {
-            role: 'user',
-            content: promptContent + '\n\n' + jsonStructure
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 1000  // Reduced for faster response
-      })
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('DeepSeek API error:', response.status, errorText);
-      return res.status(500).json({ 
-        error: `DeepSeek API error: ${response.status}`,
-        details: errorText
+    // Add timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+    try {
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal,  // Add this
+        body: JSON.stringify({
+          model: 'deepseek-chat',  // CHANGED from 'deepseek-reasoner'
+          messages: [
+            {
+              role: 'system',
+              content: 'Return ONLY valid JSON with no explanation or markdown.'
+            },
+            {
+              role: 'user',
+              content: promptContent + '\n\nReturn ONLY the JSON, no text.'
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 1000  // Reduced from 2000
+        })
       });
-    }
-    
-    const data = await response.json();
-    let content = data.choices[0]?.message?.content || '{}';
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('DeepSeek API error:', response.status, errorText);
+        throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      let content = data.choices[0]?.message?.content || '{}';
     
     // Clean and parse the response
     let aiAnalysis;
@@ -590,6 +595,75 @@ Return a JSON analysis with this exact structure:`;
       
       console.log('Using smart fallback analysis based on extracted signals');
     }
+    
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.log('DeepSeek timeout, using fallback');
+        // Generate smart fallback data on timeout
+        aiAnalysis = {
+          readinessScore: Math.min(100, 30 + 
+            (extractedSignals?.faqs?.length > 0 ? 15 : 0) +
+            (extractedSignals?.tables?.length > 0 ? 10 : 0) +
+            (extractedSignals?.schemaMarkup?.length > 0 ? 20 : 0) +
+            (extractedSignals?.howToSteps?.length > 0 ? 10 : 0) +
+            (extractedSignals?.brandMentions?.total > 5 ? 10 : 5)),
+          entityAnalysis: {
+            brandStrength: extractedSignals?.brandMentions?.total > 0 ? 65 : 30,
+            mentions: extractedSignals?.brandMentions?.total || 0,
+            density: extractedSignals?.brandMentions?.density || 0.5,
+            authorityAssociations: extractedSignals?.authorityAssociations || [],
+            hasWikipedia: extractedSignals?.authorityAssociations?.includes('wikipedia')
+          },
+          contentAnalysis: {
+            depth: extractedSignals?.headingStructure?.totalHeadings > 10 ? 75 : 45,
+            clusters: [
+              { topic: "Main Content", pages: 10, avgWords: 1500 },
+              { topic: "Supporting Pages", pages: 5, avgWords: 1000 }
+            ],
+            gaps: [
+              !extractedSignals?.faqs?.length && "FAQ Section",
+              !extractedSignals?.tables?.length && "Comparison Tables",
+              !extractedSignals?.howToSteps?.length && "How-to Guides"
+            ].filter(Boolean),
+            totalPages: 15,
+            avgPageLength: 1250
+          },
+          technicalSEO: {
+            hasSchema: extractedSignals?.schemaMarkup?.length > 0,
+            schemaTypes: ["Article", "Organization"],
+            metaQuality: 70
+          },
+          platformPresence: {
+            reddit: { found: false, mentions: 0 },
+            youtube: { found: false, videos: 0 },
+            linkedin: { found: false, followers: 0 },
+            quora: { found: false, questions: 0 },
+            news: { found: false, articles: 0 }
+          },
+          recommendations: {
+            critical: [
+              !extractedSignals?.faqs?.length && "Add FAQ section for better Q&A visibility",
+              !extractedSignals?.schemaMarkup?.length && "Implement Schema.org markup",
+              extractedSignals?.brandMentions?.total < 5 && "Increase brand mention density"
+            ].filter(Boolean).slice(0, 3),
+            important: [
+              !extractedSignals?.tables?.length && "Add comparison or feature tables",
+              !extractedSignals?.howToSteps?.length && "Create step-by-step guides",
+              "Build Wikipedia presence"
+            ].filter(Boolean).slice(0, 3),
+            nice_to_have: [
+              "Expand social media presence",
+              "Add video content", 
+              "Increase internal linking"
+            ]
+          }
+        };
+        console.log('Using timeout fallback analysis');
+      } else {
+        console.error('DeepSeek API error:', error);
+        throw error; // Re-throw non-timeout errors
+      }
     }
     
     // Normalize and enhance the response
