@@ -163,8 +163,8 @@ Content sample: ${contentToAnalyze.substring(0, 2000)}...`;
               },
               {
                 role: 'user',
-                content: promptContent 
-                  `Analyze this website content for AI platform optimization using Perplexity ranking signals. Focus on the 59 key ranking factors including content depth, authority signals, freshness, structure, and user intent. Return a JSON object with exactly this structure:
+                content: promptContent
+              }
 {
   "readinessScore": (number 0-100 based on Perplexity optimization),
   "entityAnalysis": {
@@ -204,60 +204,6 @@ Content sample: ${contentToAnalyze.substring(0, 2000)}...`;
     "quora": {"found": (boolean), "questions": (number)},
     "news": {"found": (boolean), "articles": (number)}
   },
-  "recommendations": {
-    "critical": ["array of critical Perplexity optimization improvements"],
-    "important": ["array of important ranking signal improvements"],
-    "nice_to_have": ["array of nice-to-have Perplexity enhancements"]
-  }
-}
-
-Content to analyze: ${contentToAnalyze}` :
-                  `Analyze the website "${domain}" for AI platform optimization with focus on Perplexity ranking signals. Evaluate all 59 key ranking factors including content depth, expert citations, data visualization, question-answer format, authority signals, freshness indicators, and structured content. Return a JSON object with exactly this structure:
-{
-  "readinessScore": (number 0-100 based on Perplexity optimization),
-  "entityAnalysis": {
-    "brandStrength": (number 0-100),
-    "mentions": (estimated number of brand mentions),
-    "density": (keyword density as decimal),
-    "authorityAssociations": ["array of authority signals found"],
-    "hasWikipedia": (boolean)
-  },
-  "contentAnalysis": {
-    "depth": (number 0-100 for content depth score),
-    "clusters": [
-      {"topic": "topic name", "pages": (number), "avgWords": (number)}
-    ],
-    "gaps": ["array of content gaps based on Perplexity preferences"],
-    "totalPages": (estimated number),
-    "avgPageLength": (estimated average words),
-    "perplexitySignals": {
-      "questionAnswering": (boolean - has Q&A format),
-      "howToContent": (boolean - has step-by-step guides),
-      "dataVisualization": (boolean - has charts/data),
-      "expertCitations": (boolean - has expert quotes),
-      "structuredContent": (boolean - has clear headings/lists),
-      "freshness": (boolean - recent/updated content),
-      "authorityMarkers": (boolean - credentials/institutional backing)
-    }
-  },
-  "technicalSEO": {
-    "hasSchema": (boolean),
-    "schemaTypes": ["array of schema types"],
-    "metaQuality": (number 0-100)
-  },
-  "platformPresence": {
-    "reddit": {"found": (boolean), "mentions": (number)},
-    "youtube": {"found": (boolean), "videos": (number)},
-    "linkedin": {"found": (boolean), "followers": (number)},
-    "quora": {"found": (boolean), "questions": (number)},
-    "news": {"found": (boolean), "articles": (number)}
-  },
-  "recommendations": {
-    "critical": ["array of critical Perplexity optimization improvements"],
-    "important": ["array of important ranking signal improvements"],
-    "nice_to_have": ["array of nice-to-have Perplexity enhancements"]
-  }
-}`
               }
             ],
             temperature: 0.3,
