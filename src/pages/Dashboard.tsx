@@ -100,7 +100,21 @@ const Dashboard = () => {
       .limit(1);
 
     if (scans && scans.length > 0) {
-      setScanData(scans[0].results);
+      const scanResults = scans[0].results || {};
+      
+      // Transform data for UI components
+      const transformedData = {
+        ...scanResults,
+        aggregates: {
+          citationDomains: extractCitationDomains(scanResults.citations),
+          totalCitations: scanResults.citations?.length || 0,
+          sentiment: scanResults.sentiment || { positive: 0, neutral: 100, negative: 0 },
+          rankings: scanResults.rankings || []
+        },
+        results: scanResults.rankings || []
+      };
+      
+      setScanData(transformedData);
     }
   };
 
@@ -211,6 +225,17 @@ const Dashboard = () => {
 
   const getUserInitial = () => {
     return userName.charAt(0).toUpperCase();
+  };
+
+  const extractCitationDomains = (citations: any[]) => {
+    const domains: Record<string, number> = {};
+    if (citations && Array.isArray(citations)) {
+      citations.forEach(citation => {
+        const domain = citation.domain || citation.source_url?.split('/')[2] || 'unknown';
+        domains[domain] = (domains[domain] || 0) + 1;
+      });
+    }
+    return domains;
   };
 
   const renderContent = () => {
