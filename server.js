@@ -74,6 +74,31 @@ async function canAIScrapeUrl(url) {
   }
 }
 
+function detectPlatformPresence(html) {
+  return {
+    reddit: {
+      found: /reddit\.com|\/r\/|subreddit/i.test(html),
+      mentions: (html.match(/reddit/gi) || []).length
+    },
+    youtube: {
+      found: /youtube\.com|youtu\.be/i.test(html),
+      videos: (html.match(/youtube|video/gi) || []).length
+    },
+    linkedin: {
+      found: /linkedin\.com/i.test(html),
+      followers: (html.match(/linkedin/gi) || []).length * 100
+    },
+    quora: {
+      found: /quora\.com/i.test(html),
+      questions: (html.match(/quora/gi) || []).length
+    },
+    news: {
+      found: /press release|news|media/i.test(html),
+      articles: (html.match(/news|press|media/gi) || []).length
+    }
+  };
+}
+
 function extractPerplexitySignals(html, domain) {
   const signals = {
     faqs: [],
@@ -90,7 +115,8 @@ function extractPerplexitySignals(html, domain) {
     brandMentions: {
       total: 0,
       density: 0
-    }
+    },
+    platformPresence: null // Will be populated separately
   };
   
   // Extract FAQs
@@ -149,6 +175,9 @@ function extractPerplexitySignals(html, domain) {
   const brandMatches = html.match(new RegExp(brandName, 'gi')) || [];
   signals.brandMentions.total = brandMatches.length;
   signals.brandMentions.density = brandMatches.length / (html.length / 1000);
+  
+  // Detect platform presence
+  signals.platformPresence = detectPlatformPresence(html);
   
   return signals;
 }
@@ -258,7 +287,7 @@ function normalizePulseSparkResponse(data, domain, extractedSignals) {
       metaQuality: 0
     },
     
-    platformPresence: data.platformPresence || {
+    platformPresence: extractedSignals?.platformPresence || data.platformPresence || {
       reddit: { found: false, mentions: 0 },
       youtube: { found: false, videos: 0 },
       linkedin: { found: false, followers: 0 },
@@ -596,7 +625,7 @@ Return a JSON analysis with this exact structure:`;
             schemaTypes: ["Article", "Organization"],
             metaQuality: 70
           },
-          platformPresence: {
+          platformPresence: extractedSignals?.platformPresence || {
             reddit: { found: false, mentions: 0 },
             youtube: { found: false, videos: 0 },
             linkedin: { found: false, followers: 0 },
@@ -658,7 +687,7 @@ Return a JSON analysis with this exact structure:`;
           schemaTypes: ["Article", "Organization"],
           metaQuality: 70
         },
-        platformPresence: {
+        platformPresence: extractedSignals?.platformPresence || {
           reddit: { found: false, mentions: 0 },
           youtube: { found: false, videos: 0 },
           linkedin: { found: false, followers: 0 },
