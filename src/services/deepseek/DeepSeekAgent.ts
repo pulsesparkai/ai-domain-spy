@@ -38,6 +38,25 @@ interface DeepSeekAnalysis {
   };
 }
 
+function extractPlatformPresence(citations: any[]) {
+  const platforms: any = { 
+    reddit: { found: false, mentions: 0 }, 
+    youtube: { found: false, videos: 0 }, 
+    linkedin: { found: false, followers: 0 }, 
+    quora: { found: false, questions: 0 }, 
+    news: { found: false, articles: 0 } 
+  };
+  
+  citations?.forEach(c => {
+    if (c.domain?.includes('reddit')) platforms.reddit = { found: true, mentions: 1 };
+    if (c.domain?.includes('youtube')) platforms.youtube = { found: true, videos: 1 };
+    if (c.domain?.includes('linkedin')) platforms.linkedin = { found: true, followers: 100 };
+    if (c.diversity_bucket === 'news') platforms.news = { found: true, articles: 1 };
+  });
+  
+  return platforms;
+}
+
 export class DeepSeekAgent {
   private apiEndpoint: string;
 
@@ -47,7 +66,7 @@ export class DeepSeekAgent {
     this.apiEndpoint = `${baseUrl}/api/deepseek/analyze-website`;
   }
 
-  async analyzeForPerplexity(url: string, userToken?: string): Promise<DeepSeekAnalysis> {
+  async analyzeForPerplexity(url: string): Promise<DeepSeekAnalysis> {
     try {
       if (!url || typeof url !== 'string') {
         throw new Error('Invalid URL provided');
@@ -58,34 +77,59 @@ export class DeepSeekAgent {
 
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: cleanUrl })
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API error:', response.status, errorText);
-        
-        if (response.status === 500) {
-          throw new Error('Server error. Please try again.');
-        }
         throw new Error(`Analysis failed: ${response.statusText}`);
       }
 
       const data = await response.json();
       console.log('DeepSeek API Response:', data);
       
-      // The backend returns the analysis directly
-      return data;
+      // Validate response structure
+      if (!data.citations || !data.sentiment || !data.rankings) {
+        console.warn('Response missing expected fields, using defaults');
+      }
+      
+      return {
+        ...data,
+        // Map normalized response back to expected DeepSeekAnalysis structure
+        readinessScore: data.summary_cards?.key_stats?.find((s: any) => s.label === 'Readiness Score')?.value?.split('/')[0] || 50,
+        entityAnalysis: {
+          brandStrength: data.sentiment?.score * 50 + 50 || 50,
+          mentions: data.citations?.length || 0,
+          density: 1.5,
+          authorityAssociations: data.entities?.filter((e: any) => e.type === 'authority').map((e: any) => e.name) || [],
+          hasWikipedia: data.entities?.some((e: any) => e.disambiguation_urls?.includes('wikipedia.org')) || false
+        },
+        contentAnalysis: {
+          depth: 70,
+          clusters: data.rankings?.slice(0, 3).map((r: any) => ({
+            topic: r.prompt_or_query,
+            pages: 10,
+            avgWords: 1500
+          })) || [],
+          gaps: data.summary_cards?.pros_cons?.cons || [],
+          totalPages: parseInt(data.summary_cards?.key_stats?.find((s: any) => s.label === 'Content Pages')?.value) || 10,
+          avgPageLength: 1500
+        },
+        technicalSEO: {
+          hasSchema: data.citations?.some((c: any) => c.credibility_signals?.doc_type === 'docs') || false,
+          schemaTypes: [],
+          metaQuality: 75
+        },
+        platformPresence: extractPlatformPresence(data.citations),
+        recommendations: {
+          critical: data.summary_cards?.pros_cons?.cons?.slice(0, 2) || [],
+          important: [],
+          nice_to_have: []
+        }
+      };
       
     } catch (error) {
       console.error('DeepSeek error:', error);
-      // Only use mock data as last resort
-      if (error instanceof Error && error.message.includes('fetch')) {
-        return this.getMockAnalysis(url);
-      }
       throw error;
     }
   }
