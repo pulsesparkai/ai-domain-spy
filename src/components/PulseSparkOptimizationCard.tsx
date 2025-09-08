@@ -55,9 +55,11 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
     } catch (error: any) {
       console.error('Analysis error:', error);
       
-      // Check if it's a robots.txt block
-      if (error.message.includes('blocks automated analysis')) {
-        showToast.error('This site blocks scraping. Please switch to the Manual Content tab and paste the website content.');
+      // Check if it's a robots.txt or llms.txt block
+      if (error.message.includes('blocks automated analysis') || 
+          error.message.includes('llms.txt') || 
+          error.message.includes('robots.txt')) {
+        showToast.error('Website blocks AI crawling. Please use the Manual Content tab to paste content directly.');
         setInputMode('manual');
       } else {
         showToast.error(error.message || 'Analysis failed');
@@ -82,7 +84,7 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
         {!expanded ? (
           <div>
             <p className="text-muted-foreground mb-4">
-              Analyze how well your website is optimized for AI platforms with PulseSpark AI
+              Analyze your website for Perplexity AI optimization using 59 ranking signals
             </p>
             
             <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'url' | 'manual')}>
@@ -115,13 +117,31 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  We respect robots.txt. If blocked, use the manual content option.
+                  We check both robots.txt and llms.txt for AI crawling permissions.
                 </p>
               </TabsContent>
               
               <TabsContent value="manual" className="space-y-4">
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Manual Content Collection Guide
+                  </h4>
+                  <div className="text-sm text-muted-foreground space-y-2">
+                    <p><strong>What to copy:</strong></p>
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>Homepage main content and hero section</li>
+                      <li>About page or company description</li>
+                      <li>Key product/service pages</li>
+                      <li>FAQ sections and how-to guides</li>
+                      <li>Any data, charts, or research content</li>
+                      <li>Author bios and credentials</li>
+                    </ul>
+                    <p className="mt-2"><strong>How to copy:</strong> Right-click → "View Page Source" or Ctrl+U, then copy the text content (not HTML tags).</p>
+                  </div>
+                </div>
                 <Textarea
-                  placeholder="Paste the website's HTML or main content here..."
+                  placeholder="Paste your website content here (focus on main pages, about section, key content)..."
                   value={manualContent}
                   onChange={(e) => setManualContent(e.target.value)}
                   className="min-h-[200px]"
@@ -131,10 +151,10 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
                   disabled={loading || !manualContent}
                   className="w-full"
                 >
-                  {loading ? 'Analyzing...' : 'Analyze Content'}
+                  {loading ? 'Analyzing Perplexity Signals...' : 'Analyze Content for Perplexity'}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  Copy the page source (Ctrl+U) or main content from the website and paste it here.
+                  We'll analyze your content for all 59 Perplexity ranking factors including question-answer format, expert citations, data visualization, and content structure.
                 </p>
               </TabsContent>
             </Tabs>
@@ -143,7 +163,7 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold">AI Readiness Score</h3>
+                <h3 className="text-lg font-semibold">Perplexity AI Readiness Score</h3>
                 <p className="text-sm text-muted-foreground">Based on 59 ranking patterns</p>
               </div>
               <div className="text-3xl font-bold text-primary">

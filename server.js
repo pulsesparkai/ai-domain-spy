@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
-import { canScrapeUrl } from './server/utils/robots-checker.js';
+import { canAIScrapeUrl } from './server/utils/ai-scraping-checker.js';
 import { normalizePulseSparkResponse } from './server/transformers/pulsespark-normalizer.js';
+import { PerplexitySignalsExtractor } from './server/analyzers/perplexity-signals.js';
 
 dotenv.config();
 
@@ -52,14 +53,16 @@ app.post('/api/ai-analysis', async (req, res) => {
       domain = 'manual-input';
       console.log('Analyzing manual content input');
     } else {
-      // It's a URL - check robots.txt first
+      // It's a URL - check both robots.txt and llms.txt
       domain = input.replace(/^https?:\/\//, '').replace(/\/$/, '');
       
-      const canScrape = await canScrapeUrl(input);
-      if (!canScrape) {
+      const scrapingCheck = await canAIScrapeUrl(input);
+      if (!scrapingCheck.allowed) {
         return res.status(403).json({ 
-          error: 'This website does not allow automated scraping. Please use the manual content option.',
-          requiresManual: true 
+          error: scrapingCheck.reason,
+          requiresManual: true,
+          fileType: scrapingCheck.fileType,
+          suggestion: 'Please use the manual content option and paste the website content directly.'
         });
       }
       
@@ -87,9 +90,9 @@ app.post('/api/ai-analysis', async (req, res) => {
               {
                 role: 'user',
                 content: isManualContent ? 
-                  `Analyze this website content for AI platform optimization. Return a JSON object with exactly this structure:
+                  `Analyze this website content for AI platform optimization using Perplexity ranking signals. Focus on the 59 key ranking factors including content depth, authority signals, freshness, structure, and user intent. Return a JSON object with exactly this structure:
 {
-  "readinessScore": (number 0-100 based on overall optimization),
+  "readinessScore": (number 0-100 based on Perplexity optimization),
   "entityAnalysis": {
     "brandStrength": (number 0-100),
     "mentions": (estimated number of brand mentions),
@@ -102,9 +105,18 @@ app.post('/api/ai-analysis', async (req, res) => {
     "clusters": [
       {"topic": "topic name", "pages": (number), "avgWords": (number)}
     ],
-    "gaps": ["array of content gaps"],
+    "gaps": ["array of content gaps based on Perplexity preferences"],
     "totalPages": (estimated number),
-    "avgPageLength": (estimated average words)
+    "avgPageLength": (estimated average words),
+    "perplexitySignals": {
+      "questionAnswering": (boolean - has Q&A format),
+      "howToContent": (boolean - has step-by-step guides),
+      "dataVisualization": (boolean - has charts/data),
+      "expertCitations": (boolean - has expert quotes),
+      "structuredContent": (boolean - has clear headings/lists),
+      "freshness": (boolean - recent/updated content),
+      "authorityMarkers": (boolean - credentials/institutional backing)
+    }
   },
   "technicalSEO": {
     "hasSchema": (boolean),
@@ -119,16 +131,16 @@ app.post('/api/ai-analysis', async (req, res) => {
     "news": {"found": (boolean), "articles": (number)}
   },
   "recommendations": {
-    "critical": ["array of critical improvements needed"],
-    "important": ["array of important recommendations"],
-    "nice_to_have": ["array of nice-to-have suggestions"]
+    "critical": ["array of critical Perplexity optimization improvements"],
+    "important": ["array of important ranking signal improvements"],
+    "nice_to_have": ["array of nice-to-have Perplexity enhancements"]
   }
 }
 
 Content to analyze: ${contentToAnalyze}` :
-                  `Analyze the website "${domain}" for AI platform optimization. Return a JSON object with exactly this structure:
+                  `Analyze the website "${domain}" for AI platform optimization with focus on Perplexity ranking signals. Evaluate all 59 key ranking factors including content depth, expert citations, data visualization, question-answer format, authority signals, freshness indicators, and structured content. Return a JSON object with exactly this structure:
 {
-  "readinessScore": (number 0-100 based on overall optimization),
+  "readinessScore": (number 0-100 based on Perplexity optimization),
   "entityAnalysis": {
     "brandStrength": (number 0-100),
     "mentions": (estimated number of brand mentions),
@@ -141,9 +153,18 @@ Content to analyze: ${contentToAnalyze}` :
     "clusters": [
       {"topic": "topic name", "pages": (number), "avgWords": (number)}
     ],
-    "gaps": ["array of content gaps"],
+    "gaps": ["array of content gaps based on Perplexity preferences"],
     "totalPages": (estimated number),
-    "avgPageLength": (estimated average words)
+    "avgPageLength": (estimated average words),
+    "perplexitySignals": {
+      "questionAnswering": (boolean - has Q&A format),
+      "howToContent": (boolean - has step-by-step guides),
+      "dataVisualization": (boolean - has charts/data),
+      "expertCitations": (boolean - has expert quotes),
+      "structuredContent": (boolean - has clear headings/lists),
+      "freshness": (boolean - recent/updated content),
+      "authorityMarkers": (boolean - credentials/institutional backing)
+    }
   },
   "technicalSEO": {
     "hasSchema": (boolean),
@@ -158,9 +179,9 @@ Content to analyze: ${contentToAnalyze}` :
     "news": {"found": (boolean), "articles": (number)}
   },
   "recommendations": {
-    "critical": ["array of critical improvements needed"],
-    "important": ["array of important recommendations"],
-    "nice_to_have": ["array of nice-to-have suggestions"]
+    "critical": ["array of critical Perplexity optimization improvements"],
+    "important": ["array of important ranking signal improvements"],
+    "nice_to_have": ["array of nice-to-have Perplexity enhancements"]
   }
 }`
               }
@@ -180,6 +201,16 @@ Content to analyze: ${contentToAnalyze}` :
             const aiAnalysis = JSON.parse(cleanContent);
             console.log('PulseSpark AI analysis successful for:', domain);
             
+            // If we have manual content, also run Perplexity signals analysis
+            if (isManualContent) {
+              const signalsExtractor = new PerplexitySignalsExtractor();
+              const perplexityAnalysis = signalsExtractor.analyzeContent(contentToAnalyze, domain);
+              
+              // Merge the analyses
+              aiAnalysis.perplexitySignalsAnalysis = perplexityAnalysis;
+              aiAnalysis.readinessScore = Math.max(aiAnalysis.readinessScore, perplexityAnalysis.readinessScore);
+            }
+            
             // Transform to normalized schema
             const normalizedData = normalizePulseSparkResponse(aiAnalysis, domain);
             
@@ -198,7 +229,9 @@ Content to analyze: ${contentToAnalyze}` :
           if (response.status === 403) {
             return res.status(403).json({ 
               error: 'This website blocks automated analysis. Please use the manual content option.',
-              requiresManual: true 
+              requiresManual: true,
+              fileType: 'api_blocked',
+              suggestion: 'Copy the website content manually using the instructions provided.'
             });
           }
           
