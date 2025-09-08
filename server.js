@@ -2,11 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
-import { canAIScrapeUrl } from './server/utils/ai-scraping-checker.js';
-import { normalizePulseSparkResponse } from './server/transformers/pulsespark-normalizer.js';
-import { PerplexitySignalsExtractor } from './server/analyzers/perplexity-signals.js';
-import { extractPerplexitySignals } from './server/extractors/perplexity-signals-extractor.js';
-import { convertSignalsToCitations } from './server/utils/signals-to-citations.js';
 
 dotenv.config();
 
@@ -18,7 +13,309 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+
+// ========== PRODUCTION HELPER FUNCTIONS ==========
+
+async function canAIScrapeUrl(url) {
+  try {
+    const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const baseUrl = `${urlObj.protocol}//${urlObj.hostname}`;
+    
+    // Check llms.txt first (AI-specific standard)
+    try {
+      const llmsResponse = await fetch(`${baseUrl}/llms.txt`, { timeout: 3000 });
+      if (llmsResponse.ok) {
+        const llmsText = await llmsResponse.text();
+        if (llmsText.toLowerCase().includes('disallow')) {
+          return { 
+            allowed: false, 
+            reason: 'llms.txt blocks AI crawlers',
+            fileType: 'llms.txt'
+          };
+        }
+      }
+    } catch (e) {}
+    
+    // Check robots.txt
+    try {
+      const robotsResponse = await fetch(`${baseUrl}/robots.txt`, { timeout: 3000 });
+      if (robotsResponse.ok) {
+        const robotsText = await robotsResponse.text();
+        const lines = robotsText.toLowerCase().split('\n');
+        let isDisallowed = false;
+        
+        for (const line of lines) {
+          if (line.includes('user-agent: *') || line.includes('gptbot')) {
+            if (lines.some(l => l.includes('disallow: /'))) {
+              isDisallowed = true;
+              break;
+            }
+          }
+        }
+        
+        if (isDisallowed) {
+          return { 
+            allowed: false, 
+            reason: 'robots.txt blocks crawlers',
+            fileType: 'robots.txt'
+          };
+        }
+      }
+    } catch (e) {}
+    
+    return { allowed: true, reason: null };
+  } catch (error) {
+    return { allowed: true, reason: null };
+  }
+}
+
+function extractPerplexitySignals(html, domain) {
+  const signals = {
+    faqs: [],
+    tables: [],
+    howToSteps: [],
+    schemaMarkup: [],
+    headingStructure: {
+      h1Count: 0,
+      totalHeadings: 0
+    },
+    internalLinks: 0,
+    citations: [],
+    authorityAssociations: [],
+    brandMentions: {
+      total: 0,
+      density: 0
+    }
+  };
+  
+  // Extract FAQs
+  const faqPattern = /FAQ|frequently asked questions/gi;
+  if (faqPattern.test(html)) {
+    const questionPattern = /<(h[2-5]|strong)[^>]*>([^<]*\?[^<]*)<\/\1>/gi;
+    const questions = html.match(questionPattern) || [];
+    questions.forEach(q => {
+      signals.faqs.push({
+        question: q.replace(/<[^>]*>/g, '').trim(),
+        answer: 'Found in content'
+      });
+    });
+  }
+  
+  // Extract tables
+  const tableCount = (html.match(/<table/gi) || []).length;
+  for (let i = 0; i < tableCount; i++) {
+    signals.tables.push({
+      type: html.includes('price') ? 'pricing' : 'data',
+      content: []
+    });
+  }
+  
+  // Extract how-to content
+  if (/how to|step by step|tutorial/gi.test(html)) {
+    const stepPattern = /<li[^>]*>([^<]+)<\/li>/gi;
+    const steps = html.match(stepPattern) || [];
+    steps.slice(0, 5).forEach(step => {
+      signals.howToSteps.push(step.replace(/<[^>]*>/g, '').trim());
+    });
+  }
+  
+  // Extract schema markup
+  const schemaPattern = /<script[^>]*type=["']application\/ld\+json["'][^>]*>(.*?)<\/script>/gis;
+  const schemaMatches = html.match(schemaPattern) || [];
+  schemaMatches.forEach(() => {
+    signals.schemaMarkup.push({ type: 'Schema.org' });
+  });
+  
+  // Count headings
+  signals.headingStructure.h1Count = (html.match(/<h1/gi) || []).length;
+  signals.headingStructure.totalHeadings = (html.match(/<h[1-6]/gi) || []).length;
+  
+  // Count internal links
+  const linkPattern = new RegExp(`href=["'][^"']*${domain}`, 'gi');
+  signals.internalLinks = (html.match(linkPattern) || []).length;
+  
+  // Find authority associations
+  if (html.includes('.gov')) signals.authorityAssociations.push('Government sites');
+  if (html.includes('.edu')) signals.authorityAssociations.push('Educational institutions');
+  if (html.includes('wikipedia')) signals.authorityAssociations.push('Wikipedia');
+  
+  // Count brand mentions
+  const brandName = domain.split('.')[0];
+  const brandMatches = html.match(new RegExp(brandName, 'gi')) || [];
+  signals.brandMentions.total = brandMatches.length;
+  signals.brandMentions.density = brandMatches.length / (html.length / 1000);
+  
+  return signals;
+}
+
+function convertSignalsToCitations(signals) {
+  const citations = [];
+  
+  if (signals?.faqs?.length > 0) {
+    citations.push({
+      source_url: '#faq-section',
+      domain: 'on-page',
+      title: `${signals.faqs.length} FAQ entries detected`,
+      snippet: 'FAQ content significantly improves AI visibility',
+      credibility_signals: { official: true, doc_type: 'docs' },
+      confidence: 0.95,
+      diversity_bucket: 'official'
+    });
+  }
+  
+  if (signals?.tables?.length > 0) {
+    signals.tables.forEach((table, idx) => {
+      citations.push({
+        source_url: `#table-${idx}`,
+        domain: 'on-page',
+        title: `${table.type} table detected`,
+        snippet: `Structured ${table.type} data found`,
+        credibility_signals: { official: true, doc_type: 'docs' },
+        confidence: 0.9,
+        diversity_bucket: 'reference'
+      });
+    });
+  }
+  
+  if (signals?.howToSteps?.length > 0) {
+    citations.push({
+      source_url: '#how-to',
+      domain: 'on-page',
+      title: `How-to guide with ${signals.howToSteps.length} steps`,
+      snippet: signals.howToSteps[0] || 'Step-by-step guide found',
+      credibility_signals: { official: true, doc_type: 'docs' },
+      confidence: 0.92,
+      diversity_bucket: 'official'
+    });
+  }
+  
+  if (signals?.schemaMarkup?.length > 0) {
+    citations.push({
+      source_url: '#schema',
+      domain: 'on-page',
+      title: 'Structured data markup detected',
+      snippet: `${signals.schemaMarkup.length} schema.org implementations`,
+      credibility_signals: { official: true, doc_type: 'docs' },
+      confidence: 1.0,
+      diversity_bucket: 'official'
+    });
+  }
+  
+  return citations;
+}
+
+function normalizePulseSparkResponse(data, domain, extractedSignals) {
+  const response = {
+    domain: domain.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+    readinessScore: data.readinessScore || 0,
+    
+    entityAnalysis: data.entityAnalysis || {
+      brandStrength: 0,
+      mentions: 0,
+      density: 0,
+      authorityAssociations: [],
+      hasWikipedia: false
+    },
+    
+    contentAnalysis: data.contentAnalysis || {
+      depth: 0,
+      clusters: [],
+      gaps: [],
+      totalPages: 0,
+      avgPageLength: 0
+    },
+    
+    technicalSEO: data.technicalSEO || {
+      hasSchema: false,
+      schemaTypes: [],
+      metaQuality: 0
+    },
+    
+    platformPresence: data.platformPresence || {
+      reddit: { found: false, mentions: 0 },
+      youtube: { found: false, videos: 0 },
+      linkedin: { found: false, followers: 0 },
+      quora: { found: false, questions: 0 },
+      news: { found: false, articles: 0 }
+    },
+    
+    recommendations: data.recommendations || {
+      critical: [],
+      important: [],
+      nice_to_have: []
+    },
+    
+    // Add extracted signals data
+    citations: extractedSignals ? convertSignalsToCitations(extractedSignals) : [],
+    sentiment: calculateSentiment(data.readinessScore),
+    rankings: extractRankings(data),
+    entities: extractEntities(data, domain),
+    faq: extractedSignals?.faqs || [],
+    tables: extractedSignals?.tables || [],
+    perplexity_signals: extractedSignals
+  };
+  
+  return response;
+}
+
+function calculateSentiment(score) {
+  const positive = score > 70 ? 60 : score > 50 ? 40 : 20;
+  const negative = score < 30 ? 40 : score < 50 ? 20 : 10;
+  const neutral = 100 - positive - negative;
+  
+  return {
+    pos: positive,
+    neu: neutral,
+    neg: negative,
+    score: (score - 50) / 50,
+    method: 'model',
+    sample_size: 100
+  };
+}
+
+function extractRankings(data) {
+  const rankings = [];
+  
+  if (data.contentAnalysis?.clusters) {
+    data.contentAnalysis.clusters.forEach((cluster, idx) => {
+      rankings.push({
+        prompt_or_query: cluster.topic,
+        intent: 'informational',
+        position: idx + 1,
+        evidence_url: '#content',
+        evidence_excerpt: `${cluster.pages} pages, ${cluster.avgWords} avg words`,
+        last_checked: new Date().toISOString()
+      });
+    });
+  }
+  
+  return rankings;
+}
+
+function extractEntities(data, domain) {
+  const entities = [{
+    name: domain.split('.')[0],
+    type: 'brand',
+    coverage: data.entityAnalysis?.mentions || 0,
+    disambiguation_urls: data.entityAnalysis?.hasWikipedia ? ['wikipedia.org'] : []
+  }];
+  
+  if (data.entityAnalysis?.authorityAssociations) {
+    data.entityAnalysis.authorityAssociations.forEach(auth => {
+      entities.push({
+        name: auth,
+        type: 'authority',
+        coverage: 1,
+        disambiguation_urls: []
+      });
+    });
+  }
+  
+  return entities;
+}
+
+// ========== API ENDPOINTS ==========
 
 app.get('/', (req, res) => {
   res.json({ 
@@ -37,7 +334,7 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// PulseSpark AI analysis endpoint
+// Main AI analysis endpoint
 app.post('/api/ai-analysis', async (req, res) => {
   try {
     const { input, isManualContent } = req.body;
@@ -46,28 +343,36 @@ app.post('/api/ai-analysis', async (req, res) => {
       return res.status(400).json({ error: 'Input is required' });
     }
     
+    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+    
+    if (!DEEPSEEK_API_KEY) {
+      return res.status(500).json({ 
+        error: 'API key not configured. Please set DEEPSEEK_API_KEY environment variable.',
+        requiresSetup: true 
+      });
+    }
+    
     let domain = '';
     let contentToAnalyze = '';
     let extractedSignals = null;
     
     if (isManualContent) {
-      // User pasted HTML content directly
+      // Manual HTML content
       domain = 'manual-input';
-      contentToAnalyze = input;
+      contentToAnalyze = input.substring(0, 10000);
+      extractedSignals = extractPerplexitySignals(contentToAnalyze, domain);
       
-      // Extract Perplexity signals from the HTML
-      extractedSignals = extractPerplexitySignals(input, domain);
       console.log('Extracted signals from manual content:', {
-        faqs: extractedSignals?.faqs?.length || 0,
-        tables: extractedSignals?.tables?.length || 0,
-        howToSteps: extractedSignals?.howToSteps?.length || 0,
-        schemaMarkup: extractedSignals?.schemaMarkup?.length || 0
+        faqs: extractedSignals.faqs.length,
+        tables: extractedSignals.tables.length,
+        howTo: extractedSignals.howToSteps.length
       });
       
     } else {
-      // It's a URL - check both robots.txt and llms.txt
+      // URL analysis
       domain = input.replace(/^https?:\/\//, '').replace(/\/$/, '');
       
+      // Check if we can scrape
       const scrapingCheck = await canAIScrapeUrl(input);
       if (!scrapingCheck.allowed) {
         return res.status(403).json({ 
@@ -75,339 +380,173 @@ app.post('/api/ai-analysis', async (req, res) => {
           requiresManual: true,
           reason: scrapingCheck.reason,
           fileType: scrapingCheck.fileType,
-          suggestion: 'Copy the HTML source code manually using Ctrl+U and paste it in the manual content tab.'
+          suggestion: 'Copy the HTML source code (Ctrl+U) and paste in manual content tab.'
         });
       }
       
-      // If we can scrape, fetch the content
+      // Try to fetch the page
       try {
-        console.log(`Fetching content from: ${input}`);
         const fullUrl = input.startsWith('http') ? input : `https://${input}`;
+        console.log(`Fetching content from: ${fullUrl}`);
+        
         const pageResponse = await fetch(fullUrl, {
           headers: {
             'User-Agent': 'PulseSparkBot/1.0 (AI Analysis; https://pulsespark.ai)',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'DNT': '1',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1'
+            'Accept': 'text/html,application/xhtml+xml'
           },
-          timeout: 15000
+          timeout: 10000
         });
         
         if (pageResponse.ok) {
           const htmlContent = await pageResponse.text();
           console.log(`Fetched ${htmlContent.length} characters from ${domain}`);
           
-          // Extract Perplexity signals from the scraped HTML
           extractedSignals = extractPerplexitySignals(htmlContent, domain);
-          contentToAnalyze = htmlContent;
-          
-          console.log('Extracted signals from scraped content:', {
-            faqs: extractedSignals?.faqs?.length || 0,
-            tables: extractedSignals?.tables?.length || 0,
-            howToSteps: extractedSignals?.howToSteps?.length || 0,
-            schemaMarkup: extractedSignals?.schemaMarkup?.length || 0,
-            authorityLinks: extractedSignals?.authorityAssociations?.length || 0
-          });
+          contentToAnalyze = htmlContent.substring(0, 10000);
         } else {
-          console.warn(`Failed to fetch ${domain}: ${pageResponse.status} ${pageResponse.statusText}`);
-          contentToAnalyze = domain; // Fallback to domain-only analysis
+          console.log(`Could not fetch ${domain}, analyzing domain only`);
+          contentToAnalyze = domain;
         }
       } catch (fetchError) {
-        console.error('Failed to fetch page content:', fetchError);
-        contentToAnalyze = domain; // Fallback to domain-only analysis
+        console.log('Fetch failed, using domain-only analysis');
+        contentToAnalyze = domain;
       }
     }
     
-    const PULSESPARK_API_KEY = process.env.DEEPSEEK_API_KEY; // Using DeepSeek backend for PulseSpark AI
-    
-    if (PULSESPARK_API_KEY) {
-      try {
-        // Create enhanced prompt with extracted signals
-        let promptContent;
-        
-        if (isManualContent && extractedSignals) {
-          promptContent = `Analyze this website content for AI platform optimization using Perplexity ranking signals.
-          
-Detected structural signals:
-- FAQ sections: ${extractedSignals.faqs?.length || 0} found
-- Data tables: ${extractedSignals.tables?.length || 0} found (${extractedSignals.tables?.map(t => t.type).join(', ') || 'none'})
-- How-to steps: ${extractedSignals.howToSteps?.length || 0} found
-- Schema markup: ${extractedSignals.schemaMarkup?.map(s => s.type).join(', ') || 'none'}
-- Heading structure: H1=${extractedSignals.headingStructure?.h1Count || 0}, Total=${extractedSignals.headingStructure?.totalHeadings || 0}
-- Internal links: ${extractedSignals.internalLinks || 0}
-- Citations: ${extractedSignals.citations?.length || 0}
-- Authority links: ${extractedSignals.authorityAssociations?.length || 0}
-- Brand mentions: ${extractedSignals.brandMentions?.total || 0} (density: ${extractedSignals.brandMentions?.density?.toFixed(2) || 0})
+    // Create the prompt for DeepSeek
+    const promptContent = extractedSignals ? 
+      `Analyze this website for AI platform optimization (Perplexity, ChatGPT, etc).
+      
+Detected signals:
+- FAQs: ${extractedSignals.faqs.length}
+- Tables: ${extractedSignals.tables.length}
+- How-to steps: ${extractedSignals.howToSteps.length}
+- Schema markup: ${extractedSignals.schemaMarkup.length}
+- Brand mentions: ${extractedSignals.brandMentions.total}
+- Authority links: ${extractedSignals.authorityAssociations.length}
 
 Content sample: ${contentToAnalyze.substring(0, 2000)}...
 
-Return a JSON object with the following structure:
-{
-  "readinessScore": (number 0-100 based on Perplexity optimization),
+Return a JSON analysis with this exact structure:` :
+      `Analyze the website "${domain}" for AI platform optimization.
+      
+Return a JSON analysis with this exact structure:`;
+
+    const jsonStructure = `{
+  "readinessScore": (0-100),
   "entityAnalysis": {
-    "brandStrength": (number 0-100),
-    "mentions": (estimated number of brand mentions),
-    "density": (keyword density as decimal),
-    "authorityAssociations": ["array of authority signals found"],
+    "brandStrength": (0-100),
+    "mentions": (number),
+    "density": (decimal),
+    "authorityAssociations": ["array"],
     "hasWikipedia": (boolean)
   },
   "contentAnalysis": {
-    "depth": (number 0-100 for content depth score),
-    "clusters": [
-      {"topic": "topic name", "pages": (number), "avgWords": (number)}
-    ],
-    "gaps": ["array of content gaps based on Perplexity preferences"],
-    "totalPages": (estimated number),
-    "avgPageLength": (estimated average words),
-    "perplexitySignals": {
-      "questionAnswering": (boolean - has Q&A format),
-      "howToContent": (boolean - has step-by-step guides),
-      "dataVisualization": (boolean - has charts/data),
-      "expertCitations": (boolean - has expert quotes),
-      "structuredContent": (boolean - has clear headings/lists),
-      "freshness": (boolean - recent/updated content),
-      "authorityMarkers": (boolean - credentials/institutional backing)
-    }
+    "depth": (0-100),
+    "clusters": [{"topic": "string", "pages": number, "avgWords": number}],
+    "gaps": ["array"],
+    "totalPages": (number),
+    "avgPageLength": (number)
   },
   "technicalSEO": {
     "hasSchema": (boolean),
-    "schemaTypes": ["array of schema types"],
-    "metaQuality": (number 0-100)
+    "schemaTypes": ["array"],
+    "metaQuality": (0-100)
   },
   "platformPresence": {
-    "reddit": {"found": (boolean), "mentions": (number)},
-    "youtube": {"found": (boolean), "videos": (number)},
-    "linkedin": {"found": (boolean), "followers": (number)},
-    "quora": {"found": (boolean), "questions": (number)},
-    "news": {"found": (boolean), "articles": (number)}
+    "reddit": {"found": boolean, "mentions": number},
+    "youtube": {"found": boolean, "videos": number},
+    "linkedin": {"found": boolean, "followers": number},
+    "quora": {"found": boolean, "questions": number},
+    "news": {"found": boolean, "articles": number}
   },
   "recommendations": {
-    "critical": ["array of critical improvements needed"],
-    "important": ["array of important recommendations"],
-    "nice_to_have": ["array of nice-to-have suggestions"]
+    "critical": ["array"],
+    "important": ["array"],
+    "nice_to_have": ["array"]
   }
 }`;
-        } else {
-          promptContent = `Analyze the website "${domain}" for AI platform optimization with focus on Perplexity ranking signals. Return a JSON object with the following structure:
-{
-  "readinessScore": (number 0-100 based on Perplexity optimization),
-  "entityAnalysis": {
-    "brandStrength": (number 0-100),
-    "mentions": (estimated number of brand mentions),
-    "density": (keyword density as decimal),
-    "authorityAssociations": ["array of authority signals found"],
-    "hasWikipedia": (boolean)
-  },
-  "contentAnalysis": {
-    "depth": (number 0-100 for content depth score),
-    "clusters": [
-      {"topic": "topic name", "pages": (number), "avgWords": (number)}
-    ],
-    "gaps": ["array of content gaps based on Perplexity preferences"],
-    "totalPages": (estimated number),
-    "avgPageLength": (estimated average words),
-    "perplexitySignals": {
-      "questionAnswering": (boolean - has Q&A format),
-      "howToContent": (boolean - has step-by-step guides),
-      "dataVisualization": (boolean - has charts/data),
-      "expertCitations": (boolean - has expert quotes),
-      "structuredContent": (boolean - has clear headings/lists),
-      "freshness": (boolean - recent/updated content),
-      "authorityMarkers": (boolean - credentials/institutional backing)
-    }
-  },
-  "technicalSEO": {
-    "hasSchema": (boolean),
-    "schemaTypes": ["array of schema types"],
-    "metaQuality": (number 0-100)
-  },
-  "platformPresence": {
-    "reddit": {"found": (boolean), "mentions": (number)},
-    "youtube": {"found": (boolean), "videos": (number)},
-    "linkedin": {"found": (boolean), "followers": (number)},
-    "quora": {"found": (boolean), "questions": (number)},
-    "news": {"found": (boolean), "articles": (number)}
-  },
-  "recommendations": {
-    "critical": ["array of critical improvements needed"],
-    "important": ["array of important recommendations"],
-    "nice_to_have": ["array of nice-to-have suggestions"]
-  }
-}`;
-        }
-        
-        // Call PulseSpark AI backend service
-        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${PULSESPARK_API_KEY}`,
-            'Content-Type': 'application/json'
+
+    console.log('Calling DeepSeek API...');
+    
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'deepseek-reasoner',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert AI SEO analyzer. Analyze websites for AI platform optimization. Return only valid JSON with no markdown formatting.'
           },
-          body: JSON.stringify({
-            model: 'deepseek-reasoner',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are PulseSpark AI, an expert SEO analyzer specializing in AI search optimization. Analyze websites or content for AI search platform optimization. Return your analysis as valid JSON only, with no markdown formatting or code blocks.'
-              },
-              {
-                role: 'user',
-                content: promptContent
-              }
-            ],
-            temperature: 0.3,
-            max_tokens: 2000
-          })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const content = data.choices[0].message.content;
-          
-          let cleanContent = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-          
-          try {
-            const aiAnalysis = JSON.parse(cleanContent);
-            console.log('PulseSpark AI analysis successful for:', domain);
-            
-            // If we have manual content, also run local Perplexity signals analysis
-            if (isManualContent && extractedSignals) {
-              const signalsExtractor = new PerplexitySignalsExtractor();
-              const perplexityAnalysis = signalsExtractor.analyzeContent(contentToAnalyze, domain);
-              
-              // Merge the analyses
-              aiAnalysis.perplexitySignalsAnalysis = perplexityAnalysis;
-              aiAnalysis.extractedSignals = extractedSignals;
-              aiAnalysis.readinessScore = Math.max(aiAnalysis.readinessScore, perplexityAnalysis.readinessScore);
-            }
-            
-            // Transform to normalized schema
-            const normalizedData = normalizePulseSparkResponse(aiAnalysis, domain);
-            
-            // Enhance with extracted signals
-            if (extractedSignals) {
-              normalizedData.citations = [
-                ...normalizedData.citations,
-                ...convertSignalsToCitations(extractedSignals)
-              ];
-              normalizedData.faq = extractedSignals.faqs || [];
-              normalizedData.tables = extractedSignals.tables || [];
-              normalizedData.perplexity_signals = extractedSignals;
-            }
-            
-            return res.json(normalizedData);
-          } catch (parseError) {
-            console.error('Failed to parse AI response:', parseError);
-            return res.json(normalizePulseSparkResponse({
-              readinessScore: 0,
-              error: 'Analysis parsing failed'
-            }, domain));
+          {
+            role: 'user',
+            content: promptContent + '\n\n' + jsonStructure
           }
-        } else {
-          const errorText = await response.text();
-          console.error('PulseSpark AI API error:', response.status, errorText);
-          
-          if (response.status === 403) {
-            return res.status(403).json({ 
-              error: 'This website blocks automated analysis. Please use the manual content option.',
-              requiresManual: true,
-              fileType: 'api_blocked',
-              suggestion: 'Copy the website content manually using the instructions provided.'
-            });
-          }
-          
-          throw new Error(`PulseSpark AI API error: ${response.status}`);
-        }
-      } catch (error) {
-        console.error('AI API failed:', error);
-      }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('DeepSeek API error:', response.status, errorText);
+      return res.status(500).json({ 
+        error: `DeepSeek API error: ${response.status}`,
+        details: errorText
+      });
     }
     
-    // Fallback response
-    return res.json(normalizePulseSparkResponse({
-      readinessScore: 50,
-      error: 'Analysis service temporarily unavailable'
-    }, domain));
+    const data = await response.json();
+    let content = data.choices[0]?.message?.content || '{}';
+    
+    // Clean the response
+    content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    
+    let aiAnalysis;
+    try {
+      aiAnalysis = JSON.parse(content);
+      console.log('Successfully parsed AI analysis');
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', parseError);
+      return res.status(500).json({ 
+        error: 'Failed to parse AI analysis',
+        raw: content.substring(0, 500)
+      });
+    }
+    
+    // Normalize and enhance the response
+    const finalResponse = normalizePulseSparkResponse(aiAnalysis, domain, extractedSignals);
+    
+    console.log('Returning analysis with readiness score:', finalResponse.readinessScore);
+    return res.json(finalResponse);
     
   } catch (error) {
     console.error('Analysis error:', error);
-    return res.status(500).json({ error: 'Analysis failed' });
+    return res.status(500).json({ 
+      error: 'Analysis failed',
+      details: error.message 
+    });
   }
 });
 
-// Legacy endpoint for backward compatibility
+// Legacy endpoints for backward compatibility
 app.post('/api/deepseek/analyze-website', async (req, res) => {
-  // Redirect to new endpoint
   req.body.input = req.body.url;
   req.body.isManualContent = false;
   return app._router.handle({ ...req, url: '/api/ai-analysis', method: 'POST' }, res);
 });
 
-// Simple visibility check endpoint (keep for backward compatibility)
 app.post('/api/analyze-website', async (req, res) => {
-  try {
-    const { url } = req.body;
-    const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
-    
-    if (!PERPLEXITY_API_KEY) {
-      return res.status(500).json({ error: 'API key not configured' });
-    }
-    
-    const domain = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-    const queries = [
-      `What is ${domain}?`,
-      `${domain} services and features`,
-      `${domain} company information`
-    ];
-    
-    let mentions = 0;
-    let citations = 0;
-    
-    for (const query of queries) {
-      const response = await fetch('https://api.perplexity.ai/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'llama-3.1-sonar-small-128k-online',
-          messages: [{ role: 'user', content: query }],
-          temperature: 0.2,
-          return_citations: true
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const content = data.choices[0].message.content.toLowerCase();
-        if (content.includes(domain.toLowerCase())) mentions++;
-        if (data.citations) citations += data.citations.length;
-      }
-    }
-    
-    const visibilityScore = Math.min(100, Math.round((mentions * 30) + (citations * 10)));
-    
-    res.json({
-      domain,
-      visibilityScore,
-      metrics: {
-        totalQueries: queries.length,
-        mentionedIn: mentions,
-        citationsFound: citations
-      },
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: error.message });
-  }
+  req.body.input = req.body.url;
+  req.body.isManualContent = false;
+  return app._router.handle({ ...req, url: '/api/ai-analysis', method: 'POST' }, res);
 });
 
 app.listen(PORT, () => {
-  console.log(`PulseSpark AI Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
