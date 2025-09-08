@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Brain, AlertCircle, FileText } from 'lucide-react';
+import { Brain, AlertCircle, FileText, Globe } from 'lucide-react';
 import { PulseSparkAIAgent } from '@/services/ai';
 import { showToast } from '@/lib/toast';
-import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Props {
   onAnalysisComplete?: (data: any) => void;
@@ -18,33 +19,34 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
   const [expanded, setExpanded] = useState(false);
-  const [showManualInput, setShowManualInput] = useState(false);
+  const [inputMode, setInputMode] = useState<'url' | 'manual'>('url');
 
-  const analyzeForPerplexity = async () => {
-    const inputValue = showManualInput ? manualContent : url;
-    if (!inputValue) {
-      showToast.error(`Please enter ${showManualInput ? 'content' : 'a URL'}`);
+  const analyzeContent = async () => {
+    const input = inputMode === 'url' ? url : manualContent;
+    
+    if (!input) {
+      showToast.error(inputMode === 'url' ? 'Please enter a URL' : 'Please paste website content');
       return;
     }
 
     setLoading(true);
     try {
       const agent = new PulseSparkAIAgent();
-      const result = await agent.analyzeWebsite(inputValue.trim(), { 
-        isManualContent: showManualInput 
-      });
+      const result = await agent.analyzeWebsite(
+        input.trim(), 
+        { isManualContent: inputMode === 'manual' }
+      );
       
       // Add domain to result
       const resultWithDomain = {
         ...result,
-        domain: showManualInput ? 'Manual Content' : url.trim()
+        domain: inputMode === 'url' ? url.trim() : 'Manual Content Analysis'
       };
       
       console.log('Analysis result:', resultWithDomain);
       setAnalysis(resultWithDomain);
       setExpanded(true);
       
-      // Pass data to parent
       if (onAnalysisComplete) {
         onAnalysisComplete(resultWithDomain);
       }
@@ -53,9 +55,10 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
     } catch (error: any) {
       console.error('Analysis error:', error);
       
-      if (error.message === 'ROBOTS_BLOCKED') {
-        showToast.error('This website blocks automated analysis. Try the manual content option.');
-        setShowManualInput(true);
+      // Check if it's a robots.txt block
+      if (error.message.includes('blocks automated analysis')) {
+        showToast.error('This site blocks scraping. Please switch to the Manual Content tab and paste the website content.');
+        setInputMode('manual');
       } else {
         showToast.error(error.message || 'Analysis failed');
       }
@@ -77,66 +80,64 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
       </CardHeader>
       <CardContent>
         {!expanded ? (
-          <div className="space-y-4">
-            <p className="text-muted-foreground">
-              Analyze how well your website is optimized for AI search platforms
+          <div>
+            <p className="text-muted-foreground mb-4">
+              Analyze how well your website is optimized for AI platforms like Perplexity
             </p>
             
-            <div className="flex gap-2 mb-4">
-              <Button
-                variant={!showManualInput ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowManualInput(false)}
-                className="flex items-center gap-1"
-              >
-                <Brain className="w-4 h-4" />
-                URL Analysis
-              </Button>
-              <Button
-                variant={showManualInput ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowManualInput(true)}
-                className="flex items-center gap-1"
-              >
-                <FileText className="w-4 h-4" />
-                Manual Content
-              </Button>
-            </div>
-            
-            {!showManualInput ? (
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter your domain (e.g., example.com)"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && !loading && analyzeForPerplexity()}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={analyzeForPerplexity} 
-                  disabled={loading || !url}
-                  className="min-w-[140px]"
-                >
-                  {loading ? 'Analyzing...' : 'Analyze Website'}
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
+            <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'url' | 'manual')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="url">
+                  <Globe className="w-4 h-4 mr-2" />
+                  Website URL
+                </TabsTrigger>
+                <TabsTrigger value="manual">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Paste Content
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="url" className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter your domain (e.g., example.com)"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && !loading && analyzeContent()}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={analyzeContent} 
+                    disabled={loading || !url}
+                    className="min-w-[140px]"
+                  >
+                    {loading ? 'Analyzing...' : 'Analyze Website'}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  We respect robots.txt. If blocked, use the manual content option.
+                </p>
+              </TabsContent>
+              
+              <TabsContent value="manual" className="space-y-4">
                 <Textarea
-                  placeholder="Paste your website content here (about page, key landing pages, etc.) to analyze when automated scraping is blocked..."
+                  placeholder="Paste the website's HTML or main content here..."
                   value={manualContent}
                   onChange={(e) => setManualContent(e.target.value)}
-                  className="w-full min-h-[120px]"
+                  className="min-h-[200px]"
                 />
                 <Button 
-                  onClick={analyzeForPerplexity} 
+                  onClick={analyzeContent} 
                   disabled={loading || !manualContent}
                   className="w-full"
                 >
                   {loading ? 'Analyzing...' : 'Analyze Content'}
                 </Button>
-              </div>
-            )}
+                <p className="text-xs text-muted-foreground">
+                  Copy the page source (Ctrl+U) or main content from the website and paste it here.
+                </p>
+              </TabsContent>
+            </Tabs>
           </div>
         ) : analysis && (
           <div className="space-y-4">
