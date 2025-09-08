@@ -66,37 +66,10 @@ export class PulseSparkAIAgent {
   }
 
   async checkRobotsTxt(url: string): Promise<boolean> {
-    try {
-      const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
-      const robotsResponse = await fetch(`https://${domain}/robots.txt`);
-      
-      if (!robotsResponse.ok) {
-        return true; // Allow if robots.txt not found
-      }
-      
-      const robotsText = await robotsResponse.text();
-      const lines = robotsText.split('\n').map(line => line.trim().toLowerCase());
-      
-      let userAgentAll = false;
-      let disallowAll = false;
-      
-      for (const line of lines) {
-        if (line.startsWith('user-agent:')) {
-          userAgentAll = line.includes('*');
-        }
-        if (userAgentAll && line.startsWith('disallow:')) {
-          if (line.includes('disallow: /')) {
-            disallowAll = true;
-            break;
-          }
-        }
-      }
-      
-      return !disallowAll;
-    } catch (error) {
-      console.warn('Could not check robots.txt:', error);
-      return true; // Allow if can't check
-    }
+    // REMOVED: Frontend robots.txt checking causes CORS errors
+    // Backend now handles all robots.txt checking
+    console.log('Skipping frontend robots.txt check to avoid CORS');
+    return true; // Always allow - backend will handle restrictions
   }
 
   async analyzeWebsite(urlOrContent: string, options?: { 

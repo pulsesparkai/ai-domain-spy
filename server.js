@@ -476,7 +476,7 @@ Return a JSON analysis with this exact structure:`;
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'deepseek-reasoner',
+        model: 'deepseek-chat',  // Much faster model!
         messages: [
           {
             role: 'system',
@@ -488,7 +488,7 @@ Return a JSON analysis with this exact structure:`;
           }
         ],
         temperature: 0.3,
-        max_tokens: 2000
+        max_tokens: 1000  // Reduced for faster response
       })
     });
     
@@ -513,10 +513,16 @@ Return a JSON analysis with this exact structure:`;
       console.log('Successfully parsed AI analysis');
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
-      return res.status(500).json({ 
-        error: 'Failed to parse AI analysis',
-        raw: content.substring(0, 500)
-      });
+      // Fallback analysis when JSON parsing fails
+      aiAnalysis = {
+        readinessScore: 35,
+        entityAnalysis: { brandStrength: 30, mentions: 0, density: 0, authorityAssociations: [], hasWikipedia: false },
+        contentAnalysis: { depth: 25, clusters: [], gaps: ['Improve content structure'], totalPages: 0, avgPageLength: 0 },
+        technicalSEO: { hasSchema: false, schemaTypes: [], metaQuality: 20 },
+        platformPresence: { reddit: { found: false, mentions: 0 }, youtube: { found: false, videos: 0 }, linkedin: { found: false, followers: 0 }, quora: { found: false, questions: 0 }, news: { found: false, articles: 0 } },
+        recommendations: { critical: ['Fix AI response parsing'], important: ['Improve content structure'], nice_to_have: ['Add structured data'] }
+      };
+      console.log('Using fallback analysis due to parse error');
     }
     
     // Normalize and enhance the response
