@@ -46,6 +46,7 @@ import { TrendingPages } from '@/components/dashboard/TrendingPages';
 import PulseSparkOptimizationCard from '@/components/PulseSparkOptimizationCard';
 import { showToast } from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { SystemHealthCheck } from '@/components/SystemHealthCheck';
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
   return (
@@ -446,6 +447,11 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="flex-1 p-6">
+          {/* System Health Check - Shows integration status */}
+          <div className="mb-6">
+            <SystemHealthCheck />
+          </div>
+          
           {/* Dashboard Content */}
           {renderContent()}
         </main>
