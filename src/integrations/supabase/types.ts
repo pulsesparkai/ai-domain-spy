@@ -172,30 +172,45 @@ export type Database = {
       }
       scans: {
         Row: {
+          analysis_log: Json | null
+          citations: Json | null
           created_at: string
+          entities: Json | null
           id: string
+          rankings: Json | null
           results: Json | null
           scan_type: string
+          sentiment: Json | null
           status: string | null
           target_url: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          analysis_log?: Json | null
+          citations?: Json | null
           created_at?: string
+          entities?: Json | null
           id?: string
+          rankings?: Json | null
           results?: Json | null
           scan_type: string
+          sentiment?: Json | null
           status?: string | null
           target_url?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          analysis_log?: Json | null
+          citations?: Json | null
           created_at?: string
+          entities?: Json | null
           id?: string
+          rankings?: Json | null
           results?: Json | null
           scan_type?: string
+          sentiment?: Json | null
           status?: string | null
           target_url?: string | null
           updated_at?: string
