@@ -65,12 +65,6 @@ export class PulseSparkAIAgent {
     this.apiEndpoint = `${baseUrl}/api/ai-analysis`;
   }
 
-  async checkRobotsTxt(url: string): Promise<boolean> {
-    // REMOVED: Frontend robots.txt checking causes CORS errors
-    // Backend now handles all robots.txt checking
-    console.log('Skipping frontend robots.txt check to avoid CORS');
-    return true; // Always allow - backend will handle restrictions
-  }
 
   async analyzeWebsite(urlOrContent: string, options?: { 
     isManualContent?: boolean 
@@ -80,13 +74,6 @@ export class PulseSparkAIAgent {
         throw new Error('Invalid input provided');
       }
 
-      // Check robots.txt if it's a URL (not manual content)
-      if (!options?.isManualContent) {
-        const isAllowed = await this.checkRobotsTxt(urlOrContent);
-        if (!isAllowed) {
-          throw new Error('ROBOTS_BLOCKED');
-        }
-      }
 
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
