@@ -1,4 +1,4 @@
-export function normalizeDeepSeekResponse(deepSeekData, domain) {
+export function normalizePulseSparkResponse(pulseSparkData, domain) {
   const normalized = {
     domain: domain.replace(/^https?:\/\//, '').replace(/\/$/, ''),
     crawl_meta: {
@@ -9,17 +9,17 @@ export function normalizeDeepSeekResponse(deepSeekData, domain) {
       step: 'done'
     },
     analysis_log: [
-      { message: 'DeepSeek analysis started', step: 'fetch', ts: Date.now(), ok: true },
+      { message: 'PulseSpark AI analysis started', step: 'fetch', ts: Date.now(), ok: true },
       { message: 'Analysis complete', step: 'done', ts: Date.now(), ok: true }
     ],
-    citations: extractCitations(deepSeekData),
-    sentiment: extractSentiment(deepSeekData),
-    rankings: extractRankings(deepSeekData),
-    entities: extractEntities(deepSeekData),
+    citations: extractCitations(pulseSparkData),
+    sentiment: extractSentiment(pulseSparkData),
+    rankings: extractRankings(pulseSparkData),
+    entities: extractEntities(pulseSparkData),
     summary_cards: {
-      overview: generateOverview(deepSeekData),
-      pros_cons: extractProsCons(deepSeekData),
-      key_stats: extractKeyStats(deepSeekData)
+      overview: generateOverview(pulseSparkData),
+      pros_cons: extractProsCons(pulseSparkData),
+      key_stats: extractKeyStats(pulseSparkData)
     },
     faq: [],
     tables: []

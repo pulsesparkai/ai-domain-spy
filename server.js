@@ -3,7 +3,7 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import { canScrapeUrl } from './server/utils/robots-checker.js';
-import { normalizeDeepSeekResponse } from './server/transformers/deepseek-normalizer.js';
+import { normalizePulseSparkResponse } from './server/transformers/pulsespark-normalizer.js';
 
 dotenv.config();
 
@@ -66,15 +66,15 @@ app.post('/api/ai-analysis', async (req, res) => {
       contentToAnalyze = domain;
     }
     
-    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+    const PULSESPARK_API_KEY = process.env.DEEPSEEK_API_KEY; // Using DeepSeek backend for PulseSpark AI
     
-    if (DEEPSEEK_API_KEY) {
+    if (PULSESPARK_API_KEY) {
       try {
-        // Call DeepSeek but identify as PulseSpark in the prompt
+        // Call PulseSpark AI backend service
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+            'Authorization': `Bearer ${PULSESPARK_API_KEY}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -181,12 +181,12 @@ Content to analyze: ${contentToAnalyze}` :
             console.log('PulseSpark AI analysis successful for:', domain);
             
             // Transform to normalized schema
-            const normalizedData = normalizeDeepSeekResponse(aiAnalysis, domain);
+            const normalizedData = normalizePulseSparkResponse(aiAnalysis, domain);
             
             return res.json(normalizedData);
           } catch (parseError) {
             console.error('Failed to parse AI response:', parseError);
-            return res.json(normalizeDeepSeekResponse({
+            return res.json(normalizePulseSparkResponse({
               readinessScore: 0,
               error: 'Analysis parsing failed'
             }, domain));
@@ -210,7 +210,7 @@ Content to analyze: ${contentToAnalyze}` :
     }
     
     // Fallback response
-    return res.json(normalizeDeepSeekResponse({
+    return res.json(normalizePulseSparkResponse({
       readinessScore: 50,
       error: 'Analysis service temporarily unavailable'
     }, domain));

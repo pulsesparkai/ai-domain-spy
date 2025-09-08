@@ -19,7 +19,7 @@ export const AIVisibilityScore = memo(({ scanData }: AIVisibilityScoreProps) => 
           <Brain className="w-5 h-5 text-accent" />
           AI Visibility Score
           <TooltipWrapper
-            content="Composite score: (primary*10 + secondary*5 + mentions*2)/total *100. Based on citations and rankings across Perplexity and ChatGPT."
+            content="Composite score: (primary*10 + secondary*5 + mentions*2)/total *100. Based on citations and rankings across AI platforms using PulseSpark AI analysis."
             side="right"
           >
             <Info className="w-4 h-4 text-muted-foreground cursor-help" />

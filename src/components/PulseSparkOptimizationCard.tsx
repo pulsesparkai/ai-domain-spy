@@ -82,7 +82,7 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
         {!expanded ? (
           <div>
             <p className="text-muted-foreground mb-4">
-              Analyze how well your website is optimized for AI platforms like Perplexity
+              Analyze how well your website is optimized for AI platforms with PulseSpark AI
             </p>
             
             <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'url' | 'manual')}>
@@ -143,7 +143,7 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold">Perplexity Readiness Score</h3>
+                <h3 className="text-lg font-semibold">AI Readiness Score</h3>
                 <p className="text-sm text-muted-foreground">Based on 59 ranking patterns</p>
               </div>
               <div className="text-3xl font-bold text-primary">
