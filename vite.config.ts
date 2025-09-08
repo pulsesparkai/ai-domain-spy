@@ -9,7 +9,8 @@ import viteCompression from "vite-plugin-compression";
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => ({
   server: {
-    port: 5173,
+    host: "::",
+    port: 8080,
     // Security headers for development server
     // Note: In production, these should be configured at the hosting/server level
     headers: {
