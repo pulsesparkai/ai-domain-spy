@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import { normalizeDeepSeekResponse } from './server/transformers/deepseek-normalizer.js';
 
 dotenv.config();
 
@@ -120,48 +121,20 @@ app.post('/api/deepseek/analyze-website', async (req, res) => {
           cleanContent = cleanContent.trim();
           
           try {
-            const analysis = JSON.parse(cleanContent);
+            const deepSeekAnalysis = JSON.parse(cleanContent);
             console.log('DeepSeek analysis successful for:', domain);
-            return res.json(analysis);
+            
+            // Transform to normalized schema
+            const normalizedData = normalizeDeepSeekResponse(deepSeekAnalysis, domain);
+            
+            return res.json(normalizedData);
           } catch (parseError) {
             console.error('Failed to parse DeepSeek response:', parseError);
-            // Return a default structure if parsing fails
-            return res.json({
-              readinessScore: 50,
-              entityAnalysis: {
-                brandStrength: 50,
-                mentions: 10,
-                density: 1.5,
-                authorityAssociations: ['Analysis in progress'],
-                hasWikipedia: false
-              },
-              contentAnalysis: {
-                depth: 50,
-                clusters: [
-                  { topic: 'General Content', pages: 10, avgWords: 1000 }
-                ],
-                gaps: ['Unable to fully analyze - please try again'],
-                totalPages: 10,
-                avgPageLength: 1000
-              },
-              technicalSEO: {
-                hasSchema: false,
-                schemaTypes: [],
-                metaQuality: 50
-              },
-              platformPresence: {
-                reddit: { found: false, mentions: 0 },
-                youtube: { found: false, videos: 0 },
-                linkedin: { found: false, followers: 0 },
-                quora: { found: false, questions: 0 },
-                news: { found: false, articles: 0 }
-              },
-              recommendations: {
-                critical: ['Complete analysis needed for full recommendations'],
-                important: ['Improve content depth', 'Build platform presence'],
-                nice_to_have: ['Add schema markup', 'Create video content']
-              }
-            });
+            // Return normalized error response
+            return res.json(normalizeDeepSeekResponse({
+              readinessScore: 0,
+              error: 'Analysis parsing failed'
+            }, domain));
           }
         } else {
           const errorText = await response.text();
@@ -174,62 +147,11 @@ app.post('/api/deepseek/analyze-website', async (req, res) => {
       }
     }
     
-    // Fallback to Perplexity if DeepSeek is not available or fails
-    const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
-    
-    if (!PERPLEXITY_API_KEY) {
-      // If neither API is available, return mock data
-      return res.json({
-        readinessScore: 75,
-        entityAnalysis: {
-          brandStrength: 70,
-          mentions: 150,
-          density: 2.1,
-          authorityAssociations: ['Industry Leader', 'Trusted Provider'],
-          hasWikipedia: false
-        },
-        contentAnalysis: {
-          depth: 68,
-          clusters: [
-            { topic: 'Core Services', pages: 15, avgWords: 1800 },
-            { topic: 'Case Studies', pages: 8, avgWords: 1200 },
-            { topic: 'Resources', pages: 12, avgWords: 2000 }
-          ],
-          gaps: ['Video Content', 'Comparison Guides', 'How-to Tutorials'],
-          totalPages: 35,
-          avgPageLength: 1650
-        },
-        technicalSEO: {
-          hasSchema: true,
-          schemaTypes: ['Organization', 'Article', 'Product'],
-          metaQuality: 82
-        },
-        platformPresence: {
-          reddit: { found: false, mentions: 0 },
-          youtube: { found: true, videos: 5 },
-          linkedin: { found: true, followers: 1200 },
-          quora: { found: false, questions: 0 },
-          news: { found: true, articles: 3 }
-        },
-        recommendations: {
-          critical: [
-            'Create Wikipedia page to establish entity authority',
-            'Increase content depth - aim for 2000+ words on key pages',
-            'Build Reddit presence through valuable contributions'
-          ],
-          important: [
-            'Add more video content to YouTube',
-            'Create comparison guides against competitors',
-            'Increase internal linking between topic clusters'
-          ],
-          nice_to_have: [
-            'Expand FAQ sections',
-            'Add more case studies',
-            'Create downloadable resources'
-          ]
-        }
-      });
-    }
+    // Fallback response
+    return res.json(normalizeDeepSeekResponse({
+      readinessScore: 50,
+      error: 'No API key configured'
+    }, domain));
     
     // Your existing Perplexity code here (keeping it as fallback)
     // ... (rest of the Perplexity implementation from your current code)
