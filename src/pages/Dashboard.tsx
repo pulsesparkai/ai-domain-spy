@@ -29,7 +29,13 @@ import {
   LogOut,
   User,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  Table,
+  FileText,
+  Code,
+  Award,
+  Link
 } from 'lucide-react';
 import { LoadingCard } from '@/components/LoadingCard';
 import { VisibilityChart } from '@/components/charts/VisibilityChart';
@@ -256,6 +262,79 @@ const Dashboard = () => {
                 <PulseSparkOptimizationCard onAnalysisComplete={handleAnalysisComplete} />
               </CustomErrorBoundary>
             </div>
+            
+            {/* AI Optimization Signals */}
+            {analysisData?.perplexity_signals && (
+              <div className="lg:col-span-2 xl:col-span-3">
+                <Card className="p-6">
+                  <CardTitle className="mb-4">Detected AI Optimization Signals</CardTitle>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-success" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">FAQ Sections</p>
+                        <p className="text-xl font-bold">{analysisData.perplexity_signals.faqs?.length || 0}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Table className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Data Tables</p>
+                        <p className="text-xl font-bold">{analysisData.perplexity_signals.tables?.length || 0}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-accent" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">How-To Steps</p>
+                        <p className="text-xl font-bold">{analysisData.perplexity_signals.howToSteps?.length || 0}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Code className="w-5 h-5 text-warning" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Schema Markup</p>
+                        <p className="text-xl font-bold">{analysisData.perplexity_signals.schemaMarkup?.length || 0}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Award className="w-5 h-5 text-secondary" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Brand Mentions</p>
+                        <p className="text-xl font-bold">{analysisData.perplexity_signals.brandMentions?.total || 0}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Authority Links</p>
+                        <p className="text-xl font-bold">{analysisData.perplexity_signals.authorityAssociations?.length || 0}</p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Detected On-Page Elements */}
+            {analysisData?.citations && analysisData.citations.length > 0 && (
+              <div className="lg:col-span-2 xl:col-span-3">
+                <Card className="p-6">
+                  <CardTitle className="mb-4">Detected On-Page Elements</CardTitle>
+                  <div className="space-y-3">
+                    {analysisData.citations.map((citation: any, idx: number) => (
+                      <div key={idx} className="border-l-4 border-primary pl-4">
+                        <h4 className="font-semibold text-sm">{citation.title}</h4>
+                        <p className="text-xs text-muted-foreground">{citation.snippet}</p>
+                        <Badge variant="secondary" className="mt-1">
+                          Confidence: {(citation.confidence * 100).toFixed(0)}%
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
             
             {/* Show charts only after analysis */}
             {analysisData && (
