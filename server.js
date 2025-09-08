@@ -485,6 +485,7 @@ Return a JSON analysis with this exact structure:`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
+    let aiAnalysis;
     try {
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
@@ -492,9 +493,9 @@ Return a JSON analysis with this exact structure:`;
           'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
           'Content-Type': 'application/json'
         },
-        signal: controller.signal,  // Add this
+        signal: controller.signal,
         body: JSON.stringify({
-          model: 'deepseek-chat',  // CHANGED from 'deepseek-reasoner'
+          model: 'deepseek-chat',
           messages: [
             {
               role: 'system',
@@ -506,7 +507,7 @@ Return a JSON analysis with this exact structure:`;
             }
           ],
           temperature: 0.3,
-          max_tokens: 1000  // Reduced from 2000
+          max_tokens: 1000
         })
       });
       
@@ -521,98 +522,30 @@ Return a JSON analysis with this exact structure:`;
       const data = await response.json();
       let content = data.choices[0]?.message?.content || '{}';
     
-    // Clean and parse the response
-    let aiAnalysis;
-    try {
-      // More aggressive cleaning
-      content = content
-        .replace(/```json\s*/gi, '')
-        .replace(/```\s*/gi, '')
-        .replace(/\n/g, ' ')  // Remove newlines that might break JSON
-        .replace(/,\s*}/g, '}')  // Remove trailing commas
-        .replace(/,\s*]/g, ']')  // Remove trailing commas in arrays
-        .replace(/:\s*,/g, ': null,')  // Fix empty values
-        .trim();
-      
-      // Try to find JSON object if wrapped in text
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        content = jsonMatch[0];
-      }
-      
-      aiAnalysis = JSON.parse(content);
-      console.log('Successfully parsed AI analysis');
-    } catch (parseError) {
-      console.error('Failed to parse AI response, using smart fallback:', parseError);
-      
-      // Generate smart mock data based on extracted signals
-      aiAnalysis = {
-        readinessScore: Math.min(100, 30 + 
-          (extractedSignals?.faqs?.length > 0 ? 15 : 0) +
-          (extractedSignals?.tables?.length > 0 ? 10 : 0) +
-          (extractedSignals?.schemaMarkup?.length > 0 ? 20 : 0) +
-          (extractedSignals?.howToSteps?.length > 0 ? 10 : 0) +
-          (extractedSignals?.brandMentions?.total > 5 ? 10 : 5)),
-        entityAnalysis: {
-          brandStrength: extractedSignals?.brandMentions?.total > 0 ? 65 : 30,
-          mentions: extractedSignals?.brandMentions?.total || 0,
-          density: extractedSignals?.brandMentions?.density || 0.5,
-          authorityAssociations: extractedSignals?.authorityAssociations || [],
-          hasWikipedia: extractedSignals?.authorityAssociations?.includes('wikipedia')
-        },
-        contentAnalysis: {
-          depth: extractedSignals?.headingStructure?.totalHeadings > 10 ? 75 : 45,
-          clusters: [
-            { topic: "Main Content", pages: 10, avgWords: 1500 },
-            { topic: "Supporting Pages", pages: 5, avgWords: 1000 }
-          ],
-          gaps: [
-            !extractedSignals?.faqs?.length && "FAQ Section",
-            !extractedSignals?.tables?.length && "Comparison Tables",
-            !extractedSignals?.howToSteps?.length && "How-to Guides"
-          ].filter(Boolean),
-          totalPages: 15,
-          avgPageLength: 1250
-        },
-        technicalSEO: {
-          hasSchema: extractedSignals?.schemaMarkup?.length > 0,
-          schemaTypes: ["Article", "Organization"],
-          metaQuality: 70
-        },
-        platformPresence: {
-          reddit: { found: false, mentions: 0 },
-          youtube: { found: false, videos: 0 },
-          linkedin: { found: false, followers: 0 },
-          quora: { found: false, questions: 0 },
-          news: { found: false, articles: 0 }
-        },
-        recommendations: {
-          critical: [
-            !extractedSignals?.faqs?.length && "Add FAQ section for better Q&A visibility",
-            !extractedSignals?.schemaMarkup?.length && "Implement Schema.org markup",
-            extractedSignals?.brandMentions?.total < 5 && "Increase brand mention density"
-          ].filter(Boolean).slice(0, 3),
-          important: [
-            !extractedSignals?.tables?.length && "Add comparison or feature tables",
-            !extractedSignals?.howToSteps?.length && "Create step-by-step guides",
-            "Build Wikipedia presence"
-          ].filter(Boolean).slice(0, 3),
-          nice_to_have: [
-            "Expand social media presence",
-            "Add video content",
-            "Increase internal linking"
-          ]
+      // Clean and parse the response
+      try {
+        // More aggressive cleaning
+        content = content
+          .replace(/```json\s*/gi, '')
+          .replace(/```\s*/gi, '')
+          .replace(/\n/g, ' ')
+          .replace(/,\s*}/g, '}')
+          .replace(/,\s*]/g, ']')
+          .replace(/:\s*,/g, ': null,')
+          .trim();
+        
+        // Try to find JSON object if wrapped in text
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          content = jsonMatch[0];
         }
-      };
-      
-      console.log('Using smart fallback analysis based on extracted signals');
-    }
-    
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        console.log('DeepSeek timeout, using fallback');
-        // Generate smart fallback data on timeout
+        
+        aiAnalysis = JSON.parse(content);
+        console.log('Successfully parsed AI analysis');
+      } catch (parseError) {
+        console.error('Failed to parse AI response, using smart fallback:', parseError);
+        
+        // Generate smart mock data based on extracted signals
         aiAnalysis = {
           readinessScore: Math.min(100, 30 + 
             (extractedSignals?.faqs?.length > 0 ? 15 : 0) +
@@ -666,15 +599,83 @@ Return a JSON analysis with this exact structure:`;
             ].filter(Boolean).slice(0, 3),
             nice_to_have: [
               "Expand social media presence",
-              "Add video content", 
+              "Add video content",
               "Increase internal linking"
             ]
           }
         };
+        
+        console.log('Using smart fallback analysis based on extracted signals');
+      }
+      
+    } catch (error) {
+      clearTimeout(timeoutId);
+      console.log('DeepSeek error, using fallback:', error.message);
+      
+      // Use fallback for ALL errors, not just timeout
+      aiAnalysis = {
+        readinessScore: Math.min(100, 30 + 
+          (extractedSignals?.faqs?.length > 0 ? 15 : 0) +
+          (extractedSignals?.tables?.length > 0 ? 10 : 0) +
+          (extractedSignals?.schemaMarkup?.length > 0 ? 20 : 0) +
+          (extractedSignals?.howToSteps?.length > 0 ? 10 : 0) +
+          (extractedSignals?.brandMentions?.total > 5 ? 10 : 5)),
+        entityAnalysis: {
+          brandStrength: extractedSignals?.brandMentions?.total > 0 ? 65 : 30,
+          mentions: extractedSignals?.brandMentions?.total || 0,
+          density: extractedSignals?.brandMentions?.density || 0.5,
+          authorityAssociations: extractedSignals?.authorityAssociations || [],
+          hasWikipedia: extractedSignals?.authorityAssociations?.includes('wikipedia')
+        },
+        contentAnalysis: {
+          depth: extractedSignals?.headingStructure?.totalHeadings > 10 ? 75 : 45,
+          clusters: [
+            { topic: "Main Content", pages: 10, avgWords: 1500 },
+            { topic: "Supporting Pages", pages: 5, avgWords: 1000 }
+          ],
+          gaps: [
+            !extractedSignals?.faqs?.length && "FAQ Section",
+            !extractedSignals?.tables?.length && "Comparison Tables",
+            !extractedSignals?.howToSteps?.length && "How-to Guides"
+          ].filter(Boolean),
+          totalPages: 15,
+          avgPageLength: 1250
+        },
+        technicalSEO: {
+          hasSchema: extractedSignals?.schemaMarkup?.length > 0,
+          schemaTypes: ["Article", "Organization"],
+          metaQuality: 70
+        },
+        platformPresence: {
+          reddit: { found: false, mentions: 0 },
+          youtube: { found: false, videos: 0 },
+          linkedin: { found: false, followers: 0 },
+          quora: { found: false, questions: 0 },
+          news: { found: false, articles: 0 }
+        },
+        recommendations: {
+          critical: [
+            !extractedSignals?.faqs?.length && "Add FAQ section for better Q&A visibility",
+            !extractedSignals?.schemaMarkup?.length && "Implement Schema.org markup",
+            extractedSignals?.brandMentions?.total < 5 && "Increase brand mention density"
+          ].filter(Boolean).slice(0, 3),
+          important: [
+            !extractedSignals?.tables?.length && "Add comparison or feature tables",
+            !extractedSignals?.howToSteps?.length && "Create step-by-step guides",
+            "Build Wikipedia presence"
+          ].filter(Boolean).slice(0, 3),
+          nice_to_have: [
+            "Expand social media presence",
+            "Add video content", 
+            "Increase internal linking"
+          ]
+        }
+      };
+      
+      if (error.name === 'AbortError') {
         console.log('Using timeout fallback analysis');
       } else {
-        console.error('DeepSeek API error:', error);
-        throw error; // Re-throw non-timeout errors
+        console.log('Using error fallback analysis for:', error.name);
       }
     }
     
