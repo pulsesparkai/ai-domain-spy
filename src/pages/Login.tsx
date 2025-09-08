@@ -74,11 +74,13 @@ const Login = () => {
               </Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={`h-10 border-border ${errors.password ? 'border-destructive' : ''}`}
+                autoComplete="current-password"
                 required
               />
               {errors.password && (
