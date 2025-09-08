@@ -3,35 +3,41 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Brain, AlertCircle } from 'lucide-react';
-import { DeepSeekAgent } from '@/services/deepseek';
+import { Brain, AlertCircle, FileText } from 'lucide-react';
+import { PulseSparkAIAgent } from '@/services/ai';
 import { showToast } from '@/lib/toast';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Props {
   onAnalysisComplete?: (data: any) => void;
 }
 
-const PerplexityOptimizationCard = ({ onAnalysisComplete }: Props) => {
+const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
   const [url, setUrl] = useState('');
+  const [manualContent, setManualContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
   const [expanded, setExpanded] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
 
   const analyzeForPerplexity = async () => {
-    if (!url) {
-      showToast.error('Please enter a URL');
+    const inputValue = showManualInput ? manualContent : url;
+    if (!inputValue) {
+      showToast.error(`Please enter ${showManualInput ? 'content' : 'a URL'}`);
       return;
     }
 
     setLoading(true);
     try {
-      const agent = new DeepSeekAgent();
-      const result = await agent.analyzeForPerplexity(url.trim());
+      const agent = new PulseSparkAIAgent();
+      const result = await agent.analyzeWebsite(inputValue.trim(), { 
+        isManualContent: showManualInput 
+      });
       
       // Add domain to result
       const resultWithDomain = {
         ...result,
-        domain: url.trim()
+        domain: showManualInput ? 'Manual Content' : url.trim()
       };
       
       console.log('Analysis result:', resultWithDomain);
@@ -46,7 +52,13 @@ const PerplexityOptimizationCard = ({ onAnalysisComplete }: Props) => {
       showToast.success('Analysis complete!');
     } catch (error: any) {
       console.error('Analysis error:', error);
-      showToast.error(error.message || 'Analysis failed');
+      
+      if (error.message === 'ROBOTS_BLOCKED') {
+        showToast.error('This website blocks automated analysis. Try the manual content option.');
+        setShowManualInput(true);
+      } else {
+        showToast.error(error.message || 'Analysis failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -58,33 +70,73 @@ const PerplexityOptimizationCard = ({ onAnalysisComplete }: Props) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Brain className="w-6 h-6 text-primary" />
-            <CardTitle>Perplexity AI Optimization Suite</CardTitle>
+            <CardTitle>PulseSpark AI Optimization Suite</CardTitle>
             <Badge variant="secondary">Beta</Badge>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {!expanded ? (
-          <div>
-            <p className="text-muted-foreground mb-4">
-              Analyze how well your website is optimized for Perplexity AI's ranking factors
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              Analyze how well your website is optimized for AI search platforms
             </p>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter your domain (e.g., example.com)"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !loading && analyzeForPerplexity()}
-                className="flex-1"
-              />
-              <Button 
-                onClick={analyzeForPerplexity} 
-                disabled={loading || !url}
-                className="min-w-[140px]"
+            
+            <div className="flex gap-2 mb-4">
+              <Button
+                variant={!showManualInput ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowManualInput(false)}
+                className="flex items-center gap-1"
               >
-                {loading ? 'Analyzing...' : 'Analyze Website'}
+                <Brain className="w-4 h-4" />
+                URL Analysis
+              </Button>
+              <Button
+                variant={showManualInput ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowManualInput(true)}
+                className="flex items-center gap-1"
+              >
+                <FileText className="w-4 h-4" />
+                Manual Content
               </Button>
             </div>
+            
+            {!showManualInput ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter your domain (e.g., example.com)"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && !loading && analyzeForPerplexity()}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={analyzeForPerplexity} 
+                  disabled={loading || !url}
+                  className="min-w-[140px]"
+                >
+                  {loading ? 'Analyzing...' : 'Analyze Website'}
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Textarea
+                  placeholder="Paste your website content here (about page, key landing pages, etc.) to analyze when automated scraping is blocked..."
+                  value={manualContent}
+                  onChange={(e) => setManualContent(e.target.value)}
+                  className="w-full min-h-[120px]"
+                />
+                <Button 
+                  onClick={analyzeForPerplexity} 
+                  disabled={loading || !manualContent}
+                  className="w-full"
+                >
+                  {loading ? 'Analyzing...' : 'Analyze Content'}
+                </Button>
+              </div>
+            )}
           </div>
         ) : analysis && (
           <div className="space-y-4">
@@ -178,4 +230,4 @@ const PerplexityOptimizationCard = ({ onAnalysisComplete }: Props) => {
   );
 };
 
-export default PerplexityOptimizationCard;
+export default PulseSparkOptimizationCard;

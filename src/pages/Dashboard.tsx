@@ -43,7 +43,7 @@ import { AIRankings } from '@/components/dashboard/AIRankings';
 import { PromptTrends } from '@/components/dashboard/PromptTrends';
 import { CompetitorTraffic } from '@/components/dashboard/CompetitorTraffic';
 import { TrendingPages } from '@/components/dashboard/TrendingPages';
-import PerplexityOptimizationCard from '@/components/PerplexityOptimizationCard';
+import PulseSparkOptimizationCard from '@/components/PulseSparkOptimizationCard';
 import { showToast } from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -249,10 +249,10 @@ const Dashboard = () => {
       default:
         return (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {/* Perplexity Optimization Card - Full Width */}
+            {/* PulseSpark AI Optimization Card - Full Width */}
             <div className="lg:col-span-2 xl:col-span-3">
               <CustomErrorBoundary>
-                <PerplexityOptimizationCard onAnalysisComplete={handleAnalysisComplete} />
+                <PulseSparkOptimizationCard onAnalysisComplete={handleAnalysisComplete} />
               </CustomErrorBoundary>
             </div>
             

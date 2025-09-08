@@ -33,22 +33,22 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// DeepSeek analysis endpoint - uses DeepSeek API for cost-effective analysis
-app.post('/api/deepseek/analyze-website', async (req, res) => {
+// PulseSpark AI analysis endpoint
+app.post('/api/ai-analysis', async (req, res) => {
   try {
-    const { url } = req.body;
+    const { input, isManualContent = false } = req.body;
     const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
     
-    if (!url) {
-      return res.status(400).json({ error: 'URL is required' });
+    if (!input) {
+      return res.status(400).json({ error: 'Input is required' });
     }
     
-    const domain = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const domain = isManualContent ? 'Manual Content' : input.replace(/^https?:\/\//, '').replace(/\/$/, '');
     
-    // Use DeepSeek if available, otherwise fall back to Perplexity
+    // Use PulseSpark AI (DeepSeek backend) if available
     if (DEEPSEEK_API_KEY) {
       try {
-        // DeepSeek API call
+        // PulseSpark AI API call (using DeepSeek backend)
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -60,11 +60,11 @@ app.post('/api/deepseek/analyze-website', async (req, res) => {
             messages: [
               {
                 role: 'system',
-                content: 'You are an expert SEO analyzer specializing in AI search optimization. Analyze websites for Perplexity AI optimization based on 59 ranking patterns. Return your analysis as valid JSON only, with no markdown formatting or code blocks.'
+                content: 'You are PulseSpark AI, an expert SEO analyzer specializing in AI search optimization. Analyze websites or content for AI search platform optimization. Return your analysis as valid JSON only, with no markdown formatting or code blocks.'
               },
               {
                 role: 'user',
-                content: `Analyze the website "${domain}" for Perplexity AI optimization. Return a JSON object with exactly this structure:
+                content: `Analyze ${isManualContent ? 'this content' : `the website "${input}"`} for AI search platform optimization. Return a JSON object with exactly this structure:
 {
   "readinessScore": (number 0-100 based on overall optimization),
   "entityAnalysis": {
@@ -100,7 +100,9 @@ app.post('/api/deepseek/analyze-website', async (req, res) => {
     "important": ["array of important recommendations"],
     "nice_to_have": ["array of nice-to-have suggestions"]
   }
-}`
+}
+
+${isManualContent ? `Content to analyze: ${input}` : ''}`
               }
             ],
             temperature: 0.3,
@@ -121,15 +123,15 @@ app.post('/api/deepseek/analyze-website', async (req, res) => {
           cleanContent = cleanContent.trim();
           
           try {
-            const deepSeekAnalysis = JSON.parse(cleanContent);
-            console.log('DeepSeek analysis successful for:', domain);
+            const pulseSparkAnalysis = JSON.parse(cleanContent);
+            console.log('PulseSpark AI analysis successful for:', domain);
             
             // Transform to normalized schema
-            const normalizedData = normalizeDeepSeekResponse(deepSeekAnalysis, domain);
+            const normalizedData = normalizeDeepSeekResponse(pulseSparkAnalysis, domain);
             
             return res.json(normalizedData);
           } catch (parseError) {
-            console.error('Failed to parse DeepSeek response:', parseError);
+            console.error('Failed to parse PulseSpark AI response:', parseError);
             // Return normalized error response
             return res.json(normalizeDeepSeekResponse({
               readinessScore: 0,
@@ -138,28 +140,42 @@ app.post('/api/deepseek/analyze-website', async (req, res) => {
           }
         } else {
           const errorText = await response.text();
-          console.error('DeepSeek API error:', response.status, errorText);
-          throw new Error(`DeepSeek API error: ${response.status}`);
+          console.error('PulseSpark AI API error:', response.status, errorText);
+          
+          if (response.status === 403) {
+            return res.status(403).json({ error: 'This website blocks automated analysis. Please use the manual content option.' });
+          }
+          
+          throw new Error(`PulseSpark AI API error: ${response.status}`);
         }
-      } catch (deepseekError) {
-        console.error('DeepSeek API failed:', deepseekError);
-        // Fall through to Perplexity fallback
+      } catch (pulseSparkError) {
+        console.error('PulseSpark AI API failed:', pulseSparkError);
+        // Return fallback response
+        return res.json(normalizeDeepSeekResponse({
+          readinessScore: 50,
+          error: 'API temporarily unavailable'
+        }, domain));
       }
     }
     
-    // Fallback response
+    // Fallback response when no API key
     return res.json(normalizeDeepSeekResponse({
       readinessScore: 50,
       error: 'No API key configured'
     }, domain));
     
-    // Your existing Perplexity code here (keeping it as fallback)
-    // ... (rest of the Perplexity implementation from your current code)
-    
   } catch (error) {
-    console.error('Analysis endpoint error:', error);
+    console.error('PulseSpark AI analysis error:', error);
     res.status(500).json({ error: error.message });
   }
+});
+
+// Legacy endpoint for backward compatibility
+app.post('/api/deepseek/analyze-website', async (req, res) => {
+  // Redirect to new endpoint
+  req.body.input = req.body.url;
+  req.body.isManualContent = false;
+  return app._router.handle({ ...req, url: '/api/ai-analysis', method: 'POST' }, res);
 });
 
 // Simple visibility check endpoint (keep for backward compatibility)
@@ -225,5 +241,5 @@ app.post('/api/analyze-website', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`PulseSpark AI Server running on port ${PORT}`);
 });

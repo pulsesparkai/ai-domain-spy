@@ -10,5 +10,12 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: PulseSparkAI
+Allow: /
+
 User-agent: *
 Allow: /
+
+# PulseSpark AI Bot - Friendly AI search optimization crawler
+# Respects robots.txt and provides manual content analysis option
+# Contact: support@pulsespark.ai for questions

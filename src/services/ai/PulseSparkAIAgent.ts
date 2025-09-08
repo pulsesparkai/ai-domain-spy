@@ -1,5 +1,5 @@
-// src/services/deepseek/DeepSeekAgent.ts
-interface DeepSeekAnalysis {
+// src/services/ai/PulseSparkAIAgent.ts
+interface PulseSparkAnalysis {
   readinessScore: number;
   entityAnalysis: {
     brandStrength: number;
@@ -57,36 +57,87 @@ function extractPlatformPresence(citations: any[]) {
   return platforms;
 }
 
-export class DeepSeekAgent {
+export class PulseSparkAIAgent {
   private apiEndpoint: string;
 
   constructor() {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.pulsespark.ai';
-    // Use the deepseek endpoint, not the regular analyze endpoint
-    this.apiEndpoint = `${baseUrl}/api/deepseek/analyze-website`;
+    this.apiEndpoint = `${baseUrl}/api/ai-analysis`;
   }
 
-  async analyzeForPerplexity(url: string): Promise<DeepSeekAnalysis> {
+  async checkRobotsTxt(url: string): Promise<boolean> {
     try {
-      if (!url || typeof url !== 'string') {
-        throw new Error('Invalid URL provided');
+      const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
+      const robotsResponse = await fetch(`https://${domain}/robots.txt`);
+      
+      if (!robotsResponse.ok) {
+        return true; // Allow if robots.txt not found
+      }
+      
+      const robotsText = await robotsResponse.text();
+      const lines = robotsText.split('\n').map(line => line.trim().toLowerCase());
+      
+      let userAgentAll = false;
+      let disallowAll = false;
+      
+      for (const line of lines) {
+        if (line.startsWith('user-agent:')) {
+          userAgentAll = line.includes('*');
+        }
+        if (userAgentAll && line.startsWith('disallow:')) {
+          if (line.includes('disallow: /')) {
+            disallowAll = true;
+            break;
+          }
+        }
+      }
+      
+      return !disallowAll;
+    } catch (error) {
+      console.warn('Could not check robots.txt:', error);
+      return true; // Allow if can't check
+    }
+  }
+
+  async analyzeWebsite(urlOrContent: string, options?: { 
+    isManualContent?: boolean 
+  }): Promise<PulseSparkAnalysis> {
+    try {
+      if (!urlOrContent || typeof urlOrContent !== 'string') {
+        throw new Error('Invalid input provided');
       }
 
-      // Remove protocol and trailing slash
-      const cleanUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      // Check robots.txt if it's a URL (not manual content)
+      if (!options?.isManualContent) {
+        const isAllowed = await this.checkRobotsTxt(urlOrContent);
+        if (!isAllowed) {
+          throw new Error('ROBOTS_BLOCKED');
+        }
+      }
 
       const response = await fetch(this.apiEndpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: cleanUrl })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          input: options?.isManualContent ? urlOrContent : urlOrContent.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+          isManualContent: options?.isManualContent || false
+        })
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('PulseSpark AI API error:', response.status, errorText);
+        
+        if (response.status === 403) {
+          throw new Error('ROBOTS_BLOCKED');
+        }
         throw new Error(`Analysis failed: ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('DeepSeek API Response:', data);
+      console.log('PulseSpark AI Response:', data);
       
       // Validate response structure
       if (!data.citations || !data.sentiment || !data.rankings) {
@@ -95,7 +146,7 @@ export class DeepSeekAgent {
       
       return {
         ...data,
-        // Map normalized response back to expected DeepSeekAnalysis structure
+        // Map normalized response back to expected PulseSparkAnalysis structure
         readinessScore: data.summary_cards?.key_stats?.find((s: any) => s.label === 'Readiness Score')?.value?.split('/')[0] || 50,
         entityAnalysis: {
           brandStrength: data.sentiment?.score * 50 + 50 || 50,
@@ -129,12 +180,12 @@ export class DeepSeekAgent {
       };
       
     } catch (error) {
-      console.error('DeepSeek error:', error);
+      console.error('PulseSpark AI error:', error);
       throw error;
     }
   }
 
-  private getMockAnalysis(url: string): DeepSeekAnalysis {
+  private getMockAnalysis(urlOrContent: string): PulseSparkAnalysis {
     // Mock data for testing when API is not available
     return {
       readinessScore: 73,
@@ -189,4 +240,4 @@ export class DeepSeekAgent {
   }
 }
 
-export type { DeepSeekAnalysis };
+export type { PulseSparkAnalysis };
