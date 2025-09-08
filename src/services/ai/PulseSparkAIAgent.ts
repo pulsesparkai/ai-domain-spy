@@ -61,7 +61,7 @@ export class PulseSparkAIAgent {
   private apiEndpoint: string;
 
   constructor() {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.pulsespark.ai';
+    const baseUrl = 'https://pulsespark-api.onrender.com';  // Your actual Render URL
     this.apiEndpoint = `${baseUrl}/api/ai-analysis`;
   }
 
