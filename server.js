@@ -209,10 +209,32 @@ function convertSignalsToCitations(signals) {
   return citations;
 }
 
+function calculateReadinessScore(extractedSignals) {
+  let score = 20; // Base score
+  
+  // Add points for each signal type
+  if (extractedSignals?.faqs?.length > 0) score += 15;
+  if (extractedSignals?.faqs?.length > 5) score += 10;
+  
+  if (extractedSignals?.tables?.length > 0) score += 10;
+  if (extractedSignals?.tables?.length > 3) score += 5;
+  
+  if (extractedSignals?.schemaMarkup?.length > 0) score += 20;
+  
+  if (extractedSignals?.howToSteps?.length > 0) score += 10;
+  
+  if (extractedSignals?.brandMentions?.total > 5) score += 10;
+  if (extractedSignals?.brandMentions?.total > 20) score += 10;
+  
+  if (extractedSignals?.authorityAssociations?.length > 0) score += 5;
+  
+  return Math.min(100, score);
+}
+
 function normalizePulseSparkResponse(data, domain, extractedSignals) {
   const response = {
     domain: domain.replace(/^https?:\/\//, '').replace(/\/$/, ''),
-    readinessScore: data.readinessScore || 0,
+    readinessScore: data.readinessScore || calculateReadinessScore(extractedSignals),
     
     entityAnalysis: data.entityAnalysis || {
       brandStrength: 0,
@@ -547,12 +569,7 @@ Return a JSON analysis with this exact structure:`;
         
         // Generate smart mock data based on extracted signals
         aiAnalysis = {
-          readinessScore: Math.min(100, 30 + 
-            (extractedSignals?.faqs?.length > 0 ? 15 : 0) +
-            (extractedSignals?.tables?.length > 0 ? 10 : 0) +
-            (extractedSignals?.schemaMarkup?.length > 0 ? 20 : 0) +
-            (extractedSignals?.howToSteps?.length > 0 ? 10 : 0) +
-            (extractedSignals?.brandMentions?.total > 5 ? 10 : 5)),
+          readinessScore: calculateReadinessScore(extractedSignals),
           entityAnalysis: {
             brandStrength: extractedSignals?.brandMentions?.total > 0 ? 65 : 30,
             mentions: extractedSignals?.brandMentions?.total || 0,
@@ -614,12 +631,7 @@ Return a JSON analysis with this exact structure:`;
       
       // Use fallback for ALL errors, not just timeout
       aiAnalysis = {
-        readinessScore: Math.min(100, 30 + 
-          (extractedSignals?.faqs?.length > 0 ? 15 : 0) +
-          (extractedSignals?.tables?.length > 0 ? 10 : 0) +
-          (extractedSignals?.schemaMarkup?.length > 0 ? 20 : 0) +
-          (extractedSignals?.howToSteps?.length > 0 ? 10 : 0) +
-          (extractedSignals?.brandMentions?.total > 5 ? 10 : 5)),
+        readinessScore: calculateReadinessScore(extractedSignals),
         entityAnalysis: {
           brandStrength: extractedSignals?.brandMentions?.total > 0 ? 65 : 30,
           mentions: extractedSignals?.brandMentions?.total || 0,
