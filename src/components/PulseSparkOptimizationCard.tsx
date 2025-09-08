@@ -8,6 +8,7 @@ import { Brain, AlertCircle, FileText, Globe } from 'lucide-react';
 import { PulseSparkAIAgent } from '@/services/ai';
 import { showToast } from '@/lib/toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface Props {
   onAnalysisComplete?: (data: any) => void;
@@ -20,6 +21,7 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
   const [analysis, setAnalysis] = useState<any>(null);
   const [expanded, setExpanded] = useState(false);
   const [inputMode, setInputMode] = useState<'url' | 'manual'>('url');
+  const [showInstructions, setShowInstructions] = useState(false);
 
   const analyzeContent = async () => {
     const input = inputMode === 'url' ? url : manualContent;
@@ -122,37 +124,64 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
               </TabsContent>
               
               <TabsContent value="manual" className="space-y-4">
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Manual Content Collection Guide
-                  </h4>
-                  <div className="text-sm text-muted-foreground space-y-2">
-                    <p><strong>What to copy:</strong></p>
-                    <ul className="list-disc pl-4 space-y-1">
-                      <li>Homepage main content and hero section</li>
-                      <li>About page or company description</li>
-                      <li>Key product/service pages</li>
-                      <li>FAQ sections and how-to guides</li>
-                      <li>Any data, charts, or research content</li>
-                      <li>Author bios and credentials</li>
-                    </ul>
-                    <p className="mt-2"><strong>How to copy:</strong> Right-click → "View Page Source" or Ctrl+U, then copy the text content (not HTML tags).</p>
-                  </div>
+                <div className="mb-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowInstructions(!showInstructions)}
+                    className="mb-2"
+                  >
+                    {showInstructions ? 'Hide' : 'Show'} Instructions
+                  </Button>
+                  
+                  {showInstructions && (
+                    <Alert className="mt-2">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>How to Get the Right Content</AlertTitle>
+                      <AlertDescription>
+                        <ol className="list-decimal list-inside space-y-1 mt-2">
+                          <li>Go to the website you want to analyze</li>
+                          <li>Press <kbd className="px-1 py-0.5 bg-muted text-xs rounded">Ctrl+U</kbd> (or <kbd className="px-1 py-0.5 bg-muted text-xs rounded">Cmd+U</kbd> on Mac) to view page source</li>
+                          <li>Press <kbd className="px-1 py-0.5 bg-muted text-xs rounded">Ctrl+A</kbd> to select all</li>
+                          <li>Copy and paste the entire HTML here</li>
+                        </ol>
+                        <div className="mt-3 p-3 bg-muted rounded-lg">
+                          <strong className="text-sm">Important:</strong> We need the full HTML to detect:
+                          <ul className="list-disc list-inside text-sm mt-2 space-y-0.5">
+                            <li>FAQ sections and Q&A content</li>
+                            <li>Tables (pricing, comparisons, features)</li>
+                            <li>How-to guides and step-by-step content</li>
+                            <li>Schema markup and structured data</li>
+                            <li>Entity mentions and brand signals</li>
+                            <li>Internal linking structure</li>
+                            <li>Author credentials and citations</li>
+                            <li>Freshness indicators and update dates</li>
+                          </ul>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
+                
                 <Textarea
-                  placeholder="Paste your website content here (focus on main pages, about section, key content)..."
+                  placeholder="Paste the complete HTML source code here (Ctrl+U on the website)..."
                   value={manualContent}
                   onChange={(e) => setManualContent(e.target.value)}
-                  className="min-h-[200px]"
+                  className="min-h-[200px] font-mono text-xs"
                 />
-                <Button 
-                  onClick={analyzeContent} 
-                  disabled={loading || !manualContent}
-                  className="w-full"
-                >
-                  {loading ? 'Analyzing Perplexity Signals...' : 'Analyze Content for Perplexity'}
-                </Button>
+                
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={analyzeContent} 
+                    disabled={loading || !manualContent}
+                    className="flex-1"
+                  >
+                    {loading ? 'Analyzing Perplexity Signals...' : 'Analyze Content for Perplexity'}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    {manualContent.length.toLocaleString()} characters
+                  </span>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   We'll analyze your content for all 59 Perplexity ranking factors including question-answer format, expert citations, data visualization, and content structure.
                 </p>
