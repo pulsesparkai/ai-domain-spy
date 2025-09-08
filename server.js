@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import { canAIScrapeUrl } from './server/utils/ai-scraping-checker.js';
 import { normalizePulseSparkResponse } from './server/transformers/pulsespark-normalizer.js';
 import { PerplexitySignalsExtractor } from './server/analyzers/perplexity-signals.js';
+import { extractPerplexitySignals } from './server/extractors/perplexity-signals-extractor.js';
+import { convertSignalsToCitations } from './server/utils/signals-to-citations.js';
 
 dotenv.config();
 
@@ -46,12 +48,22 @@ app.post('/api/ai-analysis', async (req, res) => {
     
     let domain = '';
     let contentToAnalyze = '';
+    let extractedSignals = null;
     
     if (isManualContent) {
-      // User pasted content directly
-      contentToAnalyze = input;
+      // User pasted HTML content directly
       domain = 'manual-input';
-      console.log('Analyzing manual content input');
+      contentToAnalyze = input;
+      
+      // Extract Perplexity signals from the HTML
+      extractedSignals = extractPerplexitySignals(input, domain);
+      console.log('Extracted signals from manual content:', {
+        faqs: extractedSignals?.faqs?.length || 0,
+        tables: extractedSignals?.tables?.length || 0,
+        howToSteps: extractedSignals?.howToSteps?.length || 0,
+        schemaMarkup: extractedSignals?.schemaMarkup?.length || 0
+      });
+      
     } else {
       // It's a URL - check both robots.txt and llms.txt
       domain = input.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -59,20 +71,82 @@ app.post('/api/ai-analysis', async (req, res) => {
       const scrapingCheck = await canAIScrapeUrl(input);
       if (!scrapingCheck.allowed) {
         return res.status(403).json({ 
-          error: scrapingCheck.reason,
+          error: `Cannot scrape: ${scrapingCheck.reason}. Please use the manual content option.`,
           requiresManual: true,
+          reason: scrapingCheck.reason,
           fileType: scrapingCheck.fileType,
-          suggestion: 'Please use the manual content option and paste the website content directly.'
+          suggestion: 'Copy the HTML source code manually using Ctrl+U and paste it in the manual content tab.'
         });
       }
       
-      contentToAnalyze = domain;
+      // If we can scrape, fetch the content
+      try {
+        console.log(`Fetching content from: ${input}`);
+        const fullUrl = input.startsWith('http') ? input : `https://${input}`;
+        const pageResponse = await fetch(fullUrl, {
+          headers: {
+            'User-Agent': 'PulseSparkBot/1.0 (AI Analysis; https://pulsespark.ai)',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
+          },
+          timeout: 15000
+        });
+        
+        if (pageResponse.ok) {
+          const htmlContent = await pageResponse.text();
+          console.log(`Fetched ${htmlContent.length} characters from ${domain}`);
+          
+          // Extract Perplexity signals from the scraped HTML
+          extractedSignals = extractPerplexitySignals(htmlContent, domain);
+          contentToAnalyze = htmlContent;
+          
+          console.log('Extracted signals from scraped content:', {
+            faqs: extractedSignals?.faqs?.length || 0,
+            tables: extractedSignals?.tables?.length || 0,
+            howToSteps: extractedSignals?.howToSteps?.length || 0,
+            schemaMarkup: extractedSignals?.schemaMarkup?.length || 0,
+            authorityLinks: extractedSignals?.authorityAssociations?.length || 0
+          });
+        } else {
+          console.warn(`Failed to fetch ${domain}: ${pageResponse.status} ${pageResponse.statusText}`);
+          contentToAnalyze = domain; // Fallback to domain-only analysis
+        }
+      } catch (fetchError) {
+        console.error('Failed to fetch page content:', fetchError);
+        contentToAnalyze = domain; // Fallback to domain-only analysis
+      }
     }
     
     const PULSESPARK_API_KEY = process.env.DEEPSEEK_API_KEY; // Using DeepSeek backend for PulseSpark AI
     
     if (PULSESPARK_API_KEY) {
       try {
+        // Create enhanced prompt with extracted signals
+        let promptContent;
+        
+        if (isManualContent && extractedSignals) {
+          promptContent = `Analyze this website content for AI platform optimization using Perplexity ranking signals.
+          
+Detected structural signals:
+- FAQ sections: ${extractedSignals.faqs?.length || 0} found
+- Data tables: ${extractedSignals.tables?.length || 0} found (${extractedSignals.tables?.map(t => t.type).join(', ') || 'none'})
+- How-to steps: ${extractedSignals.howToSteps?.length || 0} found
+- Schema markup: ${extractedSignals.schemaMarkup?.map(s => s.type).join(', ') || 'none'}
+- Heading structure: H1=${extractedSignals.headingStructure?.h1Count || 0}, Total=${extractedSignals.headingStructure?.totalHeadings || 0}
+- Internal links: ${extractedSignals.internalLinks || 0}
+- Citations: ${extractedSignals.citations?.length || 0}
+- Authority links: ${extractedSignals.authorityAssociations?.length || 0}
+- Brand mentions: ${extractedSignals.brandMentions?.total || 0} (density: ${extractedSignals.brandMentions?.density?.toFixed(2) || 0})
+
+Content sample: ${contentToAnalyze.substring(0, 2000)}...`;
+        } else {
+          promptContent = `Analyze the website "${domain}" for AI platform optimization with focus on Perplexity ranking signals...`;
+        }
+        
         // Call PulseSpark AI backend service
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
           method: 'POST',
@@ -89,7 +163,7 @@ app.post('/api/ai-analysis', async (req, res) => {
               },
               {
                 role: 'user',
-                content: isManualContent ? 
+                content: promptContent 
                   `Analyze this website content for AI platform optimization using Perplexity ranking signals. Focus on the 59 key ranking factors including content depth, authority signals, freshness, structure, and user intent. Return a JSON object with exactly this structure:
 {
   "readinessScore": (number 0-100 based on Perplexity optimization),
@@ -201,18 +275,30 @@ Content to analyze: ${contentToAnalyze}` :
             const aiAnalysis = JSON.parse(cleanContent);
             console.log('PulseSpark AI analysis successful for:', domain);
             
-            // If we have manual content, also run Perplexity signals analysis
-            if (isManualContent) {
+            // If we have manual content, also run local Perplexity signals analysis
+            if (isManualContent && extractedSignals) {
               const signalsExtractor = new PerplexitySignalsExtractor();
               const perplexityAnalysis = signalsExtractor.analyzeContent(contentToAnalyze, domain);
               
               // Merge the analyses
               aiAnalysis.perplexitySignalsAnalysis = perplexityAnalysis;
+              aiAnalysis.extractedSignals = extractedSignals;
               aiAnalysis.readinessScore = Math.max(aiAnalysis.readinessScore, perplexityAnalysis.readinessScore);
             }
             
             // Transform to normalized schema
             const normalizedData = normalizePulseSparkResponse(aiAnalysis, domain);
+            
+            // Enhance with extracted signals
+            if (extractedSignals) {
+              normalizedData.citations = [
+                ...normalizedData.citations,
+                ...convertSignalsToCitations(extractedSignals)
+              ];
+              normalizedData.faq = extractedSignals.faqs || [];
+              normalizedData.tables = extractedSignals.tables || [];
+              normalizedData.perplexity_signals = extractedSignals;
+            }
             
             return res.json(normalizedData);
           } catch (parseError) {
@@ -232,7 +318,7 @@ Content to analyze: ${contentToAnalyze}` :
               requiresManual: true,
               fileType: 'api_blocked',
               suggestion: 'Copy the website content manually using the instructions provided.'
-            });
+});
           }
           
           throw new Error(`PulseSpark AI API error: ${response.status}`);
