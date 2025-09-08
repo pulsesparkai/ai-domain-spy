@@ -5,6 +5,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Simple in-memory cache
+const analysisCache = new Map();
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -343,6 +347,14 @@ app.post('/api/ai-analysis', async (req, res) => {
       return res.status(400).json({ error: 'Input is required' });
     }
     
+    // Check cache first
+    const cacheKey = `${input}-${isManualContent}`;
+    const cached = analysisCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+      console.log('Returning cached analysis');
+      return res.json(cached.data);
+    }
+    
     const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
     
     if (!DEEPSEEK_API_KEY) {
@@ -668,6 +680,12 @@ Return a JSON analysis with this exact structure:`;
     
     // Normalize and enhance the response
     const finalResponse = normalizePulseSparkResponse(aiAnalysis, domain, extractedSignals);
+    
+    // Cache the response
+    analysisCache.set(cacheKey, {
+      data: finalResponse,
+      timestamp: Date.now()
+    });
     
     console.log('Returning analysis with readiness score:', finalResponse.readinessScore);
     return res.json(finalResponse);
