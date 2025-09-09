@@ -116,7 +116,7 @@ function extractPerplexitySignals(html, domain) {
       total: 0,
       density: 0
     },
-    platformPresence: null // Will be populated separately
+    platformPresence: null
   };
   
   // Extract FAQs
@@ -176,7 +176,7 @@ function extractPerplexitySignals(html, domain) {
   signals.brandMentions.total = brandMatches.length;
   signals.brandMentions.density = brandMatches.length / (html.length / 1000);
   
-  // Detect platform presence
+  // Add platform presence detection
   signals.platformPresence = detectPlatformPresence(html);
   
   return signals;
