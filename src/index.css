@@ -408,11 +408,19 @@ All colors MUST be HSL.
 
   /* Shimmer animation for loading states */
   @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
   }
   
   .animate-shimmer {
-    animation: shimmer 2s infinite;
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    background-size: 1000px 100%;
   }
+
+  /* Add delays for staggered animations */
+  .delay-75 { animation-delay: 75ms; }
+  .delay-150 { animation-delay: 150ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-500 { animation-delay: 500ms; }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,6 +59,40 @@ const LoadingAnimation = () => (
     </div>
   </div>
 );
+
+const TypewriterLoading = () => {
+  const [displayText, setDisplayText] = useState('');
+  const fullText = 'Analyzing website for AI optimization signals...';
+  
+  useEffect(() => {
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index <= fullText.length) {
+        setDisplayText(fullText.slice(0, index));
+        index++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 50);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  return (
+    <div className="p-6">
+      <div className="font-mono text-lg mb-4">
+        {displayText}
+        <span className="animate-pulse">|</span>
+      </div>
+      <div className="space-y-2 text-sm text-muted-foreground">
+        <p className="animate-pulse">🔍 Scanning for FAQ sections...</p>
+        <p className="animate-pulse delay-150">📊 Detecting data tables...</p>
+        <p className="animate-pulse delay-300">🏷️ Checking schema markup...</p>
+        <p className="animate-pulse delay-500">🔗 Analyzing authority signals...</p>
+      </div>
+    </div>
+  );
+};
 
 interface Props {
   onAnalysisComplete?: (data: any) => void;
