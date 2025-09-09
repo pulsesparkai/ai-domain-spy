@@ -52,7 +52,7 @@ import { TrendingPages } from '@/components/dashboard/TrendingPages';
 import PulseSparkOptimizationCard from '@/components/PulseSparkOptimizationCard';
 import { showToast } from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { SystemHealthCheck } from '@/components/SystemHealthCheck';
+import { AIVisibilityDashboard } from '@/components/dashboard/AIVisibilityDashboard';
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
   return (
@@ -255,129 +255,21 @@ const Dashboard = () => {
         return <AIRankings scanData={scanData} />;
       default:
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {/* PulseSpark AI Optimization Card - Full Width */}
-            <div className="lg:col-span-2 xl:col-span-3">
+          <div className="space-y-6">
+            {/* PulseSpark AI Optimization Suite - Always shown first */}
+            <div>
               <CustomErrorBoundary>
                 <PulseSparkOptimizationCard onAnalysisComplete={handleAnalysisComplete} />
               </CustomErrorBoundary>
             </div>
             
-            {/* AI Optimization Signals */}
-            {analysisData?.perplexity_signals && (
-              <div className="lg:col-span-2 xl:col-span-3">
-                <Card className="p-6">
-                  <CardTitle className="mb-4">Detected AI Optimization Signals</CardTitle>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-success" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">FAQ Sections</p>
-                        <p className="text-xl font-bold">{analysisData.perplexity_signals.faqs?.length || 0}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Table className="w-5 h-5 text-primary" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Data Tables</p>
-                        <p className="text-xl font-bold">{analysisData.perplexity_signals.tables?.length || 0}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-accent" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">How-To Steps</p>
-                        <p className="text-xl font-bold">{analysisData.perplexity_signals.howToSteps?.length || 0}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Code className="w-5 h-5 text-warning" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Schema Markup</p>
-                        <p className="text-xl font-bold">{analysisData.perplexity_signals.schemaMarkup?.length || 0}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Award className="w-5 h-5 text-secondary" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Brand Mentions</p>
-                        <p className="text-xl font-bold">{analysisData.perplexity_signals.brandMentions?.total || 0}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Link className="w-5 h-5 text-primary" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Authority Links</p>
-                        <p className="text-xl font-bold">{analysisData.perplexity_signals.authorityAssociations?.length || 0}</p>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            )}
-
-            {/* Detected On-Page Elements */}
-            {analysisData?.citations && analysisData.citations.length > 0 && (
-              <div className="lg:col-span-2 xl:col-span-3">
-                <Card className="p-6">
-                  <CardTitle className="mb-4">Detected On-Page Elements</CardTitle>
-                  <div className="space-y-3">
-                    {analysisData.citations.map((citation: any, idx: number) => (
-                      <div key={idx} className="border-l-4 border-primary pl-4">
-                        <h4 className="font-semibold text-sm">{citation.title}</h4>
-                        <p className="text-xs text-muted-foreground">{citation.snippet}</p>
-                        <Badge variant="secondary" className="mt-1">
-                          Confidence: {(citation.confidence * 100).toFixed(0)}%
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </div>
-            )}
-            
-            {/* Show charts only after analysis */}
-            {analysisData && (
-              <>
-                {/* Visibility Trend Chart */}
-                <div className="lg:col-span-1">
-                  <VisibilityChart data={analysisData} />
-                </div>
-                
-                {/* Competitor Analysis */}
-                <div className="lg:col-span-1">
-                  <CompetitorAnalysis 
-                    domain={analysisData.domain || scanUrl} 
-                    score={analysisData.readinessScore} 
-                  />
-                </div>
-                
-                {/* Platform Distribution */}
-                <div className="lg:col-span-1">
-                  <PlatformDistribution platformData={analysisData.platformPresence} />
-                </div>
-                
-                {/* Keyword Rankings */}
-                <div className="lg:col-span-2">
-                  <KeywordRankings />
-                </div>
-                
-                {/* AI Visibility Score using analysis data */}
-                <div className="lg:col-span-1">
-                  <AIVisibilityScore scanData={{
-                    aggregates: {
-                      visibilityScore: analysisData.readinessScore
-                    }
-                  }} />
-                </div>
-              </>
-            )}
-            
-            {/* Show placeholder when no data */}
-            {!analysisData && (
-              <div className="lg:col-span-2 xl:col-span-3 text-center py-12">
-                <p className="text-muted-foreground">Enter a domain above to see detailed analytics</p>
-              </div>
+            {/* AI Visibility Dashboard - Shows after analysis */}
+            {(analysisData || scanData) && (
+              <AIVisibilityDashboard 
+                analysisData={analysisData}
+                scanData={scanData}
+                lastScanDate={analysisData?.timestamp || scanData?.created_at}
+              />
             )}
           </div>
         );
@@ -526,11 +418,6 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="flex-1 p-6">
-          {/* System Health Check - Shows integration status */}
-          <div className="mb-6">
-            <SystemHealthCheck />
-          </div>
-          
           {/* Dashboard Content */}
           {renderContent()}
         </main>
