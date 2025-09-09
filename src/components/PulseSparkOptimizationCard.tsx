@@ -168,7 +168,7 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <LoadingAnimation />
+          <TypewriterLoading />
         ) : !expanded ? (
           <div>
             <p className="text-muted-foreground mb-4">
