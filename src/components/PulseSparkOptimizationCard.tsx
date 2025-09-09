@@ -10,6 +10,56 @@ import { showToast } from '@/lib/toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+const LoadingAnimation = () => (
+  <div className="space-y-4 p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
+    <div className="flex items-center gap-3">
+      <div className="relative">
+        <Brain className="w-8 h-8 text-primary animate-pulse" />
+        <div className="absolute inset-0 animate-ping">
+          <Brain className="w-8 h-8 text-primary opacity-30" />
+        </div>
+      </div>
+      <div className="flex-1">
+        <h3 className="font-semibold text-lg">Analyzing Website...</h3>
+        <p className="text-sm text-muted-foreground">Extracting 59 AI optimization signals</p>
+      </div>
+    </div>
+    
+    <div className="space-y-3">
+      {/* Animated progress steps */}
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+        <span className="text-sm">Checking robots.txt and llms.txt permissions...</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-75" />
+        <span className="text-sm">Extracting FAQ sections and structured data...</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-150" />
+        <span className="text-sm">Analyzing schema markup and tables...</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-300" />
+        <span className="text-sm">Detecting brand mentions and authority signals...</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-500" />
+        <span className="text-sm">Calculating AI readiness score...</span>
+      </div>
+    </div>
+    
+    {/* Animated thinking dots */}
+    <div className="flex items-center justify-center pt-4">
+      <div className="flex gap-1">
+        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+      </div>
+    </div>
+  </div>
+);
+
 interface Props {
   onAnalysisComplete?: (data: any) => void;
 }
@@ -83,7 +133,9 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
         </div>
       </CardHeader>
       <CardContent>
-        {!expanded ? (
+        {loading ? (
+          <LoadingAnimation />
+        ) : !expanded ? (
           <div>
             <p className="text-muted-foreground mb-4">
               Analyze your website for Perplexity AI optimization using 59 ranking signals
