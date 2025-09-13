@@ -29,6 +29,9 @@ file_size_limit = "50MiB"
 enabled = true
 port = 54328
 
+[functions.analyze-website]
+verify_jwt = false
+
 [functions.create-checkout]
 verify_jwt = true
 
