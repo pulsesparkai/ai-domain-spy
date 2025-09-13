@@ -1,16 +1,43 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LazyImage } from "@/components/LazyImage";
+import { toast } from "@/hooks/use-toast";
 import heroBackground from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
   const [email, setEmail] = useState("");
+  const navigate = useNavigate();
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle email signup
-    console.log("Email signup:", email);
+    
+    if (!email) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!validateEmail(email)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Redirect to auth page with pre-filled email
+    navigate(`/auth?email=${encodeURIComponent(email)}`);
   };
 
   return (

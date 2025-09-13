@@ -14,8 +14,13 @@ export default function Auth() {
   const { user, signIn, signUp, loading } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [signupData, setSignupData] = useState({ email: '', password: '', fullName: '' });
+  
+  // Get email from URL params if available
+  const urlParams = new URLSearchParams(window.location.search);
+  const prefilledEmail = urlParams.get('email') || '';
+  
+  const [loginData, setLoginData] = useState({ email: prefilledEmail, password: '' });
+  const [signupData, setSignupData] = useState({ email: prefilledEmail, password: '', fullName: '' });
 
   useEffect(() => {
     if (user && !loading) {
