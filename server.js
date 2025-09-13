@@ -3,6 +3,7 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+import { ethicalFetch, isUrlAllowed } from './bot.js';
 
 dotenv.config();
 
@@ -29,54 +30,20 @@ app.use(express.json({ limit: '10mb' }));
 
 async function canAIScrapeUrl(url) {
   try {
-    const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
-    const baseUrl = `${urlObj.protocol}//${urlObj.hostname}`;
-    
-    // Check llms.txt first (AI-specific standard)
-    try {
-      const llmsResponse = await fetch(`${baseUrl}/llms.txt`, { timeout: 3000 });
-      if (llmsResponse.ok) {
-        const llmsText = await llmsResponse.text();
-        if (llmsText.toLowerCase().includes('disallow')) {
-          return { 
-            allowed: false, 
-            reason: 'llms.txt blocks AI crawlers',
-            fileType: 'llms.txt'
-          };
-        }
-      }
-    } catch (e) {}
-    
-    // Check robots.txt
-    try {
-      const robotsResponse = await fetch(`${baseUrl}/robots.txt`, { timeout: 3000 });
-      if (robotsResponse.ok) {
-        const robotsText = await robotsResponse.text();
-        const lines = robotsText.toLowerCase().split('\n');
-        let isDisallowed = false;
-        
-        for (const line of lines) {
-          if (line.includes('user-agent: *') || line.includes('gptbot')) {
-            if (lines.some(l => l.includes('disallow: /'))) {
-              isDisallowed = true;
-              break;
-            }
-          }
-        }
-        
-        if (isDisallowed) {
-          return { 
-            allowed: false, 
-            reason: 'robots.txt blocks crawlers',
-            fileType: 'robots.txt'
-          };
-        }
-      }
-    } catch (e) {}
+    // Use our ethical bot to check if URL is allowed
+    const allowed = await isUrlAllowed(url);
+    if (!allowed) {
+      return { 
+        allowed: false, 
+        reason: 'Blocked by robots.txt for ethical compliance',
+        fileType: 'robots.txt'
+      };
+    }
     
     return { allowed: true, reason: null };
   } catch (error) {
-    return { allowed: true, reason: null };
+    console.log(`[EthicalBot] Error checking URL ${url}:`, error.message);
+    return { allowed: true, reason: null }; // Default to allowed if check fails
   }
 }
 
@@ -468,14 +435,25 @@ app.post('/api/ai-analysis', async (req, res) => {
         });
       }
       
-      // Try to fetch the page
+      // Try to fetch the page using ethical bot
       try {
         const fullUrl = input.startsWith('http') ? input : `https://${input}`;
-        console.log(`Fetching content from: ${fullUrl}`);
+        console.log(`[EthicalBot] Attempting to fetch content from: ${fullUrl}`);
         
-        const pageResponse = await fetch(fullUrl, {
+        // First check if URL is allowed (quick check)
+        const allowed = await isUrlAllowed(fullUrl);
+        if (!allowed) {
+          return res.status(403).json({ 
+            error: `Cannot scrape: Blocked by robots.txt for ethical compliance. Please use the manual content option.`,
+            requiresManual: true,
+            reason: 'robots.txt blocks our bot',
+            fileType: 'robots.txt',
+            suggestion: 'Copy the HTML source code (Ctrl+U) and paste in manual content tab.'
+          });
+        }
+        
+        const pageResponse = await ethicalFetch(fullUrl, {
           headers: {
-            'User-Agent': 'PulseSparkBot/1.0 (AI Analysis; https://pulsespark.ai)',
             'Accept': 'text/html,application/xhtml+xml'
           },
           timeout: 10000
@@ -483,16 +461,25 @@ app.post('/api/ai-analysis', async (req, res) => {
         
         if (pageResponse.ok) {
           const htmlContent = await pageResponse.text();
-          console.log(`Fetched ${htmlContent.length} characters from ${domain}`);
+          console.log(`[EthicalBot] Successfully fetched ${htmlContent.length} characters from ${domain}`);
           
           extractedSignals = extractPerplexitySignals(htmlContent, domain);
           contentToAnalyze = htmlContent.substring(0, 10000);
         } else {
-          console.log(`Could not fetch ${domain}, analyzing domain only`);
+          console.log(`[EthicalBot] Could not fetch ${domain} (${pageResponse.status}), analyzing domain only`);
           contentToAnalyze = domain;
         }
       } catch (fetchError) {
-        console.log('Fetch failed, using domain-only analysis');
+        if (fetchError.code === 'ROBOTS_BLOCKED') {
+          return res.status(403).json({ 
+            error: `Cannot scrape: ${fetchError.message}. Please use the manual content option.`,
+            requiresManual: true,
+            reason: 'Blocked by robots.txt',
+            fileType: 'robots.txt',
+            suggestion: 'Copy the HTML source code (Ctrl+U) and paste in manual content tab.'
+          });
+        }
+        console.log('[EthicalBot] Fetch failed, using domain-only analysis:', fetchError.message);
         contentToAnalyze = domain;
       }
     }
