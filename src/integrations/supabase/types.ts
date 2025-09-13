@@ -372,6 +372,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      increment_monthly_scans: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
       log_login_attempt: {
         Args: {
           p_email?: string

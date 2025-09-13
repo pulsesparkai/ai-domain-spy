@@ -61,6 +61,7 @@ import { WorkflowCanvas } from '@/components/WorkflowCanvas';
 import { NetworkMap } from '@/components/NetworkMap';
 import { DiscoverAnalysis } from '@/components/DiscoverAnalysis';
 import { TrendsSearch } from '@/components/TrendsSearch';
+import { EnhancedDomainAnalysis } from '@/components/EnhancedDomainAnalysis';
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
   return (
@@ -302,6 +303,16 @@ const Dashboard = () => {
             />
           </div>
         );
+      case 'enhanced-domain':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Enhanced Domain Analysis</h2>
+              <Badge variant="outline">DeepSeek + Perplexity</Badge>
+            </div>
+            <EnhancedDomainAnalysis />
+          </div>
+        );
       case 'citations':
         return <CitationsTracking scanData={scanData} />;
       case 'sentiment':
@@ -466,6 +477,18 @@ const Dashboard = () => {
             >
               <Compass className="w-5 h-5" />
               Discover Analysis
+            </button>
+            
+            <button
+              onClick={() => setActiveView('enhanced-domain')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                activeView === 'enhanced-domain' 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Globe className="w-5 h-5" />
+              Enhanced Domain Analysis
             </button>
             
             <button
