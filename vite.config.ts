@@ -87,8 +87,17 @@ export default defineConfig(({ command, mode }) => ({
     rollupOptions: {
       // Suppress deprecation warnings
       onwarn(warning, warn) {
+        // Suppress common deprecation warnings
         if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
         if (warning.code === 'UNRESOLVED_IMPORT') return;
+        if (warning.code === 'CIRCULAR_DEPENDENCY') return;
+        if (warning.code === 'EVAL') return;
+        // Suppress sourcemap and dependency warnings
+        if (warning.message?.includes('sourcemap-codec')) return;
+        if (warning.message?.includes('inflight')) return;
+        if (warning.message?.includes('node-domexception')) return;
+        if (warning.message?.includes('glob')) return;
+        if (warning.message?.includes('popper.js')) return;
         warn(warning);
       },
       output: {
