@@ -929,11 +929,32 @@ app.post('/api/discover-analysis', async (req, res) => {
   }
 });
 
-// Trending Searches endpoint with caching
+// Trending Searches endpoint with caching and authentication
 app.get('/api/trending-searches', async (req, res) => {
   try {
-    const { domain } = req.query;
+    const { domain, userId } = req.query;
+    const authHeader = req.headers.authorization;
+    
+    // Authentication check
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+    
+    // Verify user authentication via Supabase
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+    
+    // Validate userId if provided
+    if (userId && user.id !== userId) {
+      return res.status(403).json({ error: 'Unauthorized: userId mismatch' });
+    }
+    
     const cacheKey = domain || 'general';
+    console.log(`[Trending Searches] Request for domain: ${cacheKey}, User: ${user.id}`);
     
     // Check for cached results (1 hour expiry)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -947,12 +968,13 @@ app.get('/api/trending-searches', async (req, res) => {
       .maybeSingle();
     
     if (!cacheError && cachedData) {
-      console.log('Returning cached trending searches for:', cacheKey);
+      console.log('[Trending Searches] Returning cached results for:', cacheKey);
       return res.json({
         success: true,
-        trends: cachedData.trends_json.trends,
+        trends: cachedData.trends_json.trends || cachedData.trends_json,
         cached: true,
-        cachedAt: cachedData.created_at
+        cachedAt: cachedData.created_at,
+        domain: cacheKey
       });
     }
     
@@ -964,13 +986,13 @@ app.get('/api/trending-searches', async (req, res) => {
       });
     }
     
-    // Create domain-specific or general prompt
-    const domainContext = domain ? `with relevance to ${domain}` : 'general';
-    const userQuery = `List the top 10 current trending searches on Perplexity AI, ${domainContext}. For each, estimate how users might reach sites via these trends (e.g., citations, backlinks). Output JSON: { trends: array of {query: string, volumeEstimate: string, relatedDomains: array of strings, pathToSite: string} }`;
+    // Create the exact prompt format requested
+    const relevantPart = domain ? `relevant to ${domain}` : '';
+    const perplexityPrompt = `Top 10 trending Perplexity searches ${relevantPart}. For each, paths to sites via citations/backlinks. JSON: {trends: [{query, volumeEst: high/medium/low, relatedDomains: [strings], pathToSite: string}]}`;
     
-    console.log('Fetching trending searches from Perplexity for:', cacheKey);
+    console.log('[Trending Searches] Fetching from Perplexity API for:', cacheKey);
     
-    // Call Perplexity API
+    // Call Perplexity API with exact specifications
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -978,15 +1000,15 @@ app.get('/api/trending-searches', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'pplx-70b-online',
+        model: 'pplx-70b-online', // Use the model specified in requirements
         messages: [
           {
             role: 'system',
-            content: 'You are a search trends expert. Provide accurate trending search data in the exact JSON format requested.'
+            content: 'You are a search trends expert specializing in Perplexity AI search patterns. Provide accurate trending search data in the exact JSON format requested.'
           },
           {
             role: 'user',
-            content: userQuery
+            content: perplexityPrompt
           }
         ],
         temperature: 0.3,
@@ -1001,7 +1023,7 @@ app.get('/api/trending-searches', async (req, res) => {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Perplexity API error:', response.status, errorText);
+      console.error('[Trending Searches] Perplexity API error:', response.status, errorText);
       throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
     }
     
@@ -1012,23 +1034,75 @@ app.get('/api/trending-searches', async (req, res) => {
     let trendsJson;
     try {
       trendsJson = JSON.parse(trendsContent);
+      console.log('[Trending Searches] Successfully parsed Perplexity response');
     } catch (parseError) {
-      console.log('Failed to parse trends response, using fallback data');
-      // Create realistic fallback data
+      console.log('[Trending Searches] Failed to parse response, using fallback data');
+      
+      // Create realistic fallback data in the exact format requested
       const domainSpecificTrends = domain ? [
-        { query: `${domain} alternatives`, volumeEstimate: 'High', relatedDomains: ['review sites', 'comparison platforms'], pathToSite: 'Comparison listings and review citations' },
-        { query: `${domain} tutorial`, volumeEstimate: 'Medium', relatedDomains: ['educational sites', 'blog platforms'], pathToSite: 'How-to guides and tutorials' },
-        { query: `${domain} pricing`, volumeEstimate: 'High', relatedDomains: ['pricing comparison sites'], pathToSite: 'Pricing comparison citations' }
+        { 
+          query: `${domain} alternatives`, 
+          volumeEst: 'high', 
+          relatedDomains: ['review sites', 'comparison platforms'], 
+          pathToSite: 'Comparison listings and review citations' 
+        },
+        { 
+          query: `${domain} tutorial`, 
+          volumeEst: 'medium', 
+          relatedDomains: ['educational sites', 'blog platforms'], 
+          pathToSite: 'How-to guides and tutorials' 
+        },
+        { 
+          query: `${domain} pricing`, 
+          volumeEst: 'high', 
+          relatedDomains: ['pricing comparison sites'], 
+          pathToSite: 'Pricing comparison citations' 
+        }
       ] : [];
       
       const generalTrends = [
-        { query: 'AI tools 2025', volumeEstimate: 'Very High', relatedDomains: ['tech blogs', 'AI directories'], pathToSite: 'Featured in AI tool lists and reviews' },
-        { query: 'remote work productivity', volumeEstimate: 'High', relatedDomains: ['business blogs', 'productivity sites'], pathToSite: 'Business tool recommendations' },
-        { query: 'sustainable technology', volumeEstimate: 'Medium', relatedDomains: ['environmental sites', 'tech news'], pathToSite: 'Green tech coverage and citations' },
-        { query: 'cybersecurity trends', volumeEstimate: 'High', relatedDomains: ['security blogs', 'enterprise sites'], pathToSite: 'Security solution comparisons' },
-        { query: 'digital marketing automation', volumeEstimate: 'Medium', relatedDomains: ['marketing sites', 'SaaS directories'], pathToSite: 'Marketing tool reviews' },
-        { query: 'blockchain applications', volumeEstimate: 'Medium', relatedDomains: ['crypto sites', 'tech journals'], pathToSite: 'Technology implementation examples' },
-        { query: 'cloud computing migration', volumeEstimate: 'High', relatedDomains: ['enterprise sites', 'tech consultants'], pathToSite: 'Migration case studies' }
+        { 
+          query: 'AI tools 2025', 
+          volumeEst: 'high', 
+          relatedDomains: ['tech blogs', 'AI directories'], 
+          pathToSite: 'Featured in AI tool lists and reviews' 
+        },
+        { 
+          query: 'remote work productivity', 
+          volumeEst: 'high', 
+          relatedDomains: ['business blogs', 'productivity sites'], 
+          pathToSite: 'Business tool recommendations' 
+        },
+        { 
+          query: 'sustainable technology', 
+          volumeEst: 'medium', 
+          relatedDomains: ['environmental sites', 'tech news'], 
+          pathToSite: 'Green tech coverage and citations' 
+        },
+        { 
+          query: 'cybersecurity trends', 
+          volumeEst: 'high', 
+          relatedDomains: ['security blogs', 'enterprise sites'], 
+          pathToSite: 'Security solution comparisons' 
+        },
+        { 
+          query: 'digital marketing automation', 
+          volumeEst: 'medium', 
+          relatedDomains: ['marketing sites', 'SaaS directories'], 
+          pathToSite: 'Marketing tool reviews' 
+        },
+        { 
+          query: 'blockchain applications', 
+          volumeEst: 'medium', 
+          relatedDomains: ['crypto sites', 'tech journals'], 
+          pathToSite: 'Technology implementation examples' 
+        },
+        { 
+          query: 'cloud computing migration', 
+          volumeEst: 'high', 
+          relatedDomains: ['enterprise sites', 'tech consultants'], 
+          pathToSite: 'Migration case studies' 
+        }
       ];
       
       trendsJson = {
@@ -1036,7 +1110,36 @@ app.get('/api/trending-searches', async (req, res) => {
       };
     }
     
-    // Cache the results in Supabase
+    // Ensure trends array exists and is properly formatted
+    if (!trendsJson.trends || !Array.isArray(trendsJson.trends)) {
+      trendsJson = { trends: [] };
+    }
+    
+    // Use ethicalFetch for any URLs found in the trends (if needed for validation)
+    for (const trend of trendsJson.trends) {
+      if (trend.relatedDomains && Array.isArray(trend.relatedDomains)) {
+        for (let i = 0; i < trend.relatedDomains.length; i++) {
+          const domain = trend.relatedDomains[i];
+          // Check if domain looks like a URL and validate it ethically
+          if (domain.includes('.') && !domain.includes(' ')) {
+            try {
+              const domainUrl = domain.startsWith('http') ? domain : `https://${domain}`;
+              const scrapingCheck = await canAIScrapeUrl(domainUrl);
+              if (!scrapingCheck.allowed) {
+                console.log(`[Trending Searches] Domain ${domain} blocked by robots.txt`);
+                // Mark as restricted but keep in results
+                trend.relatedDomains[i] = `${domain} (access restricted)`;
+              }
+            } catch (error) {
+              console.log(`[Trending Searches] Could not verify domain ${domain}:`, error.message);
+              // Keep original domain name
+            }
+          }
+        }
+      }
+    }
+    
+    // Cache the results in Supabase trending_searches table
     const { error: insertError } = await supabase
       .from('trending_searches')
       .insert({
@@ -1045,7 +1148,7 @@ app.get('/api/trending-searches', async (req, res) => {
       });
     
     if (insertError) {
-      console.error('Failed to cache trending searches:', insertError);
+      console.error('[Trending Searches] Failed to cache results:', insertError);
       // Continue anyway, just log the error
     }
     
@@ -1056,16 +1159,19 @@ app.get('/api/trending-searches', async (req, res) => {
       .delete()
       .lt('created_at', oneDayAgo);
     
-    console.log('Successfully fetched and cached trending searches for:', cacheKey);
+    console.log('[Trending Searches] Successfully fetched and cached results for:', cacheKey);
+    
+    // Return JSON in the exact format specified
     return res.json({
       success: true,
       trends: trendsJson.trends,
       cached: false,
-      domain: cacheKey
+      domain: cacheKey,
+      timestamp: new Date().toISOString()
     });
     
   } catch (error) {
-    console.error('Trending searches error:', error);
+    console.error('[Trending Searches] Error:', error);
     return res.status(500).json({ 
       error: 'Failed to fetch trending searches',
       details: error.message 
