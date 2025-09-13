@@ -3,17 +3,13 @@ import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import cron from 'node-cron';
 import fetch from 'node-fetch';
-import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { ethicalFetch } from './bot.js';
-import cron from 'node-cron';
 
 dotenv.config();
 
 // Initialize Supabase client
-const supabaseUrl = 'https://ljhcqubwczhtwrfpploa.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqaGNxdWJ3Y3podHdyZnBwbG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MzYxNjcsImV4cCI6MjA3MjQxMjE2N30.dNj1uTNLaO3Utk2ilagjS_xKWfQdKSSrbbXNJwjRBWI';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
 // Simple in-memory cache
 const analysisCache = new Map();
@@ -21,11 +17,6 @@ const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Supabase configuration
-const supabaseUrl = process.env.SUPABASE_URL || 'https://ljhcqubwczhtwrfpploa.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqaGNxdWJ3Y3podHdyZnBwbG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MzYxNjcsImV4cCI6MjA3MjQxMjE2N30.dNj1uTNLaO3Utk2ilagjS_xKWfQdKSSrbbXNJwjRBWI';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(cors({
   origin: ['https://app.pulsespark.ai', 'https://ai-domain-spy.lovable.app', 'http://localhost:5173'],
