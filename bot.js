@@ -1,5 +1,5 @@
-const robotsParser = require('robots-parser');
-const fetch = require('node-fetch');
+import robotsParser from 'robots-parser';
+import fetch from 'node-fetch';
 
 // Rate limiting storage
 const lastRequestTime = new Map();
@@ -216,7 +216,7 @@ async function getCrawlDelay(url) {
   }
 }
 
-module.exports = { 
+export { 
   ethicalFetch, 
   isUrlAllowed, 
   getCrawlDelay, 
