@@ -36,7 +36,8 @@ import {
   Code,
   Award,
   Link,
-  Workflow
+  Workflow,
+  Share2
 } from 'lucide-react';
 import { LoadingCard } from '@/components/LoadingCard';
 import { VisibilityChart } from '@/components/charts/VisibilityChart';
@@ -55,6 +56,7 @@ import { showToast } from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AIVisibilityDashboard } from '@/components/dashboard/AIVisibilityDashboard';
 import { WorkflowCanvas } from '@/components/WorkflowCanvas';
+import { NetworkMap } from '@/components/NetworkMap';
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
   return (
@@ -262,6 +264,20 @@ const Dashboard = () => {
             />
           </div>
         );
+      case 'network':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Neural Network Map</h2>
+              <Badge variant="outline">Interactive Network</Badge>
+            </div>
+            <NetworkMap 
+              graphData={analysisData || scanData}
+              onNodeUpdate={(nodeId, data) => console.log('Node updated:', nodeId, data)}
+              onRankingSimulation={(changes) => console.log('Ranking simulation:', changes)}
+            />
+          </div>
+        );
       case 'citations':
         return <CitationsTracking scanData={scanData} />;
       case 'sentiment':
@@ -402,6 +418,18 @@ const Dashboard = () => {
             >
               <Workflow className="w-5 h-5" />
               Workflow
+            </button>
+            
+            <button
+              onClick={() => setActiveView('network')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                activeView === 'network' 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Share2 className="w-5 h-5" />
+              Network Map
             </button>
             
             <button
