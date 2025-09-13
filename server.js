@@ -439,16 +439,15 @@ app.post('/api/ai-analysis', async (req, res) => {
         const fullUrl = input.startsWith('http') ? input : `https://${input}`;
         console.log(`[EthicalBot] Attempting to fetch content from: ${fullUrl}`);
         
-        const pageResult = await ethicalFetch(fullUrl);
+        const { content } = await ethicalFetch(fullUrl);
         
-        if (pageResult.allowed && pageResult.content) {
-          const htmlContent = pageResult.content;
-          console.log(`[EthicalBot] Successfully fetched ${htmlContent.length} characters from ${domain}`);
+        if (content) {
+          console.log(`[EthicalBot] Successfully fetched ${content.length} characters from ${domain}`);
           
-          extractedSignals = extractPerplexitySignals(htmlContent, domain);
-          contentToAnalyze = htmlContent.substring(0, 10000);
+          extractedSignals = extractPerplexitySignals(content, domain);
+          contentToAnalyze = content.substring(0, 10000);
         } else {
-          console.log(`[EthicalBot] Could not fetch ${domain} (${pageResult.error || 'unknown error'}), analyzing domain only`);
+          console.log(`[EthicalBot] No content returned from ${domain}, analyzing domain only`);
           contentToAnalyze = domain;
         }
       } catch (fetchError) {
@@ -462,11 +461,14 @@ app.post('/api/ai-analysis', async (req, res) => {
           });
         }
         console.log('[EthicalBot] Fetch failed, using domain-only analysis:', fetchError.message);
-        contentToAnalyze = domain;
+        return res.status(500).json({ 
+          error: `Failed to fetch content: ${fetchError.message}`,
+          details: fetchError.stack
+        });
       }
     }
     
-    // Create the prompt for DeepSeek
+    // Create the prompt for DeepSeek with fetched content
     const promptContent = extractedSignals ? 
       `Analyze this website for AI platform optimization (Perplexity, ChatGPT, etc).
       
@@ -478,7 +480,7 @@ Detected signals:
 - Brand mentions: ${extractedSignals.brandMentions.total}
 - Authority links: ${extractedSignals.authorityAssociations.length}
 
-Content sample: ${contentToAnalyze.substring(0, 2000)}...
+Based on this content: ${contentToAnalyze.substring(0, 3000)}
 
 Return a JSON analysis with this exact structure:` :
       `Analyze the website "${domain}" for AI platform optimization.
@@ -1200,14 +1202,13 @@ app.post('/api/analyze-website', async (req, res) => {
     // Try to fetch content using ethical bot
     try {
       console.log(`[EthicalBot] Attempting to fetch content from: ${fullUrl}`);
-      const pageResult = await ethicalFetch(fullUrl);
+      const { content: fetchedContent } = await ethicalFetch(fullUrl);
       
-      if (pageResult.allowed && pageResult.content) {
-        content = pageResult.content;
+      if (fetchedContent) {
+        content = fetchedContent;
         console.log(`[EthicalBot] Successfully fetched ${content.length} characters from ${url}`);
       } else {
-        fetchError = pageResult.error || 'Unknown fetch error';
-        console.log(`[EthicalBot] Could not fetch ${url} (${fetchError}), proceeding with URL-only analysis`);
+        console.log(`[EthicalBot] No content returned from ${url}, proceeding with URL-only analysis`);
       }
     } catch (error) {
       if (error.message === 'Blocked by robots.txt') {
@@ -1220,6 +1221,10 @@ app.post('/api/analyze-website', async (req, res) => {
       }
       fetchError = error.message;
       console.log('[EthicalBot] Fetch failed, proceeding with URL-only analysis:', error.message);
+      return res.status(500).json({ 
+        error: `Failed to fetch content: ${error.message}`,
+        details: error.stack
+      });
     }
 
     // Step 2: Call DeepSeek API for domain analysis
@@ -1232,7 +1237,7 @@ app.post('/api/analyze-website', async (req, res) => {
     const deepSeekPrompt = `Analyze domain ${url} for Perplexity SEO: Extract backlinks, citations to authorities (e.g., github.com), semantic patterns from 59 ranking signals. Generate graph: nodes (pages), edges (links/citations). Output JSON: {backlinks: array, citations: array, graph: {nodes: [{id, label}], edges: [{from, to, type}]}}`;
     
     const fullDeepSeekPrompt = content ? 
-      `${deepSeekPrompt}\n\nContent sample: ${content.substring(0, 3000)}...` : 
+      `${deepSeekPrompt}\n\nBased on this content: ${content.substring(0, 3000)}` : 
       deepSeekPrompt;
 
     let deepSeekResult = {};
@@ -1319,7 +1324,9 @@ app.post('/api/analyze-website', async (req, res) => {
       throw new Error('Perplexity API key not configured');
     }
 
-    const perplexityPrompt = `For ${url}, estimate referrals from Perplexity trends/Discover, user paths. Add to JSON: {referrals: {source: string, estPercent: number}}`;
+    const perplexityPrompt = content ? 
+      `For ${url}, estimate referrals from Perplexity trends/Discover, user paths. Based on this content: ${content.substring(0, 2000)}. Add to JSON: {referrals: {source: string, estPercent: number}}` :
+      `For ${url}, estimate referrals from Perplexity trends/Discover, user paths. Add to JSON: {referrals: {source: string, estPercent: number}}`;
 
     let perplexityResult = { referrals: [] };
     try {
