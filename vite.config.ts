@@ -85,6 +85,12 @@ export default defineConfig(({ command, mode }) => ({
   build: {
     // Optimize bundle size
     rollupOptions: {
+      // Suppress deprecation warnings
+      onwarn(warning, warn) {
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+        if (warning.code === 'UNRESOLVED_IMPORT') return;
+        warn(warning);
+      },
       output: {
         // Manual chunks for better code splitting
         manualChunks: {
