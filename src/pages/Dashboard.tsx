@@ -508,7 +508,7 @@ const Dashboard = () => {
                       PulseSpark AI Optimization Suite Beta
                     </CardTitle>
                     <CardDescription className="transition-colors duration-300">
-                      Analyze your website for Perplexity AI optimization using 59 ranking signals
+                      Analyze your website for AI SEO optimization
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

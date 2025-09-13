@@ -172,7 +172,7 @@ const PulseSparkOptimizationCard = ({ onAnalysisComplete }: Props) => {
         ) : !expanded ? (
           <div>
             <p className="text-muted-foreground mb-4">
-              Analyze your website for Perplexity AI optimization using 59 ranking signals
+              Analyze your website for AI SEO optimization
             </p>
             
             <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'url' | 'manual')}>
