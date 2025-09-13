@@ -1,54 +1,76 @@
-import fetch from 'node-fetch';
-import robotsParser from 'robots-parser';
+const robotsParser = require('robots-parser');
+const fetch = require('node-fetch');
 
 // Rate limiting storage
 const lastRequestTime = new Map();
 const RATE_LIMIT_DELAY = 1000; // 1 second between requests per domain
 
-// Our bot user agent
-const USER_AGENT = 'PulseSparkAIBot/1.0';
+// Our bot user agent with contact info
+const userAgent = 'PulseSparkAIBot/1.0 (+https://pulsespark.ai/bot-info)';
 
 /**
  * Ethical fetch function that respects robots.txt and implements rate limiting
  * @param {string} url - The URL to fetch
- * @param {object} options - Additional fetch options
- * @returns {Promise} - Fetch response or error
+ * @param {object} options - Additional fetch options  
+ * @returns {Promise<{allowed: boolean, content?: string, error?: string}>} - Result object
  */
-export async function ethicalFetch(url, options = {}) {
+async function ethicalFetch(url, options = {}) {
   try {
     const urlObj = new URL(url);
     const domain = urlObj.hostname;
-    const robotsUrl = `${urlObj.protocol}//${domain}/robots.txt`;
+    const root = new URL('/', url).href;
+    const robotsUrl = root + 'robots.txt';
     
     console.log(`[EthicalBot] Checking robots.txt for ${domain}`);
     
     // Check robots.txt
-    let robotsContent = '';
+    let robotsTxt;
     try {
       const robotsResponse = await fetch(robotsUrl, {
         timeout: 5000,
         headers: {
-          'User-Agent': USER_AGENT
+          'User-Agent': userAgent
         }
       });
       
       if (robotsResponse.ok) {
-        robotsContent = await robotsResponse.text();
+        robotsTxt = await robotsResponse.text();
       }
     } catch (robotsError) {
       console.log(`[EthicalBot] Could not fetch robots.txt for ${domain}, proceeding with caution`);
+      // If robots.txt fetch fails, allow the request but apply rate limiting
+      await new Promise(r => setTimeout(r, RATE_LIMIT_DELAY));
+      
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            'User-Agent': userAgent,
+            ...options.headers
+          }
+        });
+        
+        if (response.ok) {
+          const content = await response.text();
+          return { allowed: true, content };
+        } else {
+          return { allowed: false, error: `HTTP ${response.status}` };
+        }
+      } catch (fetchError) {
+        return { allowed: false, error: fetchError.message };
+      }
     }
     
-    // Parse robots.txt
-    const robots = robotsParser(robotsUrl, robotsContent);
-    const isAllowed = robots.isAllowed(url, USER_AGENT);
+    // Parse robots.txt and check if URL is allowed
+    const parser = robotsParser(robotsUrl, robotsTxt);
+    const isAllowed = parser.isAllowed(url, userAgent);
     
     if (!isAllowed) {
-      const error = new Error(`Blocked by robots.txt for ${domain}`);
+      console.log(`[EthicalBot] ❌ Access denied by robots.txt for ${url}`);
+      const error = new Error('Blocked by robots.txt');
       error.code = 'ROBOTS_BLOCKED';
       error.domain = domain;
       error.url = url;
-      console.log(`[EthicalBot] ❌ Access denied by robots.txt for ${url}`);
       throw error;
     }
     
@@ -62,51 +84,61 @@ export async function ethicalFetch(url, options = {}) {
     if (timeSinceLastRequest < RATE_LIMIT_DELAY) {
       const waitTime = RATE_LIMIT_DELAY - timeSinceLastRequest;
       console.log(`[EthicalBot] ⏱️ Rate limiting: waiting ${waitTime}ms for ${domain}`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      await new Promise(r => setTimeout(r, waitTime));
     }
     
     // Update last request time
     lastRequestTime.set(domain, Date.now());
     
-    // Merge options with ethical defaults
-    const ethicalOptions = {
-      timeout: 10000,
-      headers: {
-        'User-Agent': USER_AGENT,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate',
-        'DNT': '1', // Do Not Track
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        ...options.headers
-      },
-      ...options
-    };
+    // Rate limit: await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 1000));
     
-    console.log(`[EthicalBot] 🚀 Fetching ${url} with ethical compliance`);
-    
-    // Make the actual request
-    const response = await fetch(url, ethicalOptions);
-    
-    // Log compliance information
-    console.log(`[EthicalBot] 📊 Compliance Report for ${domain}:`);
-    console.log(`  - Robots.txt checked: ✅`);
-    console.log(`  - Access allowed: ✅`);
-    console.log(`  - Rate limited: ✅`);
-    console.log(`  - User-Agent: ${USER_AGENT}`);
-    console.log(`  - Response status: ${response.status}`);
-    console.log(`  - Response headers: ${JSON.stringify(Object.fromEntries(response.headers), null, 2)}`);
-    
-    return response;
+    // Make the actual request with ethical headers
+    try {
+      const response = await fetch(url, {
+        timeout: 10000,
+        headers: {
+          'User-Agent': userAgent,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'DNT': '1', // Do Not Track
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          ...options.headers
+        },
+        ...options
+      });
+      
+      if (response.ok) {
+        const content = await response.text();
+        console.log(`[EthicalBot] 🚀 Successfully fetched ${content.length} characters from ${url}`);
+        
+        // Log compliance information
+        console.log(`[EthicalBot] 📊 Compliance Report for ${domain}:`);
+        console.log(`  - Robots.txt checked: ✅`);
+        console.log(`  - Access allowed: ✅`);
+        console.log(`  - Rate limited: ✅`);
+        console.log(`  - User-Agent: ${userAgent}`);
+        console.log(`  - Response status: ${response.status}`);
+        
+        return { allowed: true, content };
+      } else {
+        return { allowed: false, error: `HTTP ${response.status}` };
+      }
+    } catch (fetchError) {
+      console.log(`[EthicalBot] ⚠️ Error during fetch: ${fetchError.message}`);
+      return { allowed: false, error: fetchError.message };
+    }
     
   } catch (error) {
     if (error.code === 'ROBOTS_BLOCKED') {
       console.log(`[EthicalBot] 🚫 Ethical compliance block: ${error.message}`);
+      throw error;
     } else {
       console.log(`[EthicalBot] ⚠️ Error during ethical fetch: ${error.message}`);
+      return { allowed: false, error: error.message };
     }
-    throw error;
   }
 }
 
@@ -115,29 +147,30 @@ export async function ethicalFetch(url, options = {}) {
  * @param {string} url - The URL to check
  * @returns {Promise<boolean>} - Whether the URL is allowed
  */
-export async function isUrlAllowed(url) {
+async function isUrlAllowed(url) {
   try {
     const urlObj = new URL(url);
     const domain = urlObj.hostname;
-    const robotsUrl = `${urlObj.protocol}//${domain}/robots.txt`;
+    const root = new URL('/', url).href;
+    const robotsUrl = root + 'robots.txt';
     
-    let robotsContent = '';
+    let robotsTxt = '';
     try {
       const robotsResponse = await fetch(robotsUrl, {
         timeout: 5000,
-        headers: { 'User-Agent': USER_AGENT }
+        headers: { 'User-Agent': userAgent }
       });
       
       if (robotsResponse.ok) {
-        robotsContent = await robotsResponse.text();
+        robotsTxt = await robotsResponse.text();
       }
     } catch (robotsError) {
       // If we can't fetch robots.txt, assume allowed
       return true;
     }
     
-    const robots = robotsParser(robotsUrl, robotsContent);
-    return robots.isAllowed(url, USER_AGENT);
+    const parser = robotsParser(robotsUrl, robotsTxt);
+    return parser.isAllowed(url, userAgent);
     
   } catch (error) {
     console.log(`[EthicalBot] Error checking URL permission: ${error.message}`);
@@ -150,28 +183,29 @@ export async function isUrlAllowed(url) {
  * @param {string} url - The URL to check
  * @returns {Promise<number>} - Crawl delay in milliseconds
  */
-export async function getCrawlDelay(url) {
+async function getCrawlDelay(url) {
   try {
     const urlObj = new URL(url);
     const domain = urlObj.hostname;
-    const robotsUrl = `${urlObj.protocol}//${domain}/robots.txt`;
+    const root = new URL('/', url).href;
+    const robotsUrl = root + 'robots.txt';
     
-    let robotsContent = '';
+    let robotsTxt = '';
     try {
       const robotsResponse = await fetch(robotsUrl, {
         timeout: 5000,
-        headers: { 'User-Agent': USER_AGENT }
+        headers: { 'User-Agent': userAgent }
       });
       
       if (robotsResponse.ok) {
-        robotsContent = await robotsResponse.text();
+        robotsTxt = await robotsResponse.text();
       }
     } catch (robotsError) {
       return RATE_LIMIT_DELAY; // Default delay
     }
     
-    const robots = robotsParser(robotsUrl, robotsContent);
-    const crawlDelay = robots.getCrawlDelay(USER_AGENT);
+    const parser = robotsParser(robotsUrl, robotsTxt);
+    const crawlDelay = parser.getCrawlDelay(userAgent);
     
     // Convert to milliseconds and ensure minimum delay
     return Math.max(crawlDelay ? crawlDelay * 1000 : RATE_LIMIT_DELAY, RATE_LIMIT_DELAY);
@@ -182,4 +216,9 @@ export async function getCrawlDelay(url) {
   }
 }
 
-export default { ethicalFetch, isUrlAllowed, getCrawlDelay, USER_AGENT };
+module.exports = { 
+  ethicalFetch, 
+  isUrlAllowed, 
+  getCrawlDelay, 
+  userAgent 
+};

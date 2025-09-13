@@ -3,7 +3,7 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
-import { ethicalFetch, isUrlAllowed } from './bot.js';
+const { ethicalFetch, isUrlAllowed } = require('./bot');
 
 dotenv.config();
 
@@ -452,21 +452,21 @@ app.post('/api/ai-analysis', async (req, res) => {
           });
         }
         
-        const pageResponse = await ethicalFetch(fullUrl, {
+        const pageResult = await ethicalFetch(fullUrl, {
           headers: {
             'Accept': 'text/html,application/xhtml+xml'
           },
           timeout: 10000
         });
         
-        if (pageResponse.ok) {
-          const htmlContent = await pageResponse.text();
+        if (pageResult.allowed && pageResult.content) {
+          const htmlContent = pageResult.content;
           console.log(`[EthicalBot] Successfully fetched ${htmlContent.length} characters from ${domain}`);
           
           extractedSignals = extractPerplexitySignals(htmlContent, domain);
           contentToAnalyze = htmlContent.substring(0, 10000);
         } else {
-          console.log(`[EthicalBot] Could not fetch ${domain} (${pageResponse.status}), analyzing domain only`);
+          console.log(`[EthicalBot] Could not fetch ${domain} (${pageResult.error || 'unknown error'}), analyzing domain only`);
           contentToAnalyze = domain;
         }
       } catch (fetchError) {
@@ -1218,19 +1218,19 @@ app.post('/api/analyze-website', async (req, res) => {
     // Try to fetch content using ethical bot
     try {
       console.log(`[EthicalBot] Attempting to fetch content from: ${fullUrl}`);
-      const pageResponse = await ethicalFetch(fullUrl, {
+      const pageResult = await ethicalFetch(fullUrl, {
         headers: {
           'Accept': 'text/html,application/xhtml+xml'
         },
         timeout: 10000
       });
       
-      if (pageResponse.ok) {
-        content = await pageResponse.text();
+      if (pageResult.allowed && pageResult.content) {
+        content = pageResult.content;
         console.log(`[EthicalBot] Successfully fetched ${content.length} characters from ${url}`);
       } else {
-        fetchError = `HTTP ${pageResponse.status}`;
-        console.log(`[EthicalBot] Could not fetch ${url} (${pageResponse.status}), proceeding with URL-only analysis`);
+        fetchError = pageResult.error || 'Unknown fetch error';
+        console.log(`[EthicalBot] Could not fetch ${url} (${fetchError}), proceeding with URL-only analysis`);
       }
     } catch (error) {
       if (error.code === 'ROBOTS_BLOCKED') {
