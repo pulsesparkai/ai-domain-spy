@@ -16,6 +16,7 @@ import TrendingSearchesTable from '@/components/dashboard/TrendingSearchesTable'
 import CitationsList from '@/components/dashboard/CitationsList';
 import SentimentAnalyzer from '@/components/dashboard/SentimentAnalyzer';
 import RankingsTable from '@/components/dashboard/RankingsTable';
+import ReportsTable from '@/components/dashboard/ReportsTable';
 import { ArrowUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
@@ -181,6 +182,10 @@ const Dashboard = () => {
 
                     <TabsContent value="rankings">
                       <RankingsTable />
+                    </TabsContent>
+
+                    <TabsContent value="reports">
+                      <ReportsTable />
                     </TabsContent>
                   </Tabs>
                 </div>

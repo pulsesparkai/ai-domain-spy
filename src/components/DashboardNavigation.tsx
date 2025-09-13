@@ -27,6 +27,7 @@ const navigationItems = [
   { id: 'citations', label: 'Citations', icon: Quote },
   { id: 'sentiment', label: 'Sentiment', icon: Heart },
   { id: 'rankings', label: 'Rankings', icon: Target },
+  { id: 'reports', label: 'Reports', icon: BarChart3 },
 ];
 
 const DashboardNavigation: React.FC<DashboardNavigationProps> = ({ activeTab, setActiveTab }) => {

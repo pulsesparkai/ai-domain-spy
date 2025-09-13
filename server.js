@@ -1,9 +1,12 @@
 import express from 'express';
 import cors from 'cors';
+import { createClient } from '@supabase/supabase-js';
+import cron from 'node-cron';
 import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { ethicalFetch } from './bot.js';
+import cron from 'node-cron';
 
 dotenv.config();
 
@@ -18,6 +21,11 @@ const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Supabase configuration
+const supabaseUrl = process.env.SUPABASE_URL || 'https://ljhcqubwczhtwrfpploa.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqaGNxdWJ3Y3podHdyZnBwbG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MzYxNjcsImV4cCI6MjA3MjQxMjE2N30.dNj1uTNLaO3Utk2ilagjS_xKWfQdKSSrbbXNJwjRBWI';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.use(cors({
   origin: ['https://app.pulsespark.ai', 'https://ai-domain-spy.lovable.app', 'http://localhost:5173'],
@@ -1470,6 +1478,28 @@ app.post('/api/analyze-website', async (req, res) => {
   }
 });
 
+// Schedule daily cleanup of old scans (30 days)
+cron.schedule('0 0 * * *', async () => {
+  try {
+    console.log('[Cleanup] Starting daily cleanup of old scans...');
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    
+    const { data, error } = await supabase
+      .from('scans')
+      .delete()
+      .lt('created_at', thirtyDaysAgo);
+    
+    if (error) {
+      console.error('[Cleanup] Error deleting old scans:', error);
+    } else {
+      console.log('[Cleanup] Successfully deleted old scans older than 30 days');
+    }
+  } catch (error) {
+    console.error('[Cleanup] Cleanup job failed:', error);
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log('[Cron] Daily cleanup job scheduled for midnight');
 });
