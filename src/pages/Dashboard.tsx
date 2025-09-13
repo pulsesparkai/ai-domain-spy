@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
 import { supabase } from '@/integrations/supabase/client';
+import { showToast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -248,7 +249,7 @@ const Dashboard = () => {
       }
       
       // Call the backend API
-      const response = await fetch('/api/analyze-website', {
+      const response = await fetch('https://api.pulsespark.ai/api/analyze-website', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -258,6 +259,12 @@ const Dashboard = () => {
           userId: user.id
         })
       });
+
+      // Handle 404 errors with toast
+      if (response.status === 404) {
+        showToast.error('API Not Found', { description: 'Check backend URL' });
+        return;
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));

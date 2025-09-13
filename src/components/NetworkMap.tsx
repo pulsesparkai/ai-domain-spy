@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import cytoscape, { Core, NodeSingular, EdgeSingular } from 'cytoscape';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { showToast } from '@/lib/toast';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { 
@@ -369,8 +370,7 @@ export const NetworkMap = ({ graphData, onNodeUpdate, onRankingSimulation }: Net
       });
 
       // Call DeepSeek API for suggestions
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.pulsespark.ai';
-      const response = await fetch(`${API_BASE_URL}/api/ai-analysis`, {
+      const response = await fetch('https://api.pulsespark.ai/api/ai-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -378,6 +378,12 @@ export const NetworkMap = ({ graphData, onNodeUpdate, onRankingSimulation }: Net
           isManualContent: true
         })
       });
+
+      // Handle 404 errors with toast
+      if (response.status === 404) {
+        showToast.error('API Not Found', { description: 'Check backend URL' });
+        return;
+      }
 
       if (response.ok) {
         const suggestions = await response.json();

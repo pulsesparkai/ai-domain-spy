@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { showToast } from '@/lib/toast';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -52,8 +53,7 @@ export const DiscoverAnalysis = ({ onAnalysisComplete }: DiscoverAnalysisProps) 
         throw new Error('Please sign in to analyze content');
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.pulsespark.ai';
-      const response = await fetch(`${API_BASE_URL}/api/discover-analysis`, {
+      const response = await fetch('https://api.pulsespark.ai/api/discover-analysis', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,6 +63,12 @@ export const DiscoverAnalysis = ({ onAnalysisComplete }: DiscoverAnalysisProps) 
           contentUrl: contentUrl.trim() || undefined
         })
       });
+
+      // Handle 404 errors with toast
+      if (response.status === 404) {
+        showToast.error('API Not Found', { description: 'Check backend URL' });
+        return;
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));

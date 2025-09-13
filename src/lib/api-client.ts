@@ -23,7 +23,7 @@ const API_CONFIG = {
   retryAttempts: 3,
   retryDelay: 1000, // 1 second
   supabaseUrl: 'https://ljhcqubwczhtwrfpploa.supabase.co',
-  localApiUrl: 'http://localhost:3001',
+  apiBaseUrl: 'https://api.pulsespark.ai',
 };
 
 // Custom error class for API errors
@@ -154,6 +154,11 @@ class ApiClient {
 
         if (!error.response) {
           throw new ApiClientError('Network error', 0, 'NETWORK_ERROR', error);
+        }
+
+        // Handle 404 errors with toast
+        if (error.response.status === 404) {
+          showToast.error('API Not Found', { description: 'Check backend URL' });
         }
 
         const errorData = error.response.data as any;
@@ -404,7 +409,7 @@ class ApiClient {
   public async healthCheck(): Promise<{ status: string; timestamp: number }> {
     return withAsyncErrorHandling(
       async () => {
-        await this.get(`${API_CONFIG.localApiUrl}/health`);
+        await this.get(`${API_CONFIG.apiBaseUrl}/health`);
         return {
           status: 'healthy',
           timestamp: Date.now(),
