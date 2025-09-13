@@ -27,6 +27,7 @@ import {
   preloadCriticalRoutes
 } from "@/utils/lazyRoutes";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Header } from "@/components/Header";
 
 // Create QueryClient with optimized configuration
 import { createOptimizedQueryClient } from '@/lib/react-query-optimization';
@@ -52,7 +53,9 @@ const App = () => {
               <HotToaster position="top-right" />
               <DependencyLoading showProgress showDetails retryable>
                 <BrowserRouter>
-                  <Suspense fallback={<RouteLoadingSkeleton />}>
+                  <Header />
+                  <div className="pt-20">
+                    <Suspense fallback={<RouteLoadingSkeleton />}>
                     <Routes>
                       <Route path="/" element={<LazyIndex />} />
                       <Route path="/auth" element={<LazyAuth />} />
@@ -67,7 +70,8 @@ const App = () => {
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<LazyNotFound />} />
                     </Routes>
-                  </Suspense>
+                    </Suspense>
+                  </div>
                   <AccessibilityIndicator />
                   <AccessibilityToolbar />
                   <PreviewModeIndicator />
