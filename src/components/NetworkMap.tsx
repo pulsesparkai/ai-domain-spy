@@ -380,11 +380,9 @@ export const NetworkMap = ({ graphData, onNodeUpdate, onRankingSimulation }: Net
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        showToast.error(`Error: ${response.status} - ${errorText}`);
         throw new Error(`Status: ${response.status}`);
-      }
-      if (response.status === 404) {
-        showToast.error('API Not Found', { description: 'Check backend URL' });
-        return;
       }
 
       if (response.ok) {

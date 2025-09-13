@@ -65,18 +65,9 @@ export const DiscoverAnalysis = ({ onAnalysisComplete }: DiscoverAnalysisProps) 
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        showToast.error(`Error: ${response.status} - ${errorText}`);
         throw new Error(`Status: ${response.status}`);
-      }
-
-      // Handle 404 errors with toast
-      if (response.status === 404) {
-        showToast.error('API Not Found', { description: 'Check backend URL' });
-        return;
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `API error: ${response.status}`);
       }
 
       const data = await response.json();

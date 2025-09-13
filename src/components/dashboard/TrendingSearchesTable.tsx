@@ -65,6 +65,8 @@ const TrendingSearchesTable: React.FC = () => {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        showToast.error(`Error: ${response.status} - ${errorText}`);
         throw new Error(`Status: ${response.status}`);
       }
 
