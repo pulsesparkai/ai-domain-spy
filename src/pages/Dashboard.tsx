@@ -35,7 +35,8 @@ import {
   FileText,
   Code,
   Award,
-  Link
+  Link,
+  Workflow
 } from 'lucide-react';
 import { LoadingCard } from '@/components/LoadingCard';
 import { VisibilityChart } from '@/components/charts/VisibilityChart';
@@ -53,6 +54,7 @@ import PulseSparkOptimizationCard from '@/components/PulseSparkOptimizationCard'
 import { showToast } from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AIVisibilityDashboard } from '@/components/dashboard/AIVisibilityDashboard';
+import { WorkflowCanvas } from '@/components/WorkflowCanvas';
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
   return (
@@ -247,6 +249,19 @@ const Dashboard = () => {
 
   const renderContent = () => {
     switch(activeView) {
+      case 'workflow':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">AI Optimization Workflow</h2>
+              <Badge variant="outline">Interactive Flow</Badge>
+            </div>
+            <WorkflowCanvas 
+              scanData={analysisData || scanData} 
+              onNodeAdd={(type) => console.log('Added custom node:', type)}
+            />
+          </div>
+        );
       case 'citations':
         return <CitationsTracking scanData={scanData} />;
       case 'sentiment':
@@ -375,6 +390,18 @@ const Dashboard = () => {
             >
               <Brain className="w-5 h-5" />
               AI Visibility
+            </button>
+            
+            <button
+              onClick={() => setActiveView('workflow')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                activeView === 'workflow' 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Workflow className="w-5 h-5" />
+              Workflow
             </button>
             
             <button
