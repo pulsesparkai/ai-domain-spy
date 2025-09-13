@@ -379,7 +379,9 @@ export const NetworkMap = ({ graphData, onNodeUpdate, onRankingSimulation }: Net
         })
       });
 
-      // Handle 404 errors with toast
+      if (!response.ok) {
+        throw new Error(`Status: ${response.status}`);
+      }
       if (response.status === 404) {
         showToast.error('API Not Found', { description: 'Check backend URL' });
         return;

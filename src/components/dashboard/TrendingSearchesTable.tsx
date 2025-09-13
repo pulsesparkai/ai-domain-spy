@@ -64,22 +64,15 @@ const TrendingSearchesTable: React.FC = () => {
         },
       });
 
-      if (response.status === 404) {
-        showToast.error('API Not Found', { description: 'Check backend URL' });
-        // Use mock data as fallback
-        setSearches(mockSearches);
-        return;
+      if (!response.ok) {
+        throw new Error(`Status: ${response.status}`);
       }
 
-      if (response.ok) {
-        const data = await response.json();
-        setSearches(data.searches || mockSearches);
-      } else {
-        throw new Error('Failed to fetch trending searches');
-      }
+      const data = await response.json();
+      setSearches(data.searches || mockSearches);
     } catch (error) {
       console.error('Error fetching trending searches:', error);
-      showToast.error('Failed to fetch trending searches');
+      showToast.error(error instanceof Error ? error.message : 'Failed to fetch trending searches');
       // Use mock data as fallback
       setSearches(mockSearches);
     } finally {

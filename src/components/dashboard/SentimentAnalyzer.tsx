@@ -35,28 +35,15 @@ const SentimentAnalyzer: React.FC = () => {
         body: JSON.stringify({ text }),
       });
 
-      if (response.status === 404) {
-        showToast.error('API Not Found', { description: 'Check backend URL' });
-        // Use mock data as fallback
-        const mockResult: SentimentResult = {
-          sentiment: 'positive',
-          confidence: 85,
-          keywords: ['excellent', 'great', 'amazing', 'wonderful'],
-          summary: 'The text expresses positive sentiment with high confidence.'
-        };
-        setResult(mockResult);
-        return;
+      if (!response.ok) {
+        throw new Error(`Status: ${response.status}`);
       }
 
-      if (response.ok) {
-        const data = await response.json();
-        setResult(data);
-      } else {
-        throw new Error('Failed to analyze sentiment');
-      }
+      const data = await response.json();
+      setResult(data);
     } catch (error) {
       console.error('Error analyzing sentiment:', error);
-      showToast.error('Failed to analyze sentiment');
+      showToast.error(error instanceof Error ? error.message : 'Failed to analyze sentiment');
       
       // Use mock data as fallback
       const mockResult: SentimentResult = {
