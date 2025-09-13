@@ -1,4 +1,4 @@
-import Navigation from "@/components/Navigation";
+import { Header } from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import FeaturesGrid from "@/components/FeaturesGrid";
 import SolutionsSection from "@/components/SolutionsSection";
@@ -20,14 +20,16 @@ const Index = () => {
   return (
     <KeyboardNavigationProvider>
       <div className="min-h-screen bg-background">
-        <Navigation />
+        <Header />
         <MainContent>
-          <HeroSection />
-          <FeaturesGrid />
-          <SolutionsSection />
-          <TestimonialsSection />
-          <FAQSection />
-          <PricingCard />
+          <div className="pt-16">
+            <HeroSection />
+            <FeaturesGrid />
+            <SolutionsSection />
+            <TestimonialsSection />
+            <FAQSection />
+            <PricingCard />
+          </div>
         </MainContent>
         <Footer />
         <CookieConsent />
