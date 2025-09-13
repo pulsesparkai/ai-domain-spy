@@ -10,97 +10,107 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { showToast } from '@/lib/toast';
 import { format } from 'date-fns';
+import html2pdf from 'html2pdf.js';
 
 interface Scan {
   id: string;
   target_url: string;
   created_at: string;
-  status: string;
   results: any;
 }
 
 const ReportsTable: React.FC = () => {
   const { user } = useAuth();
-  const [scans, setScans] = useState<Scan[]>([]);
+  const [reports, setReports] = useState<Scan[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedScan, setSelectedScan] = useState<Scan | null>(null);
   const pageSize = 10;
 
-  const fetchScans = async (page: number = 1) => {
-    if (!user) return;
-
-    setLoading(true);
-    try {
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize - 1;
-
-      const { data, error, count } = await supabase
-        .from('scans')
-        .select('id, target_url, created_at, status, results', { count: 'exact' })
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .range(startIndex, endIndex);
-
-      if (error) {
-        throw error;
-      }
-
-      setScans(data || []);
-      setTotalPages(Math.ceil((count || 0) / pageSize));
-    } catch (error) {
-      console.error('Error fetching scans:', error);
-      showToast.error('Failed to fetch scan reports');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchScans(currentPage);
-  }, [user, currentPage]);
+    if (!user?.id) return;
+    
+    const fetchReports = async () => {
+      setLoading(true);
+      try {
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize - 1;
 
-  const getStatusBadge = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'completed':
-      case 'complete':
-        return <Badge className="bg-green-100 text-green-800">Complete</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'failed':
-        return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
-      default:
-        return <Badge variant="secondary">{status || 'Unknown'}</Badge>;
+        const { data, error, count } = await supabase
+          .from('scans')
+          .select('id, target_url, created_at, results', { count: 'exact' })
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .range(startIndex, endIndex);
+
+        if (error) {
+          throw error;
+        }
+
+        setReports(data || []);
+        setTotalPages(Math.ceil((count || 0) / pageSize));
+      } catch (error) {
+        console.error('Error fetching scans:', error);
+        showToast.error('Failed to fetch scan reports');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, [user?.id, currentPage]);
+
+  const exportToPDF = async (scan: Scan) => {
+    try {
+      // Create HTML content for PDF
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h1 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
+            Scan Report
+          </h1>
+          <div style="margin: 20px 0;">
+            <h2 style="color: #555;">Scan Details</h2>
+            <p><strong>URL:</strong> ${scan.target_url || 'N/A'}</p>
+            <p><strong>Date:</strong> ${format(new Date(scan.created_at), 'MMM dd, yyyy HH:mm')}</p>
+            <p><strong>Scan ID:</strong> ${scan.id}</p>
+          </div>
+          <div style="margin: 20px 0;">
+            <h2 style="color: #555;">Results</h2>
+            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-wrap: break-word; white-space: pre-wrap;">${JSON.stringify(scan.results, null, 2)}</pre>
+          </div>
+        </div>
+      `;
+
+      const opt = {
+        margin: 1,
+        filename: `scan-report-${scan.id}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(htmlContent).save();
+      showToast.success('PDF report exported successfully');
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      showToast.error('Failed to export PDF');
     }
   };
 
-  const exportToPDF = (scan: Scan) => {
-    // Create a simple text export for now
-    const content = JSON.stringify(scan.results, null, 2);
-    const blob = new Blob([content], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `scan-report-${scan.id}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast.success('Report exported successfully');
-  };
-
-  const getSummary = (results: any) => {
-    if (!results) return 'No results available';
-    if (results.summary) return results.summary;
-    if (results.readiness) return `AI Readiness Score: ${results.readiness}`;
-    return 'Scan completed';
+  const getDomain = (url: string) => {
+    if (!url) return 'N/A';
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Scan Reports</CardTitle>
+        <CardTitle>Reports History</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -115,35 +125,29 @@ const ReportsTable: React.FC = () => {
                   <TableHead>Date</TableHead>
                   <TableHead>Domain</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Summary</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {scans.length === 0 ? (
+                {reports.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      No scan reports found. Run your first scan to see results here.
+                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                      No past scans yet. Run your first scan to see results here.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  scans.map((scan) => (
+                  reports.map((scan) => (
                     <TableRow key={scan.id}>
                       <TableCell>
                         {format(new Date(scan.created_at), 'MMM dd, yyyy')}
                       </TableCell>
                       <TableCell>
                         <div className="max-w-[200px] truncate">
-                          {scan.target_url || 'N/A'}
+                          {getDomain(scan.target_url)}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(scan.status)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-[250px] truncate text-sm text-muted-foreground">
-                          {getSummary(scan.results)}
-                        </div>
+                        <Badge className="bg-green-100 text-green-800">Complete</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
