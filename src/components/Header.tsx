@@ -6,7 +6,7 @@ export function Header() {
   const { user } = useAuth();
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50 p-4 flex justify-between items-center">
+    <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4">
       {/* Left side - Logo */}
       <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
         <img 
@@ -16,12 +16,30 @@ export function Header() {
         />
       </Link>
 
+      {/* Center nav - Hidden if logged in */}
+      {!user && (
+        <nav className="hidden md:flex items-center space-x-8">
+          <Link to="/" className="text-gray-600 hover:text-purple-600 transition-colors">
+            Home
+          </Link>
+          <Link to="/pricing" className="text-gray-600 hover:text-purple-600 transition-colors">
+            Pricing
+          </Link>
+          <Link to="/about" className="text-gray-600 hover:text-purple-600 transition-colors">
+            About
+          </Link>
+          <Link to="/contact" className="text-gray-600 hover:text-purple-600 transition-colors">
+            Contact
+          </Link>
+        </nav>
+      )}
+
       {/* Right side - User menu */}
       <div className="flex items-center">
         {user ? (
           <UserProfileDropdown />
         ) : (
-          <Link to="/auth" className="text-gray-700 hover:text-gray-900 transition-colors">
+          <Link to="/auth" className="text-purple-600 hover:text-purple-700 transition-colors">
             Sign In
           </Link>
         )}
