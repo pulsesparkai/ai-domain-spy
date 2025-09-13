@@ -6,22 +6,26 @@ export function Header() {
   const { user } = useAuth();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-      <div className="flex items-center justify-between p-4">
-        {/* Left side - Logo */}
-        <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-          <img 
-            src="/logo.png" 
-            alt="PulseSpark AI" 
-            width={150}
-            className="h-auto"
-          />
-        </Link>
+    <header className="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50 p-4 flex justify-between items-center">
+      {/* Left side - Logo */}
+      <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+        <img 
+          src="/logo.png" 
+          alt="PulseSpark AI" 
+          width={150}
+          className="h-auto"
+        />
+      </Link>
 
-        {/* Right side - User menu */}
-        <div className="flex items-center">
-          {user && <UserProfileDropdown />}
-        </div>
+      {/* Right side - User menu */}
+      <div className="flex items-center">
+        {user ? (
+          <UserProfileDropdown />
+        ) : (
+          <Link to="/auth" className="text-gray-700 hover:text-gray-900 transition-colors">
+            Sign In
+          </Link>
+        )}
       </div>
     </header>
   );
