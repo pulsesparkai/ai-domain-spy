@@ -245,6 +245,27 @@ export type Database = {
         }
         Relationships: []
       }
+      trending_searches: {
+        Row: {
+          created_at: string
+          domain: string | null
+          id: string
+          trends_json: Json
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          trends_json: Json
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          trends_json?: Json
+        }
+        Relationships: []
+      }
       user_security_settings: {
         Row: {
           backup_codes: string[] | null
