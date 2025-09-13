@@ -10,10 +10,11 @@ export function Header() {
       {/* Left side - Logo */}
       <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
         <img 
-          src="/logo.png" 
+          src="/pulse_logo_black_180x40.png" 
           alt="PulseSpark AI" 
-          width={150}
-          className="h-auto"
+          width={180}
+          height={40}
+          className="h-10 w-auto"
         />
       </Link>
 
