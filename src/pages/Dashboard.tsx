@@ -37,7 +37,9 @@ import {
   Award,
   Link,
   Workflow,
-  Share2
+  Share2,
+  Compass,
+  Activity
 } from 'lucide-react';
 import { LoadingCard } from '@/components/LoadingCard';
 import { VisibilityChart } from '@/components/charts/VisibilityChart';
@@ -57,6 +59,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AIVisibilityDashboard } from '@/components/dashboard/AIVisibilityDashboard';
 import { WorkflowCanvas } from '@/components/WorkflowCanvas';
 import { NetworkMap } from '@/components/NetworkMap';
+import { DiscoverAnalysis } from '@/components/DiscoverAnalysis';
+import { TrendsSearch } from '@/components/TrendsSearch';
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
   return (
@@ -264,6 +268,26 @@ const Dashboard = () => {
             />
           </div>
         );
+      case 'discover':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Discover Analysis</h2>
+              <Badge variant="outline">Perplexity Insights</Badge>
+            </div>
+            <DiscoverAnalysis onAnalysisComplete={(data) => console.log('Discover analysis:', data)} />
+          </div>
+        );
+      case 'trends':
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Trending Searches</h2>
+              <Badge variant="outline">Real-time Trends</Badge>
+            </div>
+            <TrendsSearch onTrendsLoad={(data) => console.log('Trends loaded:', data)} />
+          </div>
+        );
       case 'network':
         return (
           <div className="space-y-6">
@@ -430,6 +454,30 @@ const Dashboard = () => {
             >
               <Share2 className="w-5 h-5" />
               Network Map
+            </button>
+            
+            <button
+              onClick={() => setActiveView('discover')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                activeView === 'discover' 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Compass className="w-5 h-5" />
+              Discover Analysis
+            </button>
+            
+            <button
+              onClick={() => setActiveView('trends')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                activeView === 'trends' 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Activity className="w-5 h-5" />
+              Trending Searches
             </button>
             
             <button
