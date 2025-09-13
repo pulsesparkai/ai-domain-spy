@@ -56,6 +56,14 @@ export const LazyCancel = lazy(() =>
   import(/* webpackChunkName: "route-cancel" */ '../pages/Cancel')
 );
 
+export const LazyAbout = lazy(() => 
+  import(/* webpackChunkName: "route-about" */ '../pages/About')
+);
+
+export const LazyContact = lazy(() => 
+  import(/* webpackChunkName: "route-contact" */ '../pages/Contact')
+);
+
 export const LazyNotFound = lazy(() => 
   import(/* webpackChunkName: "route-notfound" */ '../pages/NotFound')
 );
@@ -99,6 +107,8 @@ export const preloadOnHover = (routeName: keyof typeof routeMap) => {
     settings: () => import('../pages/Settings'),
     success: () => import('../pages/Success'),
     cancel: () => import('../pages/Cancel'),
+    about: () => import('../pages/About'),
+    contact: () => import('../pages/Contact'),
     notFound: () => import('../pages/NotFound'),
     passwordReset: () => import('../components/PasswordReset'),
     
@@ -124,6 +134,8 @@ export const routeMap = {
   settings: LazySettings,
   success: LazySuccess,
   cancel: LazyCancel,
+  about: LazyAbout,
+  contact: LazyContact,
   notFound: LazyNotFound,
   passwordReset: LazyPasswordReset,
   

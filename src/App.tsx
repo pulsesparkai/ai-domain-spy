@@ -20,6 +20,8 @@ import {
   LazySettings,
   LazySuccess,
   LazyCancel,
+  LazyAbout,
+  LazyContact,
   LazyNotFound,
   LazyPasswordReset,
   
@@ -62,6 +64,8 @@ const App = () => {
                       <Route path="/dashboard" element={<ProtectedRoute><LazyDashboard /></ProtectedRoute>} />
                       <Route path="/scan" element={<ProtectedRoute><LazyScan /></ProtectedRoute>} />
                       <Route path="/pricing" element={<LazyPricing />} />
+                      <Route path="/about" element={<LazyAbout />} />
+                      <Route path="/contact" element={<LazyContact />} />
                       <Route path="/settings" element={<ProtectedRoute><LazySettings /></ProtectedRoute>} />
                       
                       <Route path="/success" element={<LazySuccess />} />
