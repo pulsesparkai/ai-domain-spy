@@ -3,7 +3,7 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
-const { ethicalFetch, isUrlAllowed } = require('./bot');
+import { ethicalFetch } from './bot.js';
 
 dotenv.config();
 
@@ -30,20 +30,19 @@ app.use(express.json({ limit: '10mb' }));
 
 async function canAIScrapeUrl(url) {
   try {
-    // Use our ethical bot to check if URL is allowed
-    const allowed = await isUrlAllowed(url);
-    if (!allowed) {
+    // Use ethicalFetch to check and get content - it handles robots.txt internally
+    const result = await ethicalFetch(url);
+    return { allowed: result.allowed, reason: null };
+  } catch (error) {
+    if (error.message === 'Blocked by robots.txt') {
       return { 
         allowed: false, 
         reason: 'Blocked by robots.txt for ethical compliance',
         fileType: 'robots.txt'
       };
     }
-    
-    return { allowed: true, reason: null };
-  } catch (error) {
     console.log(`[EthicalBot] Error checking URL ${url}:`, error.message);
-    return { allowed: true, reason: null }; // Default to allowed if check fails
+    return { allowed: false, reason: error.message };
   }
 }
 
@@ -440,24 +439,7 @@ app.post('/api/ai-analysis', async (req, res) => {
         const fullUrl = input.startsWith('http') ? input : `https://${input}`;
         console.log(`[EthicalBot] Attempting to fetch content from: ${fullUrl}`);
         
-        // First check if URL is allowed (quick check)
-        const allowed = await isUrlAllowed(fullUrl);
-        if (!allowed) {
-          return res.status(403).json({ 
-            error: `Cannot scrape: Blocked by robots.txt for ethical compliance. Please use the manual content option.`,
-            requiresManual: true,
-            reason: 'robots.txt blocks our bot',
-            fileType: 'robots.txt',
-            suggestion: 'Copy the HTML source code (Ctrl+U) and paste in manual content tab.'
-          });
-        }
-        
-        const pageResult = await ethicalFetch(fullUrl, {
-          headers: {
-            'Accept': 'text/html,application/xhtml+xml'
-          },
-          timeout: 10000
-        });
+        const pageResult = await ethicalFetch(fullUrl);
         
         if (pageResult.allowed && pageResult.content) {
           const htmlContent = pageResult.content;
@@ -470,7 +452,7 @@ app.post('/api/ai-analysis', async (req, res) => {
           contentToAnalyze = domain;
         }
       } catch (fetchError) {
-        if (fetchError.code === 'ROBOTS_BLOCKED') {
+        if (fetchError.message === 'Blocked by robots.txt') {
           return res.status(403).json({ 
             error: `Cannot scrape: ${fetchError.message}. Please use the manual content option.`,
             requiresManual: true,
@@ -1218,12 +1200,7 @@ app.post('/api/analyze-website', async (req, res) => {
     // Try to fetch content using ethical bot
     try {
       console.log(`[EthicalBot] Attempting to fetch content from: ${fullUrl}`);
-      const pageResult = await ethicalFetch(fullUrl, {
-        headers: {
-          'Accept': 'text/html,application/xhtml+xml'
-        },
-        timeout: 10000
-      });
+      const pageResult = await ethicalFetch(fullUrl);
       
       if (pageResult.allowed && pageResult.content) {
         content = pageResult.content;
@@ -1233,7 +1210,7 @@ app.post('/api/analyze-website', async (req, res) => {
         console.log(`[EthicalBot] Could not fetch ${url} (${fetchError}), proceeding with URL-only analysis`);
       }
     } catch (error) {
-      if (error.code === 'ROBOTS_BLOCKED') {
+      if (error.message === 'Blocked by robots.txt') {
         return res.status(403).json({ 
           error: `Cannot scrape: ${error.message}. Please respect robots.txt restrictions.`,
           requiresManual: true,
