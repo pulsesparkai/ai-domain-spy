@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sidebar } from '@/components/Sidebar';
 import { 
   ArrowUp,
@@ -30,7 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ScanData {
@@ -75,6 +78,7 @@ const Dashboard = () => {
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState('perplexity');
 
   useEffect(() => {
     checkUser();
@@ -320,7 +324,9 @@ const Dashboard = () => {
       
       toast({
         title: "Analysis complete!",
-        description: "Your website analysis has been completed successfully.",
+        description: selectedPlatform === 'perplexity' 
+          ? "Optimized for Perplexity AI—other platforms coming soon."
+          : "Your website analysis has been completed successfully.",
       });
       
     } catch (error: any) {
@@ -512,36 +518,85 @@ const Dashboard = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Input
-                        placeholder="Enter your domain (e.g., example.com)"
-                        value={domainUrl}
-                        onChange={(e) => setDomainUrl(e.target.value)}
-                        className="flex-1 transition-all duration-300 focus:ring-2 focus:ring-primary/20"
-                        disabled={isAnalyzing}
-                      />
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="secondary" 
-                          disabled 
-                          className="transition-all duration-300 opacity-50"
-                        >
-                          Paste Content
-                        </Button>
-                        <Button 
-                          onClick={analyzeWebsite}
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <Input
+                          placeholder="Enter your domain (e.g., example.com)"
+                          value={domainUrl}
+                          onChange={(e) => setDomainUrl(e.target.value)}
+                          className="flex-1 transition-all duration-300 focus:ring-2 focus:ring-primary/20"
                           disabled={isAnalyzing}
-                          className="bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-105 disabled:scale-100"
-                        >
-                          {isAnalyzing ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Analyzing...
-                            </>
-                          ) : (
-                            'Analyze Website'
-                          )}
-                        </Button>
+                        />
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="secondary" 
+                            disabled 
+                            className="transition-all duration-300 opacity-50"
+                          >
+                            Paste Content
+                          </Button>
+                          <Button 
+                            onClick={analyzeWebsite}
+                            disabled={isAnalyzing}
+                            className="bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-105 disabled:scale-100"
+                          >
+                            {isAnalyzing ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Analyzing...
+                              </>
+                            ) : (
+                              'Analyze Website'
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="ai-platform">AI Platform</Label>
+                        <TooltipProvider>
+                          <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                            <SelectTrigger 
+                              id="ai-platform"
+                              className="w-full border-purple-500/30 focus:border-purple-500 focus:ring-purple-500/20"
+                            >
+                              <SelectValue placeholder="Select AI Platform" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="perplexity">Perplexity</SelectItem>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="text-gray-400 pointer-events-none">
+                                    <SelectItem value="chatgpt" disabled className="text-gray-400 cursor-not-allowed">
+                                      ChatGPT
+                                      <span className="ml-2 text-xs">Coming Soon</span>
+                                    </SelectItem>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Coming Soon</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <SelectItem value="claude" disabled className="text-gray-400 pointer-events-none cursor-not-allowed">
+                                Claude
+                              </SelectItem>
+                              <SelectItem value="gemini" disabled className="text-gray-400 pointer-events-none cursor-not-allowed">
+                                Gemini
+                              </SelectItem>
+                              <SelectItem value="ollama" disabled className="text-gray-400 pointer-events-none cursor-not-allowed">
+                                Ollama
+                              </SelectItem>
+                              <SelectItem value="grok" disabled className="text-gray-400 pointer-events-none cursor-not-allowed">
+                                Grok
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TooltipProvider>
+                        <p className="text-sm text-muted-foreground">
+                          Currently optimized for Perplexity. Select others for preview (coming soon).
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -679,7 +734,7 @@ const Dashboard = () => {
                             className="text-xs transition-colors duration-300"
                             tick={{ fontSize: 12 }}
                           />
-                          <Tooltip 
+                          <RechartsTooltip 
                             contentStyle={{
                               backgroundColor: 'hsl(var(--card))',
                               border: '1px solid hsl(var(--border))',
@@ -724,7 +779,7 @@ const Dashboard = () => {
                             className="text-xs transition-colors duration-300"
                             tick={{ fontSize: 12 }}
                           />
-                          <Tooltip 
+                          <RechartsTooltip 
                             contentStyle={{
                               backgroundColor: 'hsl(var(--card))',
                               border: '1px solid hsl(var(--border))',
