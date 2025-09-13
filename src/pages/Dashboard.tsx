@@ -18,28 +18,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
-  Brain, 
-  BarChart3, 
-  TrendingUp, 
-  Target, 
-  Users, 
-  Globe,
-  Search,
   Settings,
   LogOut,
-  User,
-  Sparkles,
-  AlertCircle,
-  CheckCircle,
-  Table,
-  FileText,
-  Code,
-  Award,
-  Link,
-  Workflow,
-  Share2,
-  Compass,
-  Activity
+  User
 } from 'lucide-react';
 import { LoadingCard } from '@/components/LoadingCard';
 import { VisibilityChart } from '@/components/charts/VisibilityChart';
@@ -62,6 +43,7 @@ import { NetworkMap } from '@/components/NetworkMap';
 import { DiscoverAnalysis } from '@/components/DiscoverAnalysis';
 import { TrendsSearch } from '@/components/TrendsSearch';
 import { EnhancedDomainAnalysis } from '@/components/EnhancedDomainAnalysis';
+import { Sidebar } from '@/components/Sidebar';
 
 function ErrorFallback({error, resetErrorBoundary}: {error: Error, resetErrorBoundary: () => void}) {
   return (
@@ -429,118 +411,7 @@ const Dashboard = () => {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-card border-r min-h-[calc(100vh-73px)]">
-          <nav className="p-4 space-y-2">
-            <button
-              onClick={() => setActiveView('overview')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                activeView === 'overview' 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Brain className="w-5 h-5" />
-              AI Visibility
-            </button>
-            
-            <button
-              onClick={() => setActiveView('workflow')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                activeView === 'workflow' 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Workflow className="w-5 h-5" />
-              Workflow
-            </button>
-            
-            <button
-              onClick={() => setActiveView('network')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                activeView === 'network' 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Share2 className="w-5 h-5" />
-              Network Map
-            </button>
-            
-            <button
-              onClick={() => setActiveView('discover')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                activeView === 'discover' 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Compass className="w-5 h-5" />
-              Discover Analysis
-            </button>
-            
-            <button
-              onClick={() => setActiveView('enhanced-domain')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                activeView === 'enhanced-domain' 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Globe className="w-5 h-5" />
-              Enhanced Domain Analysis
-            </button>
-            
-            <button
-              onClick={() => setActiveView('trends')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                activeView === 'trends' 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Activity className="w-5 h-5" />
-              Trending Searches
-            </button>
-            
-            <button
-              onClick={() => setActiveView('citations')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                activeView === 'citations' 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <BarChart3 className="w-5 h-5" />
-              Citations
-            </button>
-            
-            <button
-              onClick={() => setActiveView('sentiment')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                activeView === 'sentiment' 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <TrendingUp className="w-5 h-5" />
-              Sentiment
-            </button>
-            
-            <button
-              onClick={() => setActiveView('rankings')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                activeView === 'rankings' 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Target className="w-5 h-5" />
-              Rankings
-            </button>
-            
-          </nav>
-        </aside>
+        <Sidebar activeView={activeView} onViewChange={setActiveView} />
 
         {/* Main Content */}
         <main className="flex-1 p-6">
