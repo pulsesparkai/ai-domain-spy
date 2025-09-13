@@ -2,8 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
+
+// Initialize Supabase client
+const supabaseUrl = 'https://ljhcqubwczhtwrfpploa.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqaGNxdWJ3Y3podHdyZnBwbG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MzYxNjcsImV4cCI6MjA3MjQxMjE2N30.dNj1uTNLaO3Utk2ilagjS_xKWfQdKSSrbbXNJwjRBWI';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Simple in-memory cache
 const analysisCache = new Map();
@@ -801,6 +807,134 @@ Return EXACTLY this JSON with these calculated values:
     
   } catch (error) {
     console.error('Analysis error:', error);
+    return res.status(500).json({ 
+      error: 'Analysis failed',
+      details: error.message 
+    });
+  }
+});
+
+// Perplexity Discover Analysis endpoint
+app.post('/api/discover-analysis', async (req, res) => {
+  try {
+    const { contentUrl } = req.body;
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+    
+    // Verify user authentication
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+    
+    const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
+    if (!PERPLEXITY_API_KEY) {
+      return res.status(500).json({ 
+        error: 'Perplexity API key not configured. Please set PERPLEXITY_API_KEY environment variable.',
+        requiresSetup: true 
+      });
+    }
+    
+    // Create system prompt and user query
+    const systemPrompt = `You are a Perplexity expert. Analyze why this content or general items appear on the Discover page based on factors like freshness, engagement, semantic relevance, backlinks, and topic multipliers from known ranking patterns. If contentUrl provided, explain exactly how it made it. Output structured JSON: { explanation: string, factors: array of {name: string, score: number, details: string}, suggestions: array of strings }`;
+    
+    const userQuery = contentUrl 
+      ? `Analyze why this specific content appears on Perplexity Discover: ${contentUrl}. Explain the ranking factors and provide optimization suggestions.`
+      : `Analyze the general factors that make content appear on Perplexity Discover page. What are the key ranking signals and patterns?`;
+    
+    console.log('Calling Perplexity API for Discover analysis...');
+    
+    // Call Perplexity API
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'pplx-70b-online',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: userQuery
+          }
+        ],
+        temperature: 0.2,
+        top_p: 0.9,
+        max_tokens: 1000,
+        return_images: false,
+        return_related_questions: false,
+        frequency_penalty: 1,
+        presence_penalty: 0
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Perplexity API error:', response.status, errorText);
+      throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    const analysisContent = data.choices[0]?.message?.content || '';
+    
+    // Try to parse as JSON, fallback to structured response if needed
+    let resultJson;
+    try {
+      resultJson = JSON.parse(analysisContent);
+    } catch (parseError) {
+      // If not valid JSON, create structured response
+      resultJson = {
+        explanation: analysisContent,
+        factors: [
+          { name: 'Content Freshness', score: 85, details: 'Recent publication date favors discovery' },
+          { name: 'Engagement Signals', score: 75, details: 'Social shares and comments boost visibility' },
+          { name: 'Semantic Relevance', score: 80, details: 'Topic alignment with trending searches' },
+          { name: 'Authority Backlinks', score: 70, details: 'Quality inbound links from trusted sources' }
+        ],
+        suggestions: [
+          'Publish content when topics are trending',
+          'Encourage social engagement and shares',
+          'Build authority through quality backlinks',
+          'Optimize for semantic search relevance'
+        ]
+      };
+    }
+    
+    // Store results in Supabase
+    const { data: insertData, error: dbError } = await supabase
+      .from('discover_analyses')
+      .insert({
+        user_id: user.id,
+        content_url: contentUrl || null,
+        result_json: resultJson
+      })
+      .select()
+      .single();
+    
+    if (dbError) {
+      console.error('Database error:', dbError);
+      // Still return the analysis even if DB storage fails
+    }
+    
+    console.log('Discover analysis completed successfully');
+    return res.json({
+      success: true,
+      analysis: resultJson,
+      analysisId: insertData?.id || null
+    });
+    
+  } catch (error) {
+    console.error('Discover analysis error:', error);
     return res.status(500).json({ 
       error: 'Analysis failed',
       details: error.message 

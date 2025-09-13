@@ -50,6 +50,33 @@ export type Database = {
         }
         Relationships: []
       }
+      discover_analyses: {
+        Row: {
+          content_url: string | null
+          created_at: string
+          id: string
+          result_json: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_url?: string | null
+          created_at?: string
+          id?: string
+          result_json: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_url?: string | null
+          created_at?: string
+          id?: string
+          result_json?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       login_attempts: {
         Row: {
           attempt_time: string
