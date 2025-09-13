@@ -8,6 +8,7 @@ import viteCompression from "vite-plugin-compression";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => ({
+  base: '/',
   server: {
     host: "::",
     port: 8080,
