@@ -267,24 +267,42 @@ export class CachedQueryBuilder {
         timestamp: Date.now()
       });
 
-      let query = supabase.from(tableName).update(updates);
+      // Start with update and immediately apply first filter to get FilterBuilder type
+      const filterEntries = Object.entries(filters);
+      if (filterEntries.length === 0) {
+        throw new Error('Update operation requires at least one filter for security');
+      }
 
-      // Apply filters using prepared statement pattern
-      Object.entries(filters).forEach(([key, value]) => {
+      const [firstKey, firstValue] = filterEntries[0];
+      
+      // Build query step by step to maintain proper types
+      let baseQuery = supabase.from(tableName).update(updates);
+
+      // Apply first filter to convert TransformBuilder to FilterBuilder
+      let filteredQuery;
+      if (Array.isArray(firstValue)) {
+        filteredQuery = baseQuery.in(firstKey, firstValue);
+      } else if (firstValue === null) {
+        filteredQuery = baseQuery.is(firstKey, null);
+      } else {
+        filteredQuery = baseQuery.eq(firstKey, firstValue);
+      }
+
+      // Apply remaining filters
+      let finalQuery = filteredQuery;
+      filterEntries.slice(1).forEach(([key, value]) => {
         if (Array.isArray(value)) {
-          query = query.in(key, value);
+          finalQuery = finalQuery.in(key, value);
         } else if (value === null) {
-          query = query.is(key, null);
+          finalQuery = finalQuery.is(key, null);
         } else {
-          query = query.eq(key, value);
+          finalQuery = finalQuery.eq(key, value);
         }
       });
 
-      if (options.returning) {
-        query = query.select(options.returning);
-      }
-
-      const result = await query;
+      // Apply select if needed
+      const queryToExecute = options.returning ? finalQuery.select(options.returning) : finalQuery;
+      const result = await queryToExecute;
 
       if (result.error) {
         console.error(`Update error for ${tableName}:`, result.error);
