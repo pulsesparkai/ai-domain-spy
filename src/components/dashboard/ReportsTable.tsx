@@ -37,11 +37,19 @@ const ReportsTable: React.FC = () => {
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize - 1;
 
+        console.log('Query executed: reports-table-fetch', { 
+          user_id: user.id, 
+          page: currentPage, 
+          limit: pageSize, 
+          offset: startIndex 
+        });
+
         const { data, error, count } = await supabase
           .from('scans')
           .select('id, target_url, created_at, results', { count: 'exact' })
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
+          .limit(pageSize) // Add explicit LIMIT for pagination
           .range(startIndex, endIndex);
 
         if (error) {

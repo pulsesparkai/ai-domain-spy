@@ -61,3 +61,18 @@ verify_jwt = false
 
 [functions.trending-pages]
 verify_jwt = false
+
+[functions.get-scan-statistics]
+verify_jwt = false
+
+[functions.query-batch]
+verify_jwt = false
+
+[functions.reset-monthly-usage]
+verify_jwt = false
+
+[functions.auth-security]
+verify_jwt = false
+
+[functions.cache-optimizer]
+verify_jwt = false

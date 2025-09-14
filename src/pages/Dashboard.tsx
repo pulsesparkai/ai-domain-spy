@@ -52,31 +52,56 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
-    // Load user data and recent scans
+    // Load user data and recent scans with pagination
     if (user) {
-      // Simulate loading scan data with graph data
-      setScanData({
-        readiness: 75,
-        depth: 65,
-        authority: 80,
-        citations: 24,
-        platforms: { reddit: 8, youtube: 5, linkedin: 6, quora: 3, news: 2 },
-        graph: {
-          nodes: [
-            { id: 'main-domain', label: 'Main Domain', type: 'domain', authority: 80, perplexityImpact: 75 },
-            { id: 'page-1', label: 'Homepage', type: 'page', authority: 70, perplexityImpact: 85 },
-            { id: 'page-2', label: 'About Page', type: 'page', authority: 60, perplexityImpact: 45 },
-            { id: 'citation-1', label: 'Wikipedia Reference', type: 'citation', authority: 95, perplexityImpact: 90 },
-            { id: 'authority-1', label: 'Google Scholar', type: 'authority', authority: 98, perplexityImpact: 95 },
-          ],
-          edges: [
-            { id: 'e1', source: 'main-domain', target: 'page-1', type: 'link', strength: 1.0 },
-            { id: 'e2', source: 'main-domain', target: 'page-2', type: 'link', strength: 0.8 },
-            { id: 'e3', source: 'page-1', target: 'citation-1', type: 'citation', strength: 0.9 },
-            { id: 'e4', source: 'citation-1', target: 'authority-1', type: 'backlink', strength: 0.95 },
-          ]
+      const loadDashboardData = async () => {
+        try {
+          console.log('Query executed: dashboard-scans', { user_id: user.id, limit: 10, offset: 0 });
+          
+          // Load recent scans with LIMIT for pagination
+          const { data: recentScans, error: scansError } = await supabase
+            .from('scans')
+            .select('id, scan_type, target_url, status, created_at, results')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(10) // Pagination limit
+            .range(0, 9); // Offset 0, limit 10
+
+          if (scansError) {
+            console.error('Dashboard scan query error:', scansError);
+          } else {
+            console.log('Query completed: dashboard-scans', { count: recentScans?.length || 0 });
+          }
+
+          // Simulate loading scan data with graph data - replace with actual data processing
+          setScanData({
+            readiness: 75,
+            depth: 65,
+            authority: 80,
+            citations: 24,
+            platforms: { reddit: 8, youtube: 5, linkedin: 6, quora: 3, news: 2 },
+            graph: {
+              nodes: [
+                { id: 'main-domain', label: 'Main Domain', type: 'domain', authority: 80, perplexityImpact: 75 },
+                { id: 'page-1', label: 'Homepage', type: 'page', authority: 70, perplexityImpact: 85 },
+                { id: 'page-2', label: 'About Page', type: 'page', authority: 60, perplexityImpact: 45 },
+                { id: 'citation-1', label: 'Wikipedia Reference', type: 'citation', authority: 95, perplexityImpact: 90 },
+                { id: 'authority-1', label: 'Google Scholar', type: 'authority', authority: 98, perplexityImpact: 95 },
+              ],
+              edges: [
+                { id: 'e1', source: 'main-domain', target: 'page-1', type: 'link', strength: 1.0 },
+                { id: 'e2', source: 'main-domain', target: 'page-2', type: 'link', strength: 0.8 },
+                { id: 'e3', source: 'page-1', target: 'citation-1', type: 'citation', strength: 0.9 },
+                { id: 'e4', source: 'citation-1', target: 'authority-1', type: 'backlink', strength: 0.95 },
+              ]
+            }
+          });
+        } catch (error) {
+          console.error('Dashboard data loading error:', error);
         }
-      });
+      };
+
+      loadDashboardData();
     }
   }, [user]);
 

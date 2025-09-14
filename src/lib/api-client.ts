@@ -241,7 +241,7 @@ class ApiClient {
     this.abortControllers.clear();
   }
 
-  // Supabase Edge Function call
+  // Supabase Edge Function call with query logging
   public async callEdgeFunction<T = any>(
     functionName: string,
     body?: any,
@@ -251,6 +251,8 @@ class ApiClient {
     }
   ): Promise<T> {
     return this.withRetry(async () => {
+      console.log(`Query executed: edge-function-${functionName}`, { body, timestamp: Date.now() });
+      
       const { data, error } = await supabase.functions.invoke(functionName, {
         body,
         headers: {
@@ -259,6 +261,7 @@ class ApiClient {
       });
 
       if (error) {
+        console.error(`Edge function ${functionName} error:`, error);
         throw new ApiClientError(
           error.message || `Edge function ${functionName} failed`,
           error.status || 500,
@@ -267,6 +270,7 @@ class ApiClient {
         );
       }
 
+      console.log(`Query completed: edge-function-${functionName}`, { success: true, timestamp: Date.now() });
       return data;
     }, {
       attempts: options?.retryConfig?.attempts || API_CONFIG.retryAttempts,
