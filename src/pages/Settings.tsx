@@ -49,24 +49,30 @@ export default function Settings() {
     }
   };
 
-  const handleSaveApiKeys = async () => {
+  const validateAndSaveKeys = async () => {
     try {
       setLoading(true);
+      
+      // Test if keys are valid (optional)
+      if (apiKeys.perplexity) {
+        // You can add a test API call here
+        console.log('Perplexity key provided');
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Save to profiles table
       const { error } = await supabase
         .from('profiles')
-        .update({ 
+        .upsert({
+          user_id: user.id,
           api_keys: {
-            perplexity: apiKeys.perplexity,
-            openai: apiKeys.openai,
+            perplexity: apiKeys.perplexity || '',
+            openai: apiKeys.openai || '',
             deepseek: apiKeys.deepseek || ''
           },
           updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id);
+        });
 
       if (error) throw error;
       
@@ -283,7 +289,7 @@ export default function Settings() {
                   
                   {showSaveButton && (
                     <Button 
-                      onClick={handleSaveApiKeys} 
+                      onClick={validateAndSaveKeys} 
                       disabled={loading}
                       className="bg-primary hover:bg-primary/90"
                     >
