@@ -162,40 +162,34 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar activeView={activeView} onViewChange={setActiveView} />
-      
-      <div className="flex-1 overflow-auto">
-        <div className="p-6">
-          {/* Header */}
-          <div className="mb-6 flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold">Dashboard</h1>
-              <p className="text-gray-500">
-                {scanData ? 'Latest scan results' : 'Run a scan to see your data'}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline"
-                onClick={() => navigate('/scan')}
-              >
-                <ArrowUpRight className="h-4 w-4 mr-2" />
-                New Scan
-              </Button>
-              {scanData && (
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Report
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Main Content */}
-          {renderView()}
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-gray-500">
+            {scanData ? 'Latest scan results' : 'Run a scan to see your data'}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => navigate('/scan')}
+          >
+            <ArrowUpRight className="h-4 w-4 mr-2" />
+            New Scan
+          </Button>
+          {scanData && (
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export Report
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Main Content */}
+      {renderView()}
     </div>
   );
 };

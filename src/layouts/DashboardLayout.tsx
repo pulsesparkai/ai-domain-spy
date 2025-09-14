@@ -13,7 +13,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <div className="flex h-screen bg-background">
-      {showSidebar && <Sidebar activeView="" onViewChange={() => {}} />}
+      {showSidebar && <Sidebar />}
       <div className="flex-1 overflow-auto">
         {children}
       </div>
