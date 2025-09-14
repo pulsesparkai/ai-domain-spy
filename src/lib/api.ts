@@ -1,19 +1,12 @@
+import { supabase } from '@/integrations/supabase/client';
+
 const API_BASE_URL = 'https://api.pulsespark.ai';
 
 export const api = {
-  // Test connection endpoint
   async testConnection() {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/test`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error: ${response.status} - ${errorText}`);
-      }
+      const response = await fetch(`${API_BASE_URL}/api/test`);
+      if (!response.ok) throw new Error('API connection failed');
       return response.json();
     } catch (error) {
       console.error('API connection failed:', error);
@@ -21,24 +14,23 @@ export const api = {
     }
   },
 
-  // Analyze website endpoint
-  async analyzeWebsite(url: string) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/analyze-website`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error: ${response.status} - ${errorText}`);
-      }
-      return response.json();
-    } catch (error) {
-      console.error('Website analysis failed:', error);
-      throw error;
+  async analyzeWebsite(url: string, userId: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const response = await fetch(`${API_BASE_URL}/api/analyze-website`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': session ? `Bearer ${session.access_token}` : ''
+      },
+      body: JSON.stringify({ url, userId })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Analysis failed');
     }
+    
+    return response.json();
   }
 };

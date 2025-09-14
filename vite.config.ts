@@ -12,14 +12,6 @@ export default defineConfig(({ command, mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    proxy: {
-      '/api': {
-        target: 'https://api.pulsespark.ai',
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path
-      }
-    },
     // Security headers for development server
     // Note: In production, these should be configured at the hosting/server level
     headers: {
