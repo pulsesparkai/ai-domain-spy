@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import Navigation from "@/components/Navigation";
 import ScanInterface from "@/components/ScanInterface";
 import { analytics } from "@/lib/analytics";
 
@@ -35,18 +34,15 @@ const Scan = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">AI Visibility Scan</h1>
-          <p className="text-muted-foreground">
-            Analyze your brand's visibility across AI platforms and track sentiment.
-          </p>
-        </div>
-        <ScanInterface />
-      </main>
-    </div>
+    <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground mb-2">AI Visibility Scan</h1>
+        <p className="text-muted-foreground">
+          Analyze your brand's visibility across AI platforms and track sentiment.
+        </p>
+      </div>
+      <ScanInterface />
+    </main>
   );
 };
 

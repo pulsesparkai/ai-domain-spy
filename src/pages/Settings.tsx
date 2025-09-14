@@ -136,10 +136,9 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-foreground mb-8">Settings</h1>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold text-foreground mb-8">Settings</h1>
           
           <Tabs defaultValue="profile" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
@@ -352,7 +351,6 @@ export default function Settings() {
               </Card>
             </TabsContent>
           </Tabs>
-        </div>
       </div>
     </div>
   );

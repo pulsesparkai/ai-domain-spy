@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster as HotToaster } from "react-hot-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
@@ -30,6 +30,7 @@ import {
 } from "@/utils/lazyRoutes";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Header } from "@/components/Header";
+import { DashboardLayout } from "@/layouts/DashboardLayout";
 
 // Create QueryClient with optimized configuration
 import { createOptimizedQueryClient } from '@/lib/react-query-optimization';
@@ -61,16 +62,20 @@ const App = () => {
                     <Routes>
                       <Route path="/" element={<LazyIndex />} />
                       <Route path="/auth" element={<LazyAuth />} />
-                      <Route path="/dashboard" element={<ProtectedRoute><LazyDashboard /></ProtectedRoute>} />
-                      <Route path="/scan" element={<ProtectedRoute><LazyScan /></ProtectedRoute>} />
                       <Route path="/pricing" element={<LazyPricing />} />
                       <Route path="/about" element={<LazyAbout />} />
                       <Route path="/contact" element={<LazyContact />} />
-                      <Route path="/settings" element={<ProtectedRoute><LazySettings /></ProtectedRoute>} />
-                      
                       <Route path="/success" element={<LazySuccess />} />
                       <Route path="/cancel" element={<LazyCancel />} />
                       <Route path="/reset-password" element={<LazyPasswordReset />} />
+                      
+                      {/* Dashboard routes with shared layout */}
+                      <Route element={<ProtectedRoute><DashboardLayout><Outlet /></DashboardLayout></ProtectedRoute>}>
+                        <Route path="/dashboard" element={<LazyDashboard />} />
+                        <Route path="/scan" element={<LazyScan />} />
+                        <Route path="/settings" element={<LazySettings />} />
+                      </Route>
+                      
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<LazyNotFound />} />
                     </Routes>
