@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sidebar } from '@/components/Sidebar';
+import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,56 +9,14 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
-// Import existing dashboard components
-import { DiscoverAnalysis } from '@/components/DiscoverAnalysis';
-import { EnhancedDomainAnalysis } from '@/components/EnhancedDomainAnalysis';
+// Import dashboard components
+import { VisibilityScore as VisibilityScoreComponent } from '@/components/dashboard/VisibilityScore';
+import { DomainAnalysis } from '@/components/dashboard/DomainAnalysis';
 import TrendingSearchesTable from '@/components/dashboard/TrendingSearchesTable';
 import CitationsList from '@/components/dashboard/CitationsList';
 import SentimentAnalyzer from '@/components/dashboard/SentimentAnalyzer';
 import RankingsTable from '@/components/dashboard/RankingsTable';
 import ReportsTable from '@/components/dashboard/ReportsTable';
-
-// Simple dashboard components
-const VisibilityScore = ({ data }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Readiness Score</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{data?.readinessScore || 0}%</div>
-        <Progress value={data?.readinessScore || 0} className="mt-2" />
-      </CardContent>
-    </Card>
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Citations Found</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{data?.citations?.length || 0}</div>
-        <p className="text-xs text-muted-foreground">Total mentions</p>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Visibility Score</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{data?.visibility || 0}%</div>
-        <Progress value={data?.visibility || 0} className="mt-2" />
-      </CardContent>
-    </Card>
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Rankings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{data?.rankings?.length || 0}</div>
-        <p className="text-xs text-muted-foreground">Tracked queries</p>
-      </CardContent>
-    </Card>
-  </div>
-);
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -125,9 +83,9 @@ const Dashboard = () => {
 
     switch (activeView) {
       case 'visibility':
-        return <VisibilityScore data={scanData} />;
+        return <VisibilityScoreComponent data={scanData} />;
       case 'domain':
-        return <EnhancedDomainAnalysis />;
+        return <DomainAnalysis data={scanData} />;
       case 'trends':
         return <TrendingSearchesTable />;
       case 'citations':
@@ -139,7 +97,7 @@ const Dashboard = () => {
       case 'reports':
         return <ReportsTable />;
       default:
-        return <VisibilityScore data={scanData} />;
+        return <VisibilityScoreComponent data={scanData} />;
     }
   };
 
@@ -162,35 +120,37 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-gray-500">
-            {scanData ? 'Latest scan results' : 'Run a scan to see your data'}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={() => navigate('/scan')}
-          >
-            <ArrowUpRight className="h-4 w-4 mr-2" />
-            New Scan
-          </Button>
-          {scanData && (
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
+    <DashboardLayout activeView={activeView} onViewChange={setActiveView}>
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">
+              {scanData ? 'Latest scan results' : 'Run a scan to see your data'}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/scan')}
+            >
+              <ArrowUpRight className="h-4 w-4 mr-2" />
+              New Scan
             </Button>
-          )}
+            {scanData && (
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      {renderView()}
-    </div>
+        {/* Main Content */}
+        {renderView()}
+      </div>
+    </DashboardLayout>
   );
 };
 

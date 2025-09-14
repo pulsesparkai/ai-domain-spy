@@ -1,22 +1,35 @@
-import { Sidebar } from '@/components/Sidebar';
+import { DashboardAnalysisSidebar } from '@/components/DashboardAnalysisSidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useLocation } from 'react-router-dom';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  activeView?: string;
+  onViewChange?: (view: string) => void;
 }
 
-export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+export const DashboardLayout = ({ children, activeView, onViewChange }: DashboardLayoutProps) => {
   const location = useLocation();
-  const showSidebar = ['/dashboard', '/scan', '/settings'].some(path => 
-    location.pathname.startsWith(path)
-  );
+  const isDashboard = location.pathname === '/dashboard';
 
   return (
-    <div className="flex h-screen bg-background">
-      {showSidebar && <Sidebar />}
-      <div className="flex-1 overflow-auto">
-        {children}
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        {isDashboard && activeView && onViewChange && (
+          <DashboardAnalysisSidebar 
+            activeView={activeView} 
+            onViewChange={onViewChange} 
+          />
+        )}
+        <main className="flex-1">
+          {isDashboard && (
+            <header className="h-12 flex items-center border-b bg-background px-4">
+              <SidebarTrigger />
+            </header>
+          )}
+          {children}
+        </main>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
