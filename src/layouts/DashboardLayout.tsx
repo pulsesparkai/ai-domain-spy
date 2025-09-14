@@ -1,7 +1,11 @@
 import { Sidebar } from '@/components/Sidebar';
 import { useLocation } from 'react-router-dom';
 
-export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+}
+
+export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const showSidebar = ['/dashboard', '/scan', '/settings'].some(path => 
     location.pathname.startsWith(path)
@@ -9,7 +13,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
   return (
     <div className="flex h-screen bg-background">
-      {showSidebar && <Sidebar />}
+      {showSidebar && <Sidebar activeView="" onViewChange={() => {}} />}
       <div className="flex-1 overflow-auto">
         {children}
       </div>
