@@ -42,9 +42,6 @@ export function DashboardAnalysisSidebar({ activeView, onViewChange }: Dashboard
     <Sidebar className={collapsed ? "w-14" : "w-60"}>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Analysis Views
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {analysisViews.map((view) => (
