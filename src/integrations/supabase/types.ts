@@ -364,14 +364,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      delete_encrypted_api_key: {
-        Args: { key_name: string }
-        Returns: undefined
-      }
-      get_encrypted_api_keys: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
       increment_monthly_scans: {
         Args: { user_id: string }
         Returns: undefined
@@ -390,10 +382,6 @@ export type Database = {
       }
       refresh_table_stats: {
         Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      update_encrypted_api_keys: {
-        Args: { encrypted_value: string; key_name: string }
         Returns: undefined
       }
       upsert_device_fingerprint: {
