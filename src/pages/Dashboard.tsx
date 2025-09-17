@@ -120,8 +120,7 @@ const Dashboard = () => {
   }
 
   return (
-    <DashboardLayout activeView={activeView} onViewChange={setActiveView}>
-      <div className="p-6">
+    <div className="p-6">
         {/* Header */}
         <div className="mb-6 flex justify-between items-center">
           <div>
@@ -150,7 +149,6 @@ const Dashboard = () => {
         {/* Main Content */}
         {renderView()}
       </div>
-    </DashboardLayout>
   );
 };
 

@@ -69,22 +69,16 @@ const App = () => {
                       <Route path="/cancel" element={<LazyCancel />} />
                       <Route path="/reset-password" element={<LazyPasswordReset />} />
                       
-                      {/* Protected routes without dashboard layout (handled by individual pages) */}
-                      <Route path="/dashboard" element={
+                      {/* Protected routes with dashboard layout */}
+                      <Route path="/" element={
                         <ProtectedRoute>
-                          <LazyDashboard />
+                          <DashboardLayout />
                         </ProtectedRoute>
-                      } />
-                      <Route path="/scan" element={
-                        <ProtectedRoute>
-                          <LazyScan />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/settings" element={
-                        <ProtectedRoute>
-                          <LazySettings />
-                        </ProtectedRoute>
-                      } />
+                      }>
+                        <Route path="dashboard" element={<LazyDashboard />} />
+                        <Route path="scan" element={<LazyScan />} />
+                        <Route path="settings" element={<LazySettings />} />
+                      </Route>
                       
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<LazyNotFound />} />

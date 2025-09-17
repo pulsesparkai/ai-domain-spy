@@ -54,7 +54,7 @@ const Scan = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="p-6">
       <Card>
         <CardHeader>
           <CardTitle>AI Visibility Scan</CardTitle>
