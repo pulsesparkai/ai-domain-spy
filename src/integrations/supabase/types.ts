@@ -142,12 +142,10 @@ export type Database = {
       }
       profiles: {
         Row: {
-          api_keys: Json | null
           avatar_url: string | null
           billing_cycle_start: string | null
           created_at: string
           email: string
-          encrypted_api_keys: Json | null
           full_name: string | null
           id: string
           monthly_scans_limit: number | null
@@ -161,12 +159,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          api_keys?: Json | null
           avatar_url?: string | null
           billing_cycle_start?: string | null
           created_at?: string
           email: string
-          encrypted_api_keys?: Json | null
           full_name?: string | null
           id?: string
           monthly_scans_limit?: number | null
@@ -180,12 +176,10 @@ export type Database = {
           user_id: string
         }
         Update: {
-          api_keys?: Json | null
           avatar_url?: string | null
           billing_cycle_start?: string | null
           created_at?: string
           email?: string
-          encrypted_api_keys?: Json | null
           full_name?: string | null
           id?: string
           monthly_scans_limit?: number | null

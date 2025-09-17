@@ -4,8 +4,6 @@ import { z } from 'zod';
 import type {
   UserId,
   ScanId,
-  OpenAIApiKey,
-  PerplexityApiKey,
   TargetUrl,
   ISODateString,
   RequestId
@@ -200,31 +198,6 @@ export const ScanResponseSchema = SuccessResponseSchema.extend({
 
 export type ScanResponse = z.infer<typeof ScanResponseSchema>;
 
-// =====================
-// API Key Validation
-// =====================
-
-export const ApiKeyValidationRequestSchema = z.object({
-  query: z.string().min(1),
-  openaiKey: z.string().optional(),
-  perplexityKey: z.string().optional(),
-});
-
-export const ApiKeyValidationResultSchema = z.object({
-  openai: z.object({
-    valid: z.boolean(),
-    error: z.string().optional(),
-    model: z.string().optional(),
-  }).optional(),
-  perplexity: z.object({
-    valid: z.boolean(),
-    error: z.string().optional(),
-    model: z.string().optional(),
-  }).optional(),
-});
-
-export type ApiKeyValidationRequest = z.infer<typeof ApiKeyValidationRequestSchema>;
-export type ApiKeyValidationResult = z.infer<typeof ApiKeyValidationResultSchema>;
 
 // =====================
 // User Profile Types

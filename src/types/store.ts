@@ -4,8 +4,6 @@ import { z } from 'zod';
 import type { 
   UserId, 
   ScanId, 
-  OpenAIApiKey, 
-  PerplexityApiKey,
   ISODateString 
 } from './branded';
 import type { Scan, ScanResult, ScanStatus, ScanType } from './api';
@@ -40,30 +38,6 @@ export const UserPreferencesSchema = z.object({
 
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
 
-// API Keys Store
-export const ApiKeyDataSchema = z.object({
-  openai: z.object({
-    key: z.string().optional(),
-    isValid: z.boolean().optional(),
-    lastValidated: z.string().optional(),
-    model: z.string().optional(),
-  }).optional(),
-  perplexity: z.object({
-    key: z.string().optional(),
-    isValid: z.boolean().optional(),
-    lastValidated: z.string().optional(),
-    model: z.string().optional(),
-  }).optional(),
-});
-
-export type ApiKeyData = z.infer<typeof ApiKeyDataSchema>;
-
-export type ApiKeyValidationState = {
-  [K in keyof ApiKeyData]: {
-    isValidating: boolean;
-    lastError?: string;
-  };
-};
 
 // Scan History Store
 export const ScanHistoryItemSchema = z.object({
@@ -130,15 +104,6 @@ export type UserPreferencesActions = {
   updatePrivacy: (privacy: Partial<UserPreferences['privacy']>) => void;
 };
 
-// API Keys Actions
-export type ApiKeysActions = {
-  setApiKey: (provider: keyof ApiKeyData, key: string) => Promise<void>;
-  removeApiKey: (provider: keyof ApiKeyData) => Promise<void>;
-  validateApiKey: (provider: keyof ApiKeyData, key?: string) => Promise<boolean>;
-  validateAllKeys: () => Promise<void>;
-  clearValidationState: (provider?: keyof ApiKeyData) => void;
-  refreshEncryptedKeys: () => Promise<void>;
-};
 
 // =====================
 // Store State Interfaces
@@ -189,20 +154,6 @@ export interface UserPreferencesState {
   actions: UserPreferencesActions;
 }
 
-export interface ApiKeysState {
-  // Data
-  keys: ApiKeyData;
-  validation: ApiKeyValidationState;
-  
-  // UI State
-  isLoading: boolean;
-  isSyncing: boolean;
-  error: string | null;
-  lastSyncAt: ISODateString | null;
-  
-  // Actions
-  actions: ApiKeysActions;
-}
 
 // =====================
 // Derived State Selectors
@@ -230,16 +181,6 @@ export type ScanHistorySelectors = {
   };
 };
 
-export type ApiKeysSelectors = {
-  hasValidKeys: () => boolean;
-  getValidatedKeys: () => Partial<ApiKeyData>;
-  getKeyValidationStatus: (provider: keyof ApiKeyData) => {
-    isValid: boolean | undefined;
-    isValidating: boolean;
-    lastError?: string;
-  };
-  isAnyKeyValidating: () => boolean;
-};
 
 // =====================
 // Store Configuration
@@ -280,8 +221,4 @@ export const isScanHistoryItem = (item: unknown): item is ScanHistoryItem => {
 
 export const isUserPreferences = (prefs: unknown): prefs is UserPreferences => {
   return UserPreferencesSchema.safeParse(prefs).success;
-};
-
-export const isApiKeyData = (data: unknown): data is ApiKeyData => {
-  return ApiKeyDataSchema.safeParse(data).success;
 };

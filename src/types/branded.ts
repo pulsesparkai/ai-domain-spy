@@ -15,9 +15,6 @@ export type ScanId = Brand<string, 'ScanId'>;
 export type ProfileId = Brand<string, 'ProfileId'>;
 export type RequestId = Brand<string, 'RequestId'>;
 
-// API Key Types
-export type OpenAIApiKey = Brand<string, 'OpenAIApiKey'>;
-export type PerplexityApiKey = Brand<string, 'PerplexityApiKey'>;
 export type StripeCustomerId = Brand<string, 'StripeCustomerId'>;
 
 // URL Types
@@ -35,8 +32,6 @@ export const createUserId = (id: string): UserId => id as UserId;
 export const createScanId = (id: string): ScanId => id as ScanId;
 export const createProfileId = (id: string): ProfileId => id as ProfileId;
 export const createRequestId = (): RequestId => `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` as RequestId;
-export const createOpenAIApiKey = (key: string): OpenAIApiKey => key as OpenAIApiKey;
-export const createPerplexityApiKey = (key: string): PerplexityApiKey => key as PerplexityApiKey;
 export const createStripeCustomerId = (id: string): StripeCustomerId => id as StripeCustomerId;
 export const createTargetUrl = (url: string): TargetUrl => url as TargetUrl;
 export const createAvatarUrl = (url: string): AvatarUrl => url as AvatarUrl;

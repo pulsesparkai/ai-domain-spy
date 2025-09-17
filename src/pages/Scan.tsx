@@ -29,19 +29,7 @@ const Scan = () => {
     setResults(null);
 
     try {
-      // Check if user has API keys configured
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('api_keys')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profile?.api_keys?.perplexity && !profile?.api_keys?.deepseek) {
-        showToast.error('Please configure your API keys in Settings first');
-        return;
-      }
-
-      // Call the analyze endpoint
+      // Call the analyze endpoint using system API keys
       const data = await api.analyzeWebsite(url, user.id);
       
       // Save scan results

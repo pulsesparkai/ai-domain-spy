@@ -8,10 +8,7 @@ import {
   AppError, 
   ScanRequest, 
   ScanResponse,
-  ApiKeyValidationRequest,
-  ApiKeyValidationResult,
-  ScanResponseSchema,
-  ApiKeyValidationResultSchema
+  ScanResponseSchema
 } from '@/types/api';
 import { errorHandler } from '@/lib/error-handler';
 
@@ -98,22 +95,6 @@ export function useScanMutation(
   });
 }
 
-// API Key validation
-export function useApiKeyValidationMutation(
-  options?: Omit<UseMutationOptions<ApiKeyValidationResult, AppError, ApiKeyValidationRequest>, 'mutationFn'>
-) {
-  return useMutation<ApiKeyValidationResult, AppError, ApiKeyValidationRequest>({
-    mutationFn: async (data: ApiKeyValidationRequest) => {
-      const response = await apiClient.validateApiKeys(data);
-      return response;
-    },
-    ...options,
-    onError: (error, variables, context) => {
-      errorHandler.handleError(error, 'API Key Validation');
-      options?.onError?.(error, variables, context);
-    },
-  });
-}
 
 // Health check query
 export function useHealthCheckQuery(
@@ -148,10 +129,6 @@ export const queryKeys = {
     details: () => ['scans', 'detail'] as const,
     detail: (id: string) => ['scans', 'detail', id] as const,
   },
-  apiKeys: {
-    all: () => ['api-keys'] as const,
-    validation: (provider: string) => ['api-keys', 'validation', provider] as const,
-  },
   users: {
     all: () => ['users'] as const,
     profile: (userId: string) => ['users', 'profile', userId] as const,
@@ -168,7 +145,7 @@ export function useQueryInvalidation() {
     invalidateScans: () => queryClient.invalidateQueries({ queryKey: queryKeys.scans.all() }),
     invalidateScanDetails: (id: string) => 
       queryClient.invalidateQueries({ queryKey: queryKeys.scans.detail(id) }),
-    invalidateApiKeys: () => queryClient.invalidateQueries({ queryKey: queryKeys.apiKeys.all() }),
+    
     invalidateHealth: () => queryClient.invalidateQueries({ queryKey: queryKeys.health() }),
   };
 }

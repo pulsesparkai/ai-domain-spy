@@ -5,12 +5,9 @@ import {
   ApiResponse, 
   ScanRequest, 
   ScanResponse, 
-  ApiKeyValidationRequest, 
-  ApiKeyValidationResult,
   AppError,
   validateApiResponse,
   ScanResponseSchema,
-  ApiKeyValidationResultSchema
 } from '@/types/api';
 import { createRequestId, type RequestId } from '@/types/branded';
 import { sanitizeApiPayload, validateScanRequest } from '@/lib/input-sanitizer';
@@ -373,41 +370,6 @@ class ApiClient {
     ) as Promise<ScanResponse>;
   }
 
-  // Validation methods for API keys
-  public async validateApiKeys(data: ApiKeyValidationRequest): Promise<ApiKeyValidationResult> {
-    return withAsyncErrorHandling(
-      async () => {
-        // Sanitize API key data
-        const sanitizedData = sanitizeApiPayload(data);
-        
-        const response = await this.callEdgeFunction('test-scan', sanitizedData, {
-          retryConfig: {
-            attempts: 1, // No retries for validation
-          },
-        });
-        
-        // Response from Edge Function is already the validation result
-        const validation = validateApiResponse(ApiKeyValidationResultSchema, response);
-        if (validation.success) {
-          return validation.data;
-        }
-        
-        // TypeScript now knows this is the error case
-        const errorResult = validation as { success: false; error: AppError };
-        throw new ApiClientError(
-          'Invalid API key validation response format',
-          undefined,
-          'INVALID_RESPONSE',
-          { validationError: errorResult.error.type }
-        );
-      },
-      {
-        context: 'API Key Validation',
-        showToast: true,
-        logError: true,
-      }
-    ) as Promise<ApiKeyValidationResult>;
-  }
 
   // Health check
   public async healthCheck(): Promise<{ status: string; timestamp: number }> {
@@ -447,7 +409,7 @@ export const {
   delete: apiDelete,
   callEdgeFunction,
   performScan,
-  validateApiKeys,
+  
   cancelRequest,
   cancelAllRequests,
   healthCheck,

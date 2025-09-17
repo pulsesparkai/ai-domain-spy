@@ -32,11 +32,6 @@ const QuerySchema = z.string()
     { message: 'Query contains invalid characters or patterns' }
   );
 
-// API Key validation schema
-const ApiKeySchema = z.string()
-  .min(10, 'API key too short')
-  .max(200, 'API key too long')
-  .regex(/^[a-zA-Z0-9\-_\.]+$/, 'API key contains invalid characters');
 
 // Email validation schema
 const EmailSchema = z.string().email('Invalid email format').max(254, 'Email too long');
@@ -129,24 +124,6 @@ export const sanitizeAndValidateQuery = (query: string): { isValid: boolean; san
   }
 };
 
-// API Key sanitization and validation
-export const sanitizeAndValidateApiKey = (apiKey: string): { isValid: boolean; sanitizedApiKey?: string; error?: string } => {
-  if (!apiKey || typeof apiKey !== 'string') {
-    return { isValid: false, error: 'API key is required' };
-  }
-
-  try {
-    const trimmed = apiKey.trim();
-    const result = ApiKeySchema.parse(trimmed);
-    
-    return { isValid: true, sanitizedApiKey: result };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { isValid: false, error: error.errors[0].message };
-    }
-    return { isValid: false, error: 'Invalid API key format' };
-  }
-};
 
 // Email sanitization and validation
 export const sanitizeAndValidateEmail = (email: string): { isValid: boolean; sanitizedEmail?: string; error?: string } => {

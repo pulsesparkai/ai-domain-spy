@@ -56,7 +56,7 @@ app.post('/api/scan', authenticateUser, async (req, res) => {
     // Check fair use limits and subscription status
     const { data: profile } = await supabase
       .from('profiles')
-      .select('api_keys, subscription_status, subscription_tier')
+      .select('subscription_status, subscription_tier')
       .eq('user_id', req.user.id)
       .single();
 
@@ -91,29 +91,29 @@ app.post('/api/scan', authenticateUser, async (req, res) => {
         try {
           console.log(`Processing query: ${query}`);
           
-          // Get user API keys from profile
-          const userApiKeys = profile?.api_keys || {};
+          // Use system API keys instead of user-provided keys
+          const systemPerplexityKey = process.env.PERPLEXITY_API_KEY;
+          const systemOpenAIKey = process.env.OPENAI_API_KEY;
           
-          // Perplexity search
+          // Perplexity search using system API key
           let perplexityResults = null;
-          if (userApiKeys.perplexity) {
+          if (systemPerplexityKey) {
             try {
-              perplexityResults = await PerplexityAPI.search(query, userApiKeys.perplexity);
+              perplexityResults = await PerplexityAPI.search(query, systemPerplexityKey);
               console.log(`Perplexity results for "${query}":`, perplexityResults);
             } catch (error: any) {
               console.error(`Perplexity API error for query "${query}":`, error);
-              if (error.message?.includes('401') || error.message?.includes('403')) {
-                throw new Error('Invalid Perplexity API key');
-              }
+              // Don't expose API key errors to users
+              throw new Error('AI analysis service temporarily unavailable');
             }
           }
           
-          // OpenAI analysis
+          // OpenAI analysis using system API key
           let openaiAnalysis = null;
           let sentimentResult = { sentiment: 'neutral' };
           let citations: string[] = [];
           
-          if (userApiKeys.openai) {
+          if (systemOpenAIKey) {
             try {
               // Main content analysis
               openaiAnalysis = await openai.chat.completions.create({
@@ -164,9 +164,8 @@ app.post('/api/scan', authenticateUser, async (req, res) => {
               console.log(`OpenAI analysis for "${query}":`, { content: content.substring(0, 100), citations, sentiment: sentimentResult });
             } catch (error: any) {
               console.error(`OpenAI API error for query "${query}":`, error);
-              if (error.status === 401 || error.status === 403) {
-                throw new Error('Invalid OpenAI API key');
-              }
+              // Don't expose API key errors to users
+              throw new Error('AI analysis service temporarily unavailable');
             }
           }
 
@@ -196,9 +195,9 @@ app.post('/api/scan', authenticateUser, async (req, res) => {
             trends: trendsData,
             trending: trendingData,
             visibilityScore: Math.floor(Math.random() * 40) + 60, // Mock for now, could be calculated from actual data
-            hasApiKeys: {
-              perplexity: !!userApiKeys.perplexity,
-              openai: !!userApiKeys.openai
+            usingSystemKeys: {
+              perplexity: !!systemPerplexityKey,
+              openai: !!systemOpenAIKey
             }
           };
         } catch (error) {
@@ -206,9 +205,9 @@ app.post('/api/scan', authenticateUser, async (req, res) => {
           return {
             query,
             error: error instanceof Error ? error.message : 'Unknown error',
-            hasApiKeys: {
-              perplexity: !!profile?.api_keys?.perplexity,
-              openai: !!profile?.api_keys?.openai
+            usingSystemKeys: {
+              perplexity: !!process.env.PERPLEXITY_API_KEY,
+              openai: !!process.env.OPENAI_API_KEY
             }
           };
         }
@@ -241,9 +240,9 @@ app.post('/api/scan', authenticateUser, async (req, res) => {
         negative: successfulResults.filter(r => r.sentiment?.sentiment === 'negative').length
       },
       totalCitations: successfulResults.reduce((acc, r) => acc + (r.citations?.length || 0), 0),
-      apiKeysUsed: {
-        perplexity: successfulResults.some(r => r.hasApiKeys?.perplexity),
-        openai: successfulResults.some(r => r.hasApiKeys?.openai)
+      systemKeysAvailable: {
+        perplexity: !!process.env.PERPLEXITY_API_KEY,
+        openai: !!process.env.OPENAI_API_KEY
       }
     };
 

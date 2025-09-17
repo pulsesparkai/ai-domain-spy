@@ -158,25 +158,6 @@ class DependencyChecker {
       }
     });
 
-    // Encryption Service Check (Critical for security features)
-    this.dependencies.set('encryption', {
-      name: 'Encryption Service',
-      loaded: false,
-      optional: false,
-      checkFn: async () => {
-        try {
-          const { EncryptionService } = await import('@/lib/encryption');
-          
-          if (!EncryptionService.isSupported()) {
-            throw new Error('Browser does not support SubtleCrypto API');
-          }
-          
-          return true;
-        } catch (error) {
-          throw new Error(`Encryption service check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-      }
-    });
 
     // Sentry Check (Optional Error Tracking - Environment Aware)
     this.dependencies.set('sentry', {
