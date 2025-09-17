@@ -30,10 +30,10 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
 #### API Keys (User-provided via Settings)
-- Users configure their own API keys via the Settings page
-- Keys are stored securely in Supabase user metadata
-- Perplexity: `user.user_metadata.api_keys.perplexity`
-- OpenAI: `user.user_metadata.api_keys.openai`
+- System uses environment variables for all API keys
+- Keys are stored securely in Render environment
+- Perplexity: `PERPLEXITY_API_KEY`
+- OpenAI: `OPENAI_API_KEY`
 
 ## Deployment Instructions
 
@@ -73,7 +73,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 - full_name (text)
 - subscription_status (text, default: 'trial')
 - subscription_tier (text)
-- api_keys (jsonb, default: '{}')
+
 - stripe_customer_id (text)
 - trial_ends_at (timestamp)
 

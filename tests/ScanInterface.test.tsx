@@ -101,12 +101,10 @@ const mockUser = {
 
 const mockProfile = {
   id: 'profile-id',
-  user_id: 'test-user-id',
-  api_keys: {},
-  encrypted_api_keys: {}
+  user_id: 'test-user-id'
 };
 
-const createMockAuthContext = (apiKeys = { perplexity: 'test-key', openai: 'test-key' }) => ({
+const createMockAuthContext = () => ({
   user: mockUser,
   session: { access_token: 'test-token' },
   loading: false,
