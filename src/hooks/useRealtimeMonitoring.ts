@@ -34,32 +34,95 @@ export const useRealtimeMonitoring = () => {
   useEffect(() => {
     if (!user) return;
 
-    const simulateRealtimeUpdates = () => {
-      const newActivity: ActivityItem = {
-        id: `activity_${Date.now()}`,
-        type: 'citation',
+    const activities = [
+      {
+        type: 'citation' as const,
         title: 'New citation found on Perplexity',
-        description: 'Your content was referenced in an AI response about "AI visibility strategies"',
+        description: 'Your content was referenced in an AI response about "AI tools comparison"',
+        platform: 'Perplexity'
+      },
+      {
+        type: 'score_change' as const,
+        title: 'Visibility score increased',
+        description: 'Your AI visibility score increased by 2 points',
+        change: 2
+      },
+      {
+        type: 'mention' as const,
+        title: 'Brand mentioned on Reddit',
+        description: 'Your brand was discussed in r/MachineLearning',
+        platform: 'Reddit'
+      },
+      {
+        type: 'citation' as const,
+        title: 'New ranking on ChatGPT',
+        description: 'Your content ranked #1 for "best AI tools"',
+        platform: 'ChatGPT'
+      },
+      {
+        type: 'scan_complete' as const,
+        title: 'Competitor analysis completed',
+        description: 'Analysis finished for competitive landscape scanning'
+      },
+      {
+        type: 'score_change' as const,
+        title: 'Visibility score decreased',
+        description: 'Your AI visibility score decreased by 1 point',
+        change: -1
+      },
+      {
+        type: 'citation' as const,
+        title: 'Featured in Claude response',
+        description: 'Your content was featured in a Claude AI analysis',
+        platform: 'Claude'
+      }
+    ];
+
+    const simulateRealtimeUpdates = () => {
+      const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+      
+      const newActivity: ActivityItem = {
+        id: `activity_${Date.now()}_${Math.random()}`,
+        type: randomActivity.type,
+        title: randomActivity.title,
+        description: randomActivity.description,
         timestamp: new Date().toISOString(),
-        metadata: { platform: 'Perplexity', query: 'AI visibility strategies' }
+        metadata: {
+          platform: randomActivity.platform,
+          change: randomActivity.change
+        }
       };
 
       setActivityFeed(prev => [newActivity, ...prev.slice(0, 19)]); // Keep last 20 items
       setHasNewNotifications(true);
       
-      // Update metrics
-      setMetrics(prev => ({
-        ...prev,
-        citationsCount: prev.citationsCount + 1,
-        visibilityScore: Math.min(100, prev.visibilityScore + Math.floor(Math.random() * 3))
-      }));
+      // Update metrics based on activity type
+      if (randomActivity.type === 'citation') {
+        setMetrics(prev => ({
+          ...prev,
+          citationsCount: prev.citationsCount + 1,
+          visibilityScore: Math.min(100, prev.visibilityScore + Math.random() * 3)
+        }));
+      } else if (randomActivity.type === 'score_change') {
+        setMetrics(prev => ({
+          ...prev,
+          visibilityScore: Math.max(0, Math.min(100, prev.visibilityScore + (randomActivity.change || 0)))
+        }));
+      } else if (randomActivity.type === 'mention') {
+        setMetrics(prev => ({
+          ...prev,
+          mentionsCount: prev.mentionsCount + 1
+        }));
+      }
 
-      // Show toast notification
-      toast({
-        title: "New Citation Detected!",
-        description: "Your content was referenced on Perplexity AI",
-        duration: 5000,
-      });
+      // Show toast notification for important activities
+      if (randomActivity.type === 'citation' || randomActivity.type === 'score_change') {
+        toast({
+          title: randomActivity.title,
+          description: randomActivity.description,
+          duration: 4000,
+        });
+      }
     };
 
     // Simulate updates every 30 seconds

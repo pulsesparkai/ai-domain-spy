@@ -81,7 +81,8 @@ export const ActivityFeed = ({ activities, onClear, showClearButton = true }: Ac
           <div className="text-center py-8 text-muted-foreground">
             <Bell className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No recent activity</p>
-            <p className="text-sm">New citations and mentions will appear here</p>
+            <p className="text-sm">Real-time updates will appear here as they happen</p>
+            <p className="text-xs mt-2">Activity includes citations, mentions, and score changes</p>
           </div>
         ) : (
           <ScrollArea className="h-96">
