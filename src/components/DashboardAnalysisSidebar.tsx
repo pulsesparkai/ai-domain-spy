@@ -30,7 +30,6 @@ interface DashboardAnalysisSidebarProps {
 const mainNavItems = [
   { id: 'command-center', label: 'Command Center', icon: Terminal, path: '/command-center' },
   { id: 'dashboard', label: 'Dashboard', icon: Eye, path: '/dashboard' },
-  { id: 'scan', label: 'New Scan', icon: Target, path: '/scan' },
   { id: 'settings', label: 'Settings', icon: FileText, path: '/settings' },
 ];
 
