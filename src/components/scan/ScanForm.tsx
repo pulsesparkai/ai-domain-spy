@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EnhancedTooltip } from "@/components/ui/enhanced-tooltip";
-import { Info, Plus, Trash2, AlertCircle } from "lucide-react";
+import { Info, Plus, Trash2, AlertCircle, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ValidatedInput } from "@/components/forms/ValidatedInput";
 import { useScanDefaults, useScanHistoryStore } from "@/store";
@@ -80,8 +80,13 @@ export const ScanForm = ({
   };
 
   return (
-    <Card className="scan-interface">
-      <CardHeader>
+    <Card className={cn("scan-interface transition-all duration-300", {
+      "animate-pulse border-primary/20": isScanning
+    })}>
+      <CardHeader className={cn({ "relative overflow-hidden": isScanning })}>
+        {isScanning && (
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-shimmer" />
+        )}
         <CardTitle className="flex items-center gap-2">
           AI Visibility Scan
           <EnhancedTooltip
@@ -174,19 +179,20 @@ export const ScanForm = ({
         <Button 
           onClick={handleOptimisticSubmit} 
           disabled={isScanning}
-          className={cn(
-            "w-full start-scan-button",
-            isScanning && "opacity-50 cursor-not-allowed"
-          )}
-          aria-label="Run AI Scan"
+          className={cn("w-full transition-all duration-300", {
+            "animate-pulse": isScanning
+          })}
         >
           {isScanning ? (
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
-              Scanning...
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span>AI Analysis in Progress...</span>
             </div>
           ) : (
-            "Start Scan"
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              <span>Start AI Scan</span>
+            </div>
           )}
         </Button>
       </CardContent>

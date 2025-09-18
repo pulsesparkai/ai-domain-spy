@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { showToast } from "@/lib/toast";
-import ScanProgressBar from "./ScanProgressBar";
+import { ScanProgressSteps } from "./scan/ScanProgressSteps";
 import ScanInterfaceErrorBoundary from "./ScanInterfaceErrorBoundary";
 import { ScanForm } from "./scan/ScanForm";
 import { ResultsDisplay } from "./scan/ResultsDisplay";
@@ -110,30 +110,52 @@ const ScanInterface = () => {
       });
 
       if (devMode) {
-        // Mock scanning with progress for dev mode
-        for (let i = 0; i <= 100; i += 20) {
-          setProgress(i);
-          await new Promise(resolve => setTimeout(resolve, 500));
+        // Mock scanning with realistic progress steps
+        const steps = [0, 20, 40, 60, 80, 100];
+        for (let i = 0; i < steps.length; i++) {
+          setProgress(steps[i]);
+          await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 400)); // Realistic timing
         }
         
         setResults(mockScanResults);
       } else {
-        // Real API call using dependency validation and centralized client
-        try {
-          await withDependencyCheck(['supabase'], async () => {
-            const data = await performScan({
-              queries: queries.filter(q => q.trim()),
-              scanType: scanType as "openai" | "perplexity" | "combined" | "trending",
-              targetUrl
-            });
-            
-            setResults(data.data);
-          }, {
-            timeout: 10000,
-            fallback: () => {
-              throw new Error('Database connection failed - scan cannot proceed');
-            }
+        // Real API call with stepped progress simulation
+        const steps = [
+          { progress: 20, delay: 800 },
+          { progress: 40, delay: 1200 },
+          { progress: 60, delay: 1000 },
+          { progress: 80, delay: 900 },
+          { progress: 95, delay: 600 }
+        ];
+        
+        // Start background API call
+        const scanPromise = withDependencyCheck(['supabase'], async () => {
+          const data = await performScan({
+            queries: queries.filter(q => q.trim()),
+            scanType: scanType as "openai" | "perplexity" | "combined" | "trending",
+            targetUrl
           });
+          return data.data;
+        }, {
+          timeout: 30000, // Increased timeout for real scans
+          fallback: () => {
+            throw new Error('Database connection failed - scan cannot proceed');
+          }
+        });
+        
+        // Simulate progress steps
+        for (const step of steps) {
+          await new Promise(resolve => setTimeout(resolve, step.delay));
+          if (isScanning) { // Check if still scanning
+            setProgress(step.progress);
+          }
+        }
+        
+        // Wait for actual scan to complete and set final progress
+        try {
+          const scanResults = await scanPromise;
+          setProgress(100);
+          setResults(scanResults);
         } catch (dependencyError) {
           throw dependencyError;
         }
@@ -158,7 +180,7 @@ const ScanInterface = () => {
     >
       <TooltipProvider>
         <div className="space-y-6">
-          <ScanProgressBar progress={progress} isVisible={isScanning} />
+          <ScanProgressSteps progress={progress} isScanning={isScanning} />
           
           {/* Rate Limit Status Widget */}
           <RateLimitStatusWidget 
