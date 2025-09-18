@@ -17,7 +17,9 @@ export const scanService = {
       },
       body: JSON.stringify({
         url: scanRequest.targetUrl,
-        userId: user.id
+        userId: user.id,
+        queries: scanRequest.queries || [],
+        brandContext: scanRequest.options?.brandContext || null
       })
     });
     

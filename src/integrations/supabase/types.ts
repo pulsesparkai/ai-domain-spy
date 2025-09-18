@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_profiles: {
+        Row: {
+          brand_domain: string | null
+          brand_name: string
+          competitors: string[] | null
+          created_at: string
+          description: string | null
+          id: string
+          industry: string | null
+          keywords: string[] | null
+          location: string | null
+          target_audience: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_domain?: string | null
+          brand_name: string
+          competitors?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry?: string | null
+          keywords?: string[] | null
+          location?: string | null
+          target_audience?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_domain?: string | null
+          brand_name?: string
+          competitors?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry?: string | null
+          keywords?: string[] | null
+          location?: string | null
+          target_audience?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       device_fingerprints: {
         Row: {
           created_at: string

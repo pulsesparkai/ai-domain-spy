@@ -187,6 +187,14 @@ export const ScanRequestSchema = z.object({
     priority: z.enum(['low', 'normal', 'high']).default('normal'),
     includeMetadata: z.boolean().default(true),
     timeout: z.number().min(1000).max(300000).default(30000),
+    brandContext: z.object({
+      brand_name: z.string().optional(),
+      brand_domain: z.string().optional(),
+      industry: z.string().optional(),
+      location: z.string().optional(),
+      competitors: z.array(z.string()).optional(),
+      keywords: z.array(z.string()).optional()
+    }).nullish()
   }).optional(),
 });
 
