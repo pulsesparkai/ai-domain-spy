@@ -28,6 +28,9 @@ export const scanService = {
     
     const data = await response.json();
     
+    // Add debug logging
+    console.log('API Response:', data);
+    
     // Save to database
     const { error: saveError } = await supabase
       .from('scans')
@@ -42,18 +45,17 @@ export const scanService = {
     
     if (saveError) console.error('Save error:', saveError);
     
+    // Return the data directly instead of wrapping in results array
     return {
       scanId: crypto.randomUUID(),
       status: 'completed',
-      results: [{
-        query: scanRequest.targetUrl,
-        platform: 'perplexity',
-        visibility: data.readinessScore || 0,
-        citations: data.citations || [],
-        sentiment: data.sentiment || {},
-        rankings: data.rankings || [],
-        content: JSON.stringify(data)
-      }]
+      ...data,  // Spread the actual API response data
+      readinessScore: data.readinessScore || 0,
+      citations: data.citations || [],
+      platformPresence: data.platformPresence || {},
+      entityAnalysis: data.entityAnalysis || {},
+      contentAnalysis: data.contentAnalysis || {},
+      recommendations: data.recommendations || []
     };
   }
 };

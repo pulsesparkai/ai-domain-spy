@@ -44,6 +44,9 @@ interface EntityAnalysis {
 }
 
 export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
+  // Add debug logging
+  console.log('ResultsDisplay received:', results);
+  
   if (!results) {
     return null;
   }

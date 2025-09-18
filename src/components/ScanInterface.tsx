@@ -175,6 +175,10 @@ const ScanInterface = () => {
         try {
           const scanResults = await scanPromise;
           setProgress(100);
+          
+          // Add debug logging
+          console.log('Results set:', scanResults);
+          
           setResults(scanResults);
           
           // Update scan record with results
