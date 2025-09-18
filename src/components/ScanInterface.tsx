@@ -5,7 +5,7 @@ import { ScanProgressSteps } from "./scan/ScanProgressSteps";
 import ScanInterfaceErrorBoundary from "./ScanInterfaceErrorBoundary";
 import { ScanForm } from "./scan/ScanForm";
 import { ResultsDisplay } from "./scan/ResultsDisplay";
-import { useMockData } from "@/hooks/useMockData";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { analytics } from "@/lib/analytics";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +25,6 @@ const ScanInterface = () => {
   const [results, setResults] = useState<any>(null);
   const [errors, setErrors] = useState<string[]>([]);
   
-  const { devMode, mockScanResults } = useMockData();
   const { user, session, profile } = useAuth();
   const { isReady: supabaseReady, error: supabaseError } = useSupabaseReady();
   
@@ -121,86 +120,66 @@ const ScanInterface = () => {
         status: 'pending'
       });
 
-      if (devMode) {
-        // Mock scanning with realistic progress steps
-        const steps = [0, 20, 40, 60, 80, 100];
-        for (let i = 0; i < steps.length; i++) {
-          setProgress(steps[i]);
-          await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 400)); // Realistic timing
-        }
+      // Real API call with stepped progress simulation
+      const steps = [
+        { progress: 20, delay: 800 },
+        { progress: 40, delay: 1200 },
+        { progress: 60, delay: 1000 },
+        { progress: 80, delay: 900 },
+        { progress: 95, delay: 600 }
+      ];
         
-        setResults(mockScanResults);
+      // Start background API call
+      const scanPromise = withDependencyCheck(['supabase'], async () => {
+        const data = await performScan({
+          queries: queries.filter(q => q.trim()),
+          scanType: scanType as "openai" | "perplexity" | "combined" | "trending",
+          targetUrl
+        });
+        return data.data;
+      }, {
+        timeout: 30000, // Increased timeout for real scans
+        fallback: () => {
+          throw new Error('Database connection failed - scan cannot proceed');
+        }
+      });
+      
+      // Simulate progress steps
+      for (const step of steps) {
+        await new Promise(resolve => setTimeout(resolve, step.delay));
+        if (isScanning) { // Check if still scanning
+          setProgress(step.progress);
+        }
+      }
+      
+      // Wait for actual scan to complete and set final progress
+      try {
+        const scanResults = await scanPromise;
+        setProgress(100);
+        
+        // Add debug logging
+        console.log('Results set:', scanResults);
+        
+        setResults(scanResults);
         
         // Update scan record with results
         if (scanId) {
           await updateScan(scanId, {
             status: 'completed',
-            results: mockScanResults
+            results: scanResults
           });
         }
-      } else {
-        // Real API call with stepped progress simulation
-        const steps = [
-          { progress: 20, delay: 800 },
-          { progress: 40, delay: 1200 },
-          { progress: 60, delay: 1000 },
-          { progress: 80, delay: 900 },
-          { progress: 95, delay: 600 }
-        ];
-        
-        // Start background API call
-        const scanPromise = withDependencyCheck(['supabase'], async () => {
-          const data = await performScan({
-            queries: queries.filter(q => q.trim()),
-            scanType: scanType as "openai" | "perplexity" | "combined" | "trending",
-            targetUrl
+      } catch (dependencyError) {
+        // Update scan record as failed
+        if (scanId) {
+          await updateScan(scanId, {
+            status: 'failed'
           });
-          return data.data;
-        }, {
-          timeout: 30000, // Increased timeout for real scans
-          fallback: () => {
-            throw new Error('Database connection failed - scan cannot proceed');
-          }
-        });
-        
-        // Simulate progress steps
-        for (const step of steps) {
-          await new Promise(resolve => setTimeout(resolve, step.delay));
-          if (isScanning) { // Check if still scanning
-            setProgress(step.progress);
-          }
         }
-        
-        // Wait for actual scan to complete and set final progress
-        try {
-          const scanResults = await scanPromise;
-          setProgress(100);
-          
-          // Add debug logging
-          console.log('Results set:', scanResults);
-          
-          setResults(scanResults);
-          
-          // Update scan record with results
-          if (scanId) {
-            await updateScan(scanId, {
-              status: 'completed',
-              results: scanResults
-            });
-          }
-        } catch (dependencyError) {
-          // Update scan record as failed
-          if (scanId) {
-            await updateScan(scanId, {
-              status: 'failed'
-            });
-          }
-          throw dependencyError;
-        }
-
-        // Rate limit success feedback is handled by the rate limiter
+        throw dependencyError;
       }
-      
+
+      // Rate limit success feedback is handled by the rate limiter
       showToast.success("Scan completed successfully!");
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Scan failed';
