@@ -9,50 +9,14 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const useStoreSync = () => {
   const { user } = useAuth();
-  const { syncWithBackend, setLoading, setError } = useScanHistoryStore();
+  const { loadScans } = useScanHistoryStore();
   const { updatePreferences } = useUserPreferencesStore();
 
   // Sync scan history with Supabase using optimized queries
   useEffect(() => {
     if (!user) return;
 
-    const loadScanHistory = async () => {
-      setLoading(true);
-      try {
-        // Use optimized query with proper indexing
-        const { data: scans, error } = await supabase
-          .from('scans')
-          .select('id, user_id, scan_type, target_url, status, created_at, updated_at, results')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(50); // Use indexed query with limit
-
-        if (error) throw error;
-
-        if (scans) {
-          const formattedScans = scans.map(scan => ({
-            id: scan.id,
-            userId: scan.user_id,
-            scanType: scan.scan_type as "openai" | "perplexity" | "combined" | "trending",
-            targetUrl: scan.target_url || '',
-            queries: (scan as any).queries || [],
-            results: scan.results,
-            status: scan.status as 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled',
-            createdAt: scan.created_at,
-            updatedAt: scan.updated_at,
-          }));
-
-          syncWithBackend(formattedScans);
-        }
-      } catch (error) {
-        console.error('Failed to load scan history:', error);
-        setError(error instanceof Error ? error.message : 'Failed to load scan history');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadScanHistory();
+    loadScans();
 
     // Set up real-time subscription for scans
     const scansChannel = supabase
@@ -68,7 +32,7 @@ export const useStoreSync = () => {
         (payload) => {
           console.log('Scan change detected:', payload);
           // Reload scan history on any change
-          loadScanHistory();
+          loadScans();
         }
       )
       .subscribe();
@@ -76,7 +40,7 @@ export const useStoreSync = () => {
     return () => {
       supabase.removeChannel(scansChannel);
     };
-  }, [user, syncWithBackend, setLoading, setError]);
+  }, [user, loadScans]);
 
   // Sync user preferences with profile data
   useEffect(() => {

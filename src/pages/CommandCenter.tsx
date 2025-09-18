@@ -6,11 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, TrendingUp, Eye, Zap, Clock, ExternalLink, Trash2, Play, CheckCircle, XCircle, Minus } from 'lucide-react';
+import { AlertCircle, TrendingUp, Eye, Zap, Clock, ExternalLink, Trash2, Play, CheckCircle, XCircle, Minus, Bell } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { ScanHistoryTable } from '@/components/ScanHistoryTable';
 import { useScanHistoryStore } from '@/store/scanHistoryStore';
+import { useRealtimeMonitoring } from '@/hooks/useRealtimeMonitoring';
+import { ActivityFeed } from '@/components/ActivityFeed';
+import { RealtimeMetrics } from '@/components/RealtimeMetrics';
+import { NotificationBadge } from '@/components/NotificationBadge';
 
 interface ScanRecord {
   id: string;
@@ -39,6 +43,13 @@ export const CommandCenter = () => {
     getReadinessScore,
     getCitationsCount 
   } = useScanHistoryStore();
+  const { 
+    activityFeed, 
+    metrics, 
+    hasNewNotifications, 
+    markNotificationsAsRead,
+    clearActivityFeed 
+  } = useRealtimeMonitoring();
   const [loading, setLoading] = useState(false);
   const [currentScore, setCurrentScore] = useState(87);
   const [scoreHistory] = useState([
@@ -175,9 +186,24 @@ export const CommandCenter = () => {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="history">Scan History</TabsTrigger>
           <TabsTrigger value="monitoring">Live Monitoring</TabsTrigger>
+          <TabsTrigger 
+            value="activity" 
+            className="relative"
+            onClick={markNotificationsAsRead}
+          >
+            Activity Feed
+            <NotificationBadge 
+              hasNotifications={hasNewNotifications} 
+              className="ml-2" 
+              showIcon={false}
+            />
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
+          {/* Real-time Metrics */}
+          <RealtimeMetrics metrics={metrics} />
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Visibility Trend Chart */}
             <Card>
@@ -337,6 +363,14 @@ export const CommandCenter = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-4">
+          <ActivityFeed 
+            activities={activityFeed} 
+            onClear={clearActivityFeed}
+            showClearButton={true}
+          />
         </TabsContent>
       </Tabs>
     </div>
