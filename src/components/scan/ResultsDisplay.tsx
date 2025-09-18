@@ -62,8 +62,7 @@ interface EntityAnalysis {
 }
 
 export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
-  // Add debug logging
-  console.log('ResultsDisplay received:', results);
+  console.log('ResultsDisplay received:', results); // Debug log
   
   const [expandedCitationGroups, setExpandedCitationGroups] = useState<{[key: string]: boolean}>({});
   
@@ -71,15 +70,23 @@ export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
     return null;
   }
 
-  // Extract data with proper fallbacks
+  // Fix extraction - data is nested under 'analysis'
   const readinessScore = results?.readinessScore || 
-                        results?.perplexity_signals?.ranking_potential || 
+                        results?.analysis?.perplexity_signals?.ranking_potential ||
                         results?.aggregates?.visibilityScore || 0;
-
-  const citations: Citation[] = results?.citations || [];
-  const platformPresence: PlatformPresence = results?.platformPresence || {};
-  const entityAnalysis: EntityAnalysis = results?.entityAnalysis || {};
-  const recommendations = results?.recommendations || [];
+  
+  const citations: Citation[] = results?.citations || 
+                               results?.analysis?.citations || 
+                               [];
+  
+  const platformPresence: PlatformPresence = results?.platformPresence || 
+                                           results?.analysis?.platformPresence || {};
+  
+  const entityAnalysis: EntityAnalysis = results?.entityAnalysis || 
+                                       results?.analysis?.entityAnalysis || {};
+  
+  const recommendations = results?.recommendations || 
+                         results?.analysis?.recommendations || [];
 
   // Sentiment data for chart
   const sentimentData = results?.sentiment ? [
