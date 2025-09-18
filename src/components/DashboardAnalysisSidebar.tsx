@@ -51,7 +51,16 @@ export function DashboardAnalysisSidebar({ activeView, onViewChange }: Dashboard
   const location = useLocation();
 
   const handleNavigation = (item: typeof mainNavItems[0]) => {
-    navigate(item.path);
+    if (item.path === '/scan') {
+      // For scan, navigate to the scan page
+      navigate('/scan');
+    } else if (item.path === '/command-center') {
+      navigate('/command-center');
+    } else if (item.path === '/dashboard') {
+      navigate('/dashboard');
+    } else if (item.path === '/settings') {
+      navigate('/settings');
+    }
   };
 
   const isActive = (path: string) => location.pathname === path;

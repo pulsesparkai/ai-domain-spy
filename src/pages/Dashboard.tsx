@@ -96,7 +96,7 @@ const Dashboard = () => {
       case 'trends':
         return <TrendingSearchesTable />;
       case 'citations':
-        return <CitationsList />;
+        return <CitationsList citations={scanData?.citations || []} />;
       case 'sentiment':
         return <SentimentAnalyzer />;
       case 'rankings':
@@ -155,7 +155,8 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-6">
+    <DashboardLayout activeView={activeView} onViewChange={setActiveView}>
+      <div className="p-6">
         {/* Header */}
         <div className="mb-6 flex justify-between items-center">
           <div>
@@ -165,13 +166,6 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline"
-              onClick={() => navigate('/scan')}
-            >
-              <ArrowUpRight className="h-4 w-4 mr-2" />
-              New Scan
-            </Button>
             {scanData && (
               <Button variant="outline">
                 <Download className="h-4 w-4 mr-2" />
@@ -215,6 +209,7 @@ const Dashboard = () => {
         {/* Main Content */}
         {renderView()}
       </div>
+    </DashboardLayout>
   );
 };
 
