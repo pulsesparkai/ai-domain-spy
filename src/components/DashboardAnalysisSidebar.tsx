@@ -29,7 +29,6 @@ interface DashboardAnalysisSidebarProps {
 // Main navigation items
 const mainNavItems = [
   { id: 'command-center', label: 'Command Center', icon: Terminal, path: '/command-center' },
-  { id: 'settings', label: 'Settings', icon: FileText, path: '/settings' },
 ];
 
 // Only dashboard analysis views - for dashboard page internal navigation
