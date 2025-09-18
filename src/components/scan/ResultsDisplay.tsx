@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -15,10 +15,27 @@ import {
   Star,
   Target,
   BookOpen,
-  Lightbulb
+  Lightbulb,
+  Download,
+  Mail,
+  Share,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Check,
+  Youtube,
+  Linkedin,
+  MessageSquare,
+  HelpCircle,
+  FileText,
+  TrendingDown
 } from "lucide-react";
 import { TooltipWrapper } from "@/components/TooltipWrapper";
 import { LazyPieChart } from "@/components/lazy/LazyChartComponents";
+import { RadialBarChart, RadialBar, ResponsiveContainer } from "recharts";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ExportButton } from "@/components/ExportButton";
 
 interface ResultsDisplayProps {
   results: any;
@@ -30,10 +47,11 @@ interface Citation {
   source?: string;
   authority?: string;
   snippet?: string;
+  domain?: string;
 }
 
 interface PlatformPresence {
-  [key: string]: boolean | string;
+  [key: string]: boolean | string | number;
 }
 
 interface EntityAnalysis {
@@ -47,6 +65,8 @@ export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
   // Add debug logging
   console.log('ResultsDisplay received:', results);
   
+  const [expandedCitationGroups, setExpandedCitationGroups] = useState<{[key: string]: boolean}>({});
+  
   if (!results) {
     return null;
   }
@@ -59,312 +79,421 @@ export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
   const citations: Citation[] = results?.citations || [];
   const platformPresence: PlatformPresence = results?.platformPresence || {};
   const entityAnalysis: EntityAnalysis = results?.entityAnalysis || {};
+  const recommendations = results?.recommendations || [];
 
   // Sentiment data for chart
-  const sentimentData = results?.aggregates?.sentimentBreakdown ? [
-    { name: 'Positive', value: results.aggregates.sentimentBreakdown.positive },
-    { name: 'Neutral', value: results.aggregates.sentimentBreakdown.neutral },
-    { name: 'Negative', value: results.aggregates.sentimentBreakdown.negative },
+  const sentimentData = results?.sentiment ? [
+    { name: 'Positive', value: results.sentiment.positive || 0, fill: '#10b981' },
+    { name: 'Neutral', value: results.sentiment.neutral || 0, fill: '#6b7280' },
+    { name: 'Negative', value: results.sentiment.negative || 0, fill: '#ef4444' }
   ] : [];
 
-  const sentimentColors = ["#4CAF50", "#9E9E9E", "#F44336"];
-
-  // Get recommendations with fallbacks
-  const recommendations = results?.recommendations || 
-                         results?.perplexity_signals?.content_gaps || 
-                         [];
-
-  // Platform presence indicators
+  // Platform icons mapping
   const platformIcons: { [key: string]: any } = {
-    reddit: Users,
-    youtube: Globe,
-    linkedin: Users,
-    twitter: Globe,
-    github: BookOpen,
-    medium: BookOpen,
-    stackoverflow: Target
+    reddit: MessageSquare,
+    youtube: Youtube,
+    linkedin: Linkedin,
+    twitter: MessageSquare,
+    quora: HelpCircle,
+    news: FileText,
+    medium: FileText,
+    github: Globe,
+    stackoverflow: MessageSquare
   };
 
+  // Helper functions
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600 bg-green-50 border-green-200";
-    if (score >= 60) return "text-yellow-600 bg-yellow-50 border-yellow-200";
-    return "text-red-600 bg-red-50 border-red-200";
+    if (score >= 80) return "text-green-600 border-green-200 bg-green-50";
+    if (score >= 60) return "text-yellow-600 border-yellow-200 bg-yellow-50";
+    return "text-red-600 border-red-200 bg-red-50";
   };
 
   const getScoreIcon = (score: number) => {
-    if (score >= 80) return CheckCircle;
-    if (score >= 60) return AlertTriangle;
-    return Target;
+    if (score >= 80) return <CheckCircle className="h-8 w-8 text-green-600" />;
+    if (score >= 60) return <AlertTriangle className="h-8 w-8 text-yellow-600" />;
+    return <TrendingDown className="h-8 w-8 text-red-600" />;
+  };
+
+  const getRadialData = (score: number) => [
+    {
+      name: 'Score',
+      value: score,
+      fill: score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444'
+    }
+  ];
+
+  // Group citations by domain
+  const groupedCitations = citations.reduce((acc: {[key: string]: Citation[]}, citation) => {
+    const domain = citation.domain || citation.source || 'Unknown';
+    if (!acc[domain]) acc[domain] = [];
+    acc[domain].push(citation);
+    return acc;
+  }, {});
+
+  // Generate insights
+  const generateInsights = () => {
+    const strengths = [];
+    const improvements = [];
+    const quickWins = [];
+
+    if (readinessScore >= 80) {
+      strengths.push("Excellent AI visibility score");
+    } else if (readinessScore >= 60) {
+      improvements.push("Moderate AI visibility - room for improvement");
+    } else {
+      improvements.push("Low AI visibility requires attention");
+    }
+
+    if (citations.length > 5) {
+      strengths.push(`Strong citation presence (${citations.length} sources)`);
+    } else if (citations.length > 0) {
+      improvements.push("Limited citation diversity");
+      quickWins.push("Increase content authority and citations");
+    } else {
+      improvements.push("No citations found");
+      quickWins.push("Create cite-worthy content and build authority");
+    }
+
+    if (Object.values(platformPresence).filter(Boolean).length > 3) {
+      strengths.push("Good platform presence");
+    } else {
+      improvements.push("Limited platform presence");
+      quickWins.push("Expand presence on AI platforms");
+    }
+
+    return { strengths: strengths.slice(0, 3), improvements: improvements.slice(0, 3), quickWins: quickWins.slice(0, 3) };
+  };
+
+  const insights = generateInsights();
+
+  const toggleCitationGroup = (domain: string) => {
+    setExpandedCitationGroups(prev => ({
+      ...prev,
+      [domain]: !prev[domain]
+    }));
   };
 
   return (
-    <div className="space-y-6 scan-results">
-      {/* Readiness Score - Prominent Display */}
-      <Card className="border-2">
+    <div className="space-y-6 scan-results animate-fade-in">
+      {/* Header with Export Options */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-foreground">Scan Results</h2>
+        <div className="flex gap-2">
+          <ExportButton data={results} filename="scan-results" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Share className="w-4 h-4 mr-2" />
+                Share
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => navigator.clipboard.writeText(window.location.href)}>
+                Copy Link
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Mail className="w-4 h-4 mr-2" />
+                Email Report
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Main Score Dashboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Large Circular Progress Indicator */}
+        <Card className={`col-span-1 lg:col-span-2 border-2 ${getScoreColor(readinessScore)}`}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              {getScoreIcon(readinessScore)}
+              AI Readiness Score
+              <TooltipWrapper
+                id="readiness-tooltip"
+                content="Overall assessment of how well your content is optimized for AI platform discovery"
+              >
+                <Info className="w-4 h-4 text-muted-foreground" />
+              </TooltipWrapper>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center">
+              <div className="relative w-48 h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadialBarChart 
+                    cx="50%" 
+                    cy="50%" 
+                    innerRadius="60%" 
+                    outerRadius="90%" 
+                    startAngle={90} 
+                    endAngle={-270} 
+                    data={getRadialData(readinessScore)}
+                  >
+                    <RadialBar
+                      dataKey="value"
+                      cornerRadius={10}
+                      fill={readinessScore >= 80 ? '#10b981' : readinessScore >= 60 ? '#f59e0b' : '#ef4444'}
+                    />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold">{readinessScore}</div>
+                    <div className="text-sm text-muted-foreground">out of 100</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              {readinessScore >= 80 && "Excellent AI visibility"}
+              {readinessScore >= 60 && readinessScore < 80 && "Good AI visibility with room for improvement"}
+              {readinessScore < 60 && "Needs improvement for better AI visibility"}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Insights Panel */}
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5" />
+              Key Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {insights.strengths.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-green-600 mb-2 flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" />
+                  Strengths
+                </h4>
+                <ul className="space-y-1">
+                  {insights.strengths.map((strength, index) => (
+                    <li key={index} className="text-sm text-muted-foreground">{strength}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {insights.improvements.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-orange-600 mb-2 flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4" />
+                  Areas to Improve
+                </h4>
+                <ul className="space-y-1">
+                  {insights.improvements.map((improvement, index) => (
+                    <li key={index} className="text-sm text-muted-foreground">{improvement}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {insights.quickWins.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-blue-600 mb-2 flex items-center gap-1">
+                  <Target className="w-4 h-4" />
+                  Quick Wins
+                </h4>
+                <ul className="space-y-1">
+                  {insights.quickWins.map((win, index) => (
+                    <li key={index} className="text-sm text-muted-foreground">{win}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Platform Presence Grid */}
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <TrendingUp className="h-6 w-6" />
-            AI Readiness Score
-            <TooltipWrapper
-              id="readiness-tooltip"
-              content="Overall assessment of how well your content is optimized for AI platform discovery"
-            >
-              <Info className="w-4 h-4 text-muted-foreground" />
-            </TooltipWrapper>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Platform Presence
+            <Badge variant="secondary">{Object.values(platformPresence).filter(Boolean).length} active</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center space-x-8">
-            <div className="relative w-32 h-32">
-              <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
-                {/* Background circle */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="8"
-                  fill="none"
-                />
-                {/* Progress circle */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="8"
-                  fill="none"
-                  strokeDasharray={`${2 * Math.PI * 40}`}
-                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - readinessScore / 100)}`}
-                  className="transition-all duration-1000 ease-out"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-primary">{Math.round(readinessScore)}</div>
-                  <div className="text-xs text-muted-foreground">out of 100</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {Object.entries(platformPresence).map(([platform, status]) => {
+              const IconComponent = platformIcons[platform.toLowerCase()] || Globe;
+              const isActive = Boolean(status);
+              
+              return (
+                <div
+                  key={platform}
+                  className={`p-4 rounded-lg border-2 transition-all hover-scale ${
+                    isActive 
+                      ? 'border-green-200 bg-green-50 hover:bg-green-100' 
+                      : 'border-red-200 bg-red-50 hover:bg-red-100'
+                  }`}
+                >
+                  <div className="flex flex-col items-center text-center space-y-2">
+                    <div className="relative">
+                      <IconComponent className={`w-8 h-8 ${isActive ? 'text-green-600' : 'text-red-400'}`} />
+                      <div className="absolute -top-1 -right-1">
+                        {isActive ? (
+                          <Check className="w-4 h-4 text-green-600 bg-white rounded-full" />
+                        ) : (
+                          <X className="w-4 h-4 text-red-400 bg-white rounded-full" />
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm capitalize">{platform}</div>
+                      {typeof status === 'number' && status > 0 && (
+                        <div className="text-xs text-muted-foreground">{status} mentions</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className={`p-3 rounded-lg border ${getScoreColor(readinessScore)}`}>
-                <div className="flex items-center gap-2">
-                  {(() => {
-                    const Icon = getScoreIcon(readinessScore);
-                    return <Icon className="h-5 w-5" />;
-                  })()}
-                  <span className="font-medium">
-                    {readinessScore >= 80 ? "Excellent" : 
-                     readinessScore >= 60 ? "Good" : "Needs Improvement"}
-                  </span>
-                </div>
-                <p className="text-sm mt-1">
-                  {readinessScore >= 80 ? "Your content is well-optimized for AI discovery" :
-                   readinessScore >= 60 ? "Your content has good potential with some improvements" :
-                   "Significant optimization opportunities available"}
-                </p>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Citations Display */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ExternalLink className="h-5 w-5" />
-              Citations Found ({citations.length})
-              <TooltipWrapper
-                id="citations-tooltip"
-                content="Existing mentions of your content or brand across AI platforms"
-              >
-                <Info className="w-4 h-4 text-muted-foreground" />
-              </TooltipWrapper>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {citations.length > 0 ? (
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {citations.map((citation, index) => (
-                  <div key={index} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          {citation.source && (
-                            <Badge variant="secondary" className="text-xs">
-                              {citation.source}
-                            </Badge>
-                          )}
-                          {citation.authority && (
-                            <Badge variant="outline" className="text-xs">
-                              {citation.authority}
-                            </Badge>
-                          )}
-                        </div>
-                        {citation.title && (
-                          <h4 className="font-medium text-sm truncate">{citation.title}</h4>
-                        )}
-                        {citation.snippet && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {citation.snippet}
-                          </p>
-                        )}
-                      </div>
-                      {citation.url && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="flex-shrink-0"
-                          onClick={() => window.open(citation.url, '_blank')}
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Globe className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No citations found</p>
-                <p className="text-xs">Your content may not be widely referenced yet</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Platform Presence */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              Platform Presence
-              <TooltipWrapper
-                id="platform-tooltip"
-                content="Presence and mentions across different platforms and social media"
-              >
-                <Info className="w-4 h-4 text-muted-foreground" />
-              </TooltipWrapper>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {Object.entries(platformPresence).map(([platform, presence]) => {
-                const IconComponent = platformIcons[platform.toLowerCase()] || Globe;
-                const isPresent = Boolean(presence);
-                
-                return (
-                  <div 
-                    key={platform}
-                    className={`p-3 rounded-lg border transition-colors ${
-                      isPresent ? 'bg-green-50 border-green-200' : 'bg-muted/50 border-muted'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <IconComponent className={`h-4 w-4 ${isPresent ? 'text-green-600' : 'text-muted-foreground'}`} />
-                      <span className="text-sm font-medium capitalize">{platform}</span>
-                    </div>
-                    <div className={`text-xs mt-1 ${isPresent ? 'text-green-600' : 'text-muted-foreground'}`}>
-                      {isPresent ? 'Active presence' : 'No presence detected'}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Content Analysis Scores */}
+      {/* Enhanced Citations Display */}
+      {citations.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              Content Analysis
-              <TooltipWrapper
-                id="analysis-tooltip"
-                content="Detailed analysis of your content quality and brand authority"
-              >
-                <Info className="w-4 h-4 text-muted-foreground" />
-              </TooltipWrapper>
+              Citations Found
+              <Badge variant="secondary">{citations.length} total</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {entityAnalysis.brandMentions !== undefined && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Brand Mentions</span>
-                  <span className="font-medium">{entityAnalysis.brandMentions}</span>
-                </div>
-                <Progress value={Math.min(entityAnalysis.brandMentions * 10, 100)} />
-              </div>
-            )}
-            
-            {entityAnalysis.contentDepth !== undefined && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Content Depth</span>
-                  <span className="font-medium">{entityAnalysis.contentDepth}%</span>
-                </div>
-                <Progress value={entityAnalysis.contentDepth} />
-              </div>
-            )}
-            
-            {entityAnalysis.authorityScore !== undefined && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Authority Score</span>
-                  <span className="font-medium">{entityAnalysis.authorityScore}%</span>
-                </div>
-                <Progress value={entityAnalysis.authorityScore} />
-              </div>
-            )}
-            
-            {entityAnalysis.topicRelevance !== undefined && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Topic Relevance</span>
-                  <span className="font-medium">{entityAnalysis.topicRelevance}%</span>
-                </div>
-                <Progress value={entityAnalysis.topicRelevance} />
-              </div>
-            )}
+          <CardContent>
+            <div className="space-y-4">
+              {Object.entries(groupedCitations).map(([domain, domainCitations]) => (
+                <Collapsible 
+                  key={domain}
+                  open={expandedCitationGroups[domain]}
+                  onOpenChange={() => toggleCitationGroup(domain)}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} 
+                          alt={`${domain} favicon`}
+                          className="w-4 h-4"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                        <span className="font-medium">{domain}</span>
+                        <Badge variant="outline">{domainCitations.length}</Badge>
+                      </div>
+                      {expandedCitationGroups[domain] ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-2 mt-2">
+                    {domainCitations.map((citation, index) => (
+                      <div key={index} className="border rounded-lg p-3 bg-muted/50">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="flex-1">
+                            {citation.title && (
+                              <h4 className="font-medium text-sm mb-1">{citation.title}</h4>
+                            )}
+                            {citation.snippet && (
+                              <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                                {citation.snippet}
+                              </p>
+                            )}
+                            {citation.authority && (
+                              <Badge variant="outline" className="text-xs">
+                                {citation.authority}
+                              </Badge>
+                            )}
+                          </div>
+                          {citation.url && (
+                            <Button size="sm" variant="outline" asChild>
+                              <a href={citation.url} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Content Analysis Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Brand Mentions</span>
+              <Eye className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="text-2xl font-bold mb-1">{entityAnalysis.brandMentions || 0}</div>
+            <Progress value={(entityAnalysis.brandMentions || 0) * 10} className="h-2" />
           </CardContent>
         </Card>
 
-        {/* Sentiment Analysis */}
-        {sentimentData.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5" />
-                Sentiment Analysis
-                <TooltipWrapper
-                  id="sentiment-tooltip"
-                  content="Emotional tone of mentions: positive, neutral, or negative sentiment"
-                >
-                  <Info className="w-4 h-4 text-muted-foreground" />
-                </TooltipWrapper>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Suspense fallback={<div className="h-48 bg-muted animate-pulse rounded" />}>
-                <LazyPieChart
-                  data={sentimentData}
-                  dataKey="value"
-                  nameKey="name"
-                  height={200}
-                  colors={sentimentColors}
-                />
-              </Suspense>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Content Depth</span>
+              <BookOpen className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="text-2xl font-bold mb-1">{entityAnalysis.contentDepth || 0}%</div>
+            <Progress value={entityAnalysis.contentDepth || 0} className="h-2" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Authority Score</span>
+              <Star className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="text-2xl font-bold mb-1">{entityAnalysis.authorityScore || 0}%</div>
+            <Progress value={entityAnalysis.authorityScore || 0} className="h-2" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Topic Relevance</span>
+              <Target className="w-4 h-4 text-muted-foreground" />
+            </div>
+            <div className="text-2xl font-bold mb-1">{entityAnalysis.topicRelevance || 0}%</div>
+            <Progress value={entityAnalysis.topicRelevance || 0} className="h-2" />
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Sentiment Analysis */}
+      {sentimentData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Sentiment Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <Suspense fallback={<div className="flex items-center justify-center h-full">Loading chart...</div>}>
+                <LazyPieChart data={sentimentData} dataKey="value" nameKey="name" />
+              </Suspense>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recommendations */}
       {recommendations.length > 0 && (
@@ -372,59 +501,19 @@ export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lightbulb className="h-5 w-5" />
-              Recommendations for Improvement
-              <TooltipWrapper
-                id="recommendations-tooltip"
-                content="AI-generated suggestions to improve your content's discoverability"
-              >
-                <Info className="w-4 h-4 text-muted-foreground" />
-              </TooltipWrapper>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {recommendations.map((rec: string, index: number) => (
-                <div key={index} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <Lightbulb className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-blue-900">{rec}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Legacy visibility score display for backward compatibility */}
-      {results?.aggregates && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Detailed Visibility Metrics
-              <TooltipWrapper
-                id="legacy-visibility-tooltip"
-                content="Breakdown of visibility rankings across platforms"
-              >
-                <Info className="w-4 h-4 text-muted-foreground" />
-              </TooltipWrapper>
+              Recommendations
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Primary Mentions</span>
-                <Badge variant="default">{results.aggregates.primaryRank || 0}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Secondary Mentions</span>
-                <Badge variant="secondary">{results.aggregates.secondaryRank || 0}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Other Mentions</span>
-                <Badge variant="outline">{results.aggregates.noRank || 0}</Badge>
-              </div>
+              {recommendations.map((recommendation: string, index: number) => (
+                <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-xs font-medium text-primary">{index + 1}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{recommendation}</p>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
