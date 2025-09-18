@@ -14,6 +14,7 @@ import { Suspense, useEffect } from "react";
 import { 
   LazyIndex,
   LazyAuth,
+  LazyCommandCenter,
   LazyDashboard,
   LazyScan,
   LazyPricing,
@@ -75,6 +76,7 @@ const App = () => {
                           <DashboardLayout />
                         </ProtectedRoute>
                       }>
+                        <Route path="command-center" element={<LazyCommandCenter />} />
                         <Route path="dashboard" element={<LazyDashboard />} />
                         <Route path="scan" element={<LazyScan />} />
                         <Route path="settings" element={<LazySettings />} />

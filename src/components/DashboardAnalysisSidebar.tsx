@@ -5,8 +5,10 @@ import {
   Quote, 
   Heart, 
   Target,
-  FileText 
+  FileText,
+  Terminal
 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -24,7 +26,15 @@ interface DashboardAnalysisSidebarProps {
   onViewChange: (view: string) => void;
 }
 
-// Only dashboard analysis views - no duplicate navigation
+// Main navigation items
+const mainNavItems = [
+  { id: 'command-center', label: 'Command Center', icon: Terminal, path: '/command-center' },
+  { id: 'dashboard', label: 'Dashboard', icon: Eye, path: '/dashboard' },
+  { id: 'scan', label: 'New Scan', icon: Target, path: '/scan' },
+  { id: 'settings', label: 'Settings', icon: FileText, path: '/settings' },
+];
+
+// Only dashboard analysis views - for dashboard page internal navigation
 const analysisViews = [
   { id: 'visibility', label: 'AI Visibility', icon: Eye },
   { id: 'domain', label: 'Domain Analysis', icon: Globe },
@@ -37,31 +47,68 @@ const analysisViews = [
 
 export function DashboardAnalysisSidebar({ activeView, onViewChange }: DashboardAnalysisSidebarProps) {
   const { collapsed } = useSidebar();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigation = (item: typeof mainNavItems[0]) => {
+    navigate(item.path);
+  };
+
+  const isActive = (path: string) => location.pathname === path;
+  const isDashboard = location.pathname === '/dashboard';
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-60"}>
       <SidebarContent>
+        {/* Main Navigation */}
         <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {analysisViews.map((view) => (
-                <SidebarMenuItem key={view.id}>
+              {mainNavItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
-                    onClick={() => onViewChange(view.id)}
+                    onClick={() => handleNavigation(item)}
                     className={`cursor-pointer ${
-                      activeView === view.id
+                      isActive(item.path)
                         ? "bg-primary/10 text-primary font-medium" 
                         : "hover:bg-muted/50"
                     }`}
                   >
-                    <view.icon className="h-4 w-4" />
-                    {!collapsed && <span>{view.label}</span>}
+                    <item.icon className="h-4 w-4" />
+                    {!collapsed && <span>{item.label}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Dashboard Analysis Views - Only show when on dashboard */}
+        {isDashboard && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Analysis Views</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {analysisViews.map((view) => (
+                  <SidebarMenuItem key={view.id}>
+                    <SidebarMenuButton 
+                      onClick={() => onViewChange(view.id)}
+                      className={`cursor-pointer ${
+                        activeView === view.id
+                          ? "bg-primary/10 text-primary font-medium" 
+                          : "hover:bg-muted/50"
+                      }`}
+                    >
+                      <view.icon className="h-4 w-4" />
+                      {!collapsed && <span>{view.label}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );

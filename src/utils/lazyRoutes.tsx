@@ -32,6 +32,10 @@ export const LazyAuth = lazy(() =>
   import(/* webpackChunkName: "route-auth" */ '../pages/Auth')
 );
 
+export const LazyCommandCenter = lazy(() => 
+  import(/* webpackChunkName: "route-command-center" */ '../pages/CommandCenter')
+);
+
 export const LazyDashboard = lazy(() => 
   import(/* webpackChunkName: "route-dashboard" */ '../pages/Dashboard')
 );
@@ -80,6 +84,7 @@ export const preloadCriticalRoutes = () => {
   // Preload routes that users are likely to visit
   const criticalRoutes = [
     () => import('../pages/Auth'),
+    () => import('../pages/CommandCenter'),
     () => import('../pages/Dashboard'),
     () => import('../pages/Scan')
   ];
@@ -101,6 +106,7 @@ export const preloadOnHover = (routeName: keyof typeof routeMap) => {
   const routePreloaders: Record<keyof typeof routeMap, () => Promise<any>> = {
     index: () => import('../pages/Index'),
     auth: () => import('../pages/Auth'),
+    commandCenter: () => import('../pages/CommandCenter'),
     dashboard: () => import('../pages/Dashboard'),
     scan: () => import('../pages/Scan'),
     pricing: () => import('../pages/Pricing'),
@@ -128,6 +134,7 @@ export const preloadOnHover = (routeName: keyof typeof routeMap) => {
 export const routeMap = {
   index: LazyIndex,
   auth: LazyAuth,
+  commandCenter: LazyCommandCenter,
   dashboard: LazyDashboard,
   scan: LazyScan,
   pricing: LazyPricing,
