@@ -27,11 +27,15 @@ import {
   Download,
   Search,
   Filter,
-  Calendar
+  Calendar,
+  BarChart3,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { useScanHistoryStore, ScanRecord } from '@/store/scanHistoryStore';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { ScanComparison } from '@/components/scan/ScanComparison';
 
 interface ScanHistoryTableProps {
   showFilters?: boolean;
@@ -66,6 +70,8 @@ export const ScanHistoryTable = ({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [selectedScan, setSelectedScan] = useState<ScanRecord | null>(null);
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
 
   const filteredScans = getFilteredScans();
   const paginatedScans = getPaginatedScans();
@@ -93,6 +99,33 @@ export const ScanHistoryTable = ({
     return sortDirection === 'asc' ? 
       <ArrowUp className="h-4 w-4" /> : 
       <ArrowDown className="h-4 w-4" />;
+  };
+
+  const handleComparisonToggle = (scanId: string) => {
+    setSelectedForComparison(prev => {
+      if (prev.includes(scanId)) {
+        return prev.filter(id => id !== scanId);
+      } else if (prev.length < 3) {
+        return [...prev, scanId];
+      }
+      return prev;
+    });
+  };
+
+  const startComparison = () => {
+    if (selectedForComparison.length >= 2) {
+      setShowComparison(true);
+    }
+  };
+
+  const closeComparison = () => {
+    setShowComparison(false);
+    setSelectedForComparison([]);
+  };
+
+  const getComparisonScans = () => {
+    return scans.filter(scan => selectedForComparison.includes(scan.id))
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   };
 
   const getStatusBadge = (status: string) => {
@@ -132,6 +165,30 @@ export const ScanHistoryTable = ({
         </div>
         
         <div className="flex items-center gap-2">
+          {selectedForComparison.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">
+                {selectedForComparison.length} selected
+              </Badge>
+              {selectedForComparison.length >= 2 && (
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={startComparison}
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Compare
+                </Button>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setSelectedForComparison([])}
+              >
+                Clear
+              </Button>
+            </div>
+          )}
           <Button variant="outline" size="sm" onClick={exportToCSV}>
             <Download className="h-4 w-4 mr-2" />
             Export CSV
@@ -240,6 +297,12 @@ export const ScanHistoryTable = ({
           <Table>
             <TableHeader className="sticky top-0 bg-background z-10">
               <TableRow>
+                <TableHead className="w-12">
+                  <div className="flex items-center gap-1">
+                    <CheckSquare className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs">Compare</span>
+                  </div>
+                </TableHead>
                 <TableHead className="w-32">
                   <Button
                     variant="ghost"
@@ -316,6 +379,21 @@ export const ScanHistoryTable = ({
                   
                   return (
                     <TableRow key={scan.id} className="hover:bg-muted/50">
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-1"
+                          onClick={() => handleComparisonToggle(scan.id)}
+                          disabled={!selectedForComparison.includes(scan.id) && selectedForComparison.length >= 3}
+                        >
+                          {selectedForComparison.includes(scan.id) ? (
+                            <CheckSquare className="h-4 w-4 text-primary" />
+                          ) : (
+                            <Square className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </TableCell>
                       <TableCell className="font-medium">
                         {format(new Date(scan.created_at), 'MMM dd, yyyy')}
                         {!compact && (

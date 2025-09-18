@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, TrendingUp, Eye, Zap, Clock, ExternalLink, Trash2, Play, CheckCircle, XCircle, Minus, Bell } from 'lucide-react';
+import { AlertCircle, TrendingUp, Eye, Zap, Clock, ExternalLink, Trash2, Play, CheckCircle, XCircle, Minus, Bell, History } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { ScanHistoryTable } from '@/components/ScanHistoryTable';
