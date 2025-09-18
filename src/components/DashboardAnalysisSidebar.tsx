@@ -29,7 +29,6 @@ interface DashboardAnalysisSidebarProps {
 // Main navigation items
 const mainNavItems = [
   { id: 'command-center', label: 'Command Center', icon: Terminal, path: '/command-center' },
-  { id: 'dashboard', label: 'Dashboard', icon: Eye, path: '/dashboard' },
   { id: 'settings', label: 'Settings', icon: FileText, path: '/settings' },
 ];
 
@@ -37,10 +36,10 @@ const mainNavItems = [
 const analysisViews = [
   { id: 'visibility', label: 'AI Visibility', icon: Eye },
   { id: 'domain', label: 'Domain Analysis', icon: Globe },
-  { id: 'trends', label: 'Trending Searches', icon: TrendingUp },
+  { id: 'trends', label: 'Trending Prompts', icon: TrendingUp },
   { id: 'citations', label: 'Citations', icon: Quote },
-  { id: 'sentiment', label: 'Sentiment', icon: Heart },
-  { id: 'rankings', label: 'Rankings', icon: Target },
+  { id: 'sentiment', label: 'Sentiment Report', icon: Heart },
+  { id: 'rankings', label: 'AI Rankings', icon: Target },
   { id: 'reports', label: 'Reports', icon: FileText },
 ];
 
