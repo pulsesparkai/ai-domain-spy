@@ -37,16 +37,8 @@ export const DashboardLayout = ({ children, activeView, onViewChange }: Dashboar
           onViewChange={handleViewChange} 
         />
         <main className="flex-1">
-          <header className="h-12 flex items-center border-b bg-background px-4 justify-between">
+          <header className="h-12 flex items-center border-b bg-background px-4">
             <SidebarTrigger />
-            <Button 
-              variant="outline"
-              onClick={() => navigate('/scan')}
-              size="sm"
-            >
-              <ArrowUpRight className="h-4 w-4 mr-2" />
-              New Scan
-            </Button>
           </header>
           {children || <Outlet />}
         </main>
