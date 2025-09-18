@@ -827,7 +827,7 @@ app.post('/api/discover-analysis', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
+        model: 'sonar-small-online',
         messages: [
           {
             role: 'system',
@@ -983,7 +983,7 @@ app.get('/api/trending-searches', async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
+        model: 'sonar-small-online',
         messages: [
           {
             role: 'system',
@@ -1336,7 +1336,7 @@ app.post('/api/analyze-website', async (req, res) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.1-sonar-small-128k-online',
+          model: 'sonar-small-online',
           messages: [
             {
               role: 'system',
