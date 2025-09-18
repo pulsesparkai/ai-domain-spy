@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ArrowUpRight, Download, Star, Sparkles } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { ScanHistoryTable } from '@/components/ScanHistoryTable';
@@ -174,61 +172,63 @@ const Dashboard = () => {
   }
 
   return (
-    <DashboardLayout activeView={activeView} onViewChange={setActiveView}>
-      <div className="p-6">
-        {/* Header */}
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">
-              {scanData ? 'Latest scan results' : 'Run a scan to see your data'}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            {scanData && (
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export Report
-              </Button>
-            )}
-          </div>
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">AI Visibility Dashboard</h1>
+          <p className="text-muted-foreground">
+            {scanData ? 'Latest scan results' : 'Run a scan to see your data'}
+          </p>
         </div>
-
-        {/* Brand Profile Setup CTA */}
-        {!brandLoading && !brandProfile?.brand_name && (
-          <Card className="border-primary bg-primary/5 mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg flex items-center gap-2">
-                      Complete Your Brand Profile
-                      <Star className="h-4 w-4 text-amber-500" />
-                    </h3>
-                    <p className="text-muted-foreground mt-1">
-                      Set up your brand information once and we'll automatically use it for all scans.
-                      This enables smart query generation, competitor analysis, and location-based insights.
-                    </p>
-                  </div>
-                </div>
-                <Button 
-                  onClick={() => setShowBrandOnboarding(true)}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  Set Up Brand →
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Main Content */}
-        {renderView()}
+        <div className="flex gap-2">
+          {scanData && (
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export Report
+            </Button>
+          )}
+          <Button onClick={() => navigate('/scan')} variant="default">
+            <ArrowUpRight className="h-4 w-4 mr-2" />
+            New Scan
+          </Button>
+        </div>
       </div>
-    </DashboardLayout>
+
+      {/* Brand Profile Setup CTA */}
+      {!brandLoading && !brandProfile?.brand_name && (
+        <Card className="border-primary bg-primary/5 mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-4">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    Complete Your Brand Profile
+                    <Star className="h-4 w-4 text-amber-500" />
+                  </h3>
+                  <p className="text-muted-foreground mt-1">
+                    Set up your brand information once and we'll automatically use it for all scans.
+                    This enables smart query generation, competitor analysis, and location-based insights.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setShowBrandOnboarding(true)}
+                className="bg-primary hover:bg-primary/90"
+              >
+                Set Up Brand →
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main Content */}
+      {renderView()}
+    </div>
   );
 };
 

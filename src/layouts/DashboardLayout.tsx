@@ -14,14 +14,27 @@ interface DashboardLayoutProps {
 export const DashboardLayout = ({ children, activeView, onViewChange }: DashboardLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isDashboard = location.pathname === '/dashboard';
+  
+  // Get active view from URL for dashboard
+  const currentView = isDashboard ? (searchParams.get('view') || 'visibility') : 'visibility';
+
+  const handleViewChange = (view: string) => {
+    if (isDashboard) {
+      navigate(`/dashboard?view=${view}`);
+    }
+    if (onViewChange) {
+      onViewChange(view);
+    }
+  };
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <DashboardAnalysisSidebar 
-          activeView={activeView || 'visibility'} 
-          onViewChange={onViewChange || (() => {})} 
+          activeView={activeView || currentView} 
+          onViewChange={handleViewChange} 
         />
         <main className="flex-1">
           <header className="h-12 flex items-center border-b bg-background px-4 justify-between">
