@@ -7,7 +7,7 @@ export class PerplexityAPI {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3-sonar-large-32k-online',
+        model: 'llama-3.1-sonar-small-128k-online',
         messages: [
           {
             role: 'user',
