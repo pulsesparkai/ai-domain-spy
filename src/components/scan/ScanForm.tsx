@@ -34,7 +34,7 @@ export const ScanForm = ({
   onSubmit
 }: ScanFormProps) => {
   const scanDefaults = useScanDefaults();
-  const { optimisticUpdateScan, addScan } = useScanHistoryStore();
+  const { addScan } = useScanHistoryStore();
 
   // Initialize with user preferences
   useEffect(() => {
@@ -49,9 +49,9 @@ export const ScanForm = ({
   const handleOptimisticSubmit = () => {
     // Create optimistic scan entry
     const scanId = addScan({
-      userId: 'current-user', // Would come from auth context
-      scanType: scanType as "openai" | "perplexity" | "combined" | "trending",
-      targetUrl,
+      user_id: 'current-user', // Would come from auth context
+      scan_type: scanType as "openai" | "perplexity" | "combined" | "trending",
+      target_url: targetUrl,
       queries: queries.filter(q => q.trim()),
       status: 'pending'
     });

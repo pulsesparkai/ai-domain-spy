@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ArrowUpRight, Download } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { ScanHistoryTable } from '@/components/ScanHistoryTable';
+import { useScanHistoryStore } from '@/store/scanHistoryStore';
 
 // Import dashboard components
 import { VisibilityScore as VisibilityScoreComponent } from '@/components/dashboard/VisibilityScore';
@@ -21,6 +23,7 @@ import ReportsTable from '@/components/dashboard/ReportsTable';
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { loadScans } = useScanHistoryStore();
   const [activeView, setActiveView] = useState('visibility');
   const [scanData, setScanData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -95,7 +98,17 @@ const Dashboard = () => {
       case 'rankings':
         return <RankingsTable />;
       case 'reports':
-        return <ReportsTable />;
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Scan History & Reports</CardTitle>
+              <CardDescription>Comprehensive history of all your AI visibility scans</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScanHistoryTable showFilters={true} />
+            </CardContent>
+          </Card>
+        );
       default:
         return <VisibilityScoreComponent data={scanData} />;
     }

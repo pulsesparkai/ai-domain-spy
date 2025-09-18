@@ -1,7 +1,7 @@
 // Central store exports for easy imports
 export { useUserPreferencesStore, useThemePreference, useNotificationPreference, useDashboardLayoutPreference, useScanDefaults } from './userPreferencesStore';
 
-export { useScanHistoryStore, useLatestScan, useCompletedScans, useFailedScans, usePendingScans, useScansByType, useScanStats } from './scanHistoryStore';
+export { useScanHistoryStore } from './scanHistoryStore';
 
 // Combined selectors for complex derived state
 import { useUserPreferencesStore } from './userPreferencesStore';

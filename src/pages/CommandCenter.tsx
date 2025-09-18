@@ -9,6 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { AlertCircle, TrendingUp, Eye, Zap, Clock, ExternalLink, Trash2, Play, CheckCircle, XCircle, Minus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { ScanHistoryTable } from '@/components/ScanHistoryTable';
+import { useScanHistoryStore } from '@/store/scanHistoryStore';
 
 interface ScanRecord {
   id: string;
@@ -29,8 +31,15 @@ interface PlatformStatus {
 
 export const CommandCenter = () => {
   const navigate = useNavigate();
-  const [scanHistory, setScanHistory] = useState<ScanRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { 
+    scans, 
+    loading: scanHistoryLoading, 
+    loadScans, 
+    deleteScan: deleteScanFromStore,
+    getReadinessScore,
+    getCitationsCount 
+  } = useScanHistoryStore();
+  const [loading, setLoading] = useState(false);
   const [currentScore, setCurrentScore] = useState(87);
   const [scoreHistory] = useState([
     { date: '2024-01', score: 72 },
@@ -53,58 +62,10 @@ export const CommandCenter = () => {
   ]);
 
   useEffect(() => {
-    fetchScanHistory();
-  }, []);
+    loadScans();
+  }, [loadScans]);
 
-  const fetchScanHistory = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
-      const { data, error } = await supabase
-        .from('scans')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      setScanHistory(data || []);
-    } catch (error) {
-      console.error('Error fetching scan history:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load scan history",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteScan = async (scanId: string) => {
-    try {
-      const { error } = await supabase
-        .from('scans')
-        .delete()
-        .eq('id', scanId);
-
-      if (error) throw error;
-
-      setScanHistory(prev => prev.filter(scan => scan.id !== scanId));
-      toast({
-        title: "Success",
-        description: "Scan deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting scan:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete scan",
-        variant: "destructive",
-      });
-    }
-  };
 
   const getStatusIcon = (status: 'operational' | 'degraded' | 'down') => {
     switch (status) {
@@ -119,19 +80,8 @@ export const CommandCenter = () => {
     }
   };
 
-  const getReadinessScore = (scan: ScanRecord) => {
-    if (scan.results?.readinessScore) return scan.results.readinessScore;
-    if (scan.results?.perplexity_signals?.ranking_potential) return scan.results.perplexity_signals.ranking_potential;
-    return Math.floor(Math.random() * 30) + 70; // Fallback
-  };
 
-  const getCitationsCount = (scan: ScanRecord) => {
-    if (scan.citations && Array.isArray(scan.citations)) return scan.citations.length;
-    if (scan.results?.citations && Array.isArray(scan.results.citations)) return scan.results.citations.length;
-    return 0;
-  };
-
-  if (loading) {
+  if (scanHistoryLoading && scans.length === 0) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
@@ -184,7 +134,7 @@ export const CommandCenter = () => {
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{scanHistory.length}</div>
+            <div className="text-2xl font-bold">{scans.length}</div>
             <p className="text-xs text-muted-foreground">
               Across all platforms
             </p>
@@ -198,7 +148,7 @@ export const CommandCenter = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {scanHistory.reduce((total, scan) => total + getCitationsCount(scan), 0)}
+              {scans.reduce((total, scan) => total + getCitationsCount(scan), 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               Live mentions found
@@ -308,58 +258,7 @@ export const CommandCenter = () => {
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Scan History</CardTitle>
-              <CardDescription>View and manage your past scans</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {scanHistory.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No scans found. <Button variant="link" onClick={() => navigate('/scan')}>Run your first scan</Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {scanHistory.map((scan) => (
-                      <div key={scan.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{scan.target_url || 'Unknown URL'}</span>
-                            <Badge variant="outline">{scan.scan_type}</Badge>
-                            <Badge variant={scan.status === 'completed' ? 'default' : 'secondary'}>
-                              {scan.status}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {new Date(scan.created_at).toLocaleDateString()}
-                            </span>
-                            <span>Score: {getReadinessScore(scan)}</span>
-                            <span>Citations: {getCitationsCount(scan)}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/dashboard`)}>
-                            View Details
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => deleteScan(scan.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ScanHistoryTable showFilters={true} />
         </TabsContent>
 
         <TabsContent value="monitoring" className="space-y-4">

@@ -13,6 +13,7 @@ import { useSupabaseReady, withDependencyCheck } from "@/lib/dependency-hooks";
 import { getRateLimiter } from "@/lib/rate-limiter";
 import { RateLimitStatusWidget } from "@/components/RateLimitStatus";
 import { performScan } from "@/lib/api-client";
+import { useScanHistoryStore } from "@/store/scanHistoryStore";
 
 const ScanInterface = () => {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ const ScanInterface = () => {
   // Get user tier for rate limiting
   const userTier = profile?.subscription_status === 'active' ? 'paid' : 'free';
   const rateLimiter = getRateLimiter(userTier, 'scan');
+  const { addScan, updateScan } = useScanHistoryStore();
 
   const handleRetry = () => {
     setResults(null);
@@ -100,6 +102,8 @@ const ScanInterface = () => {
 
     setIsScanning(true);
     setProgress(0);
+    
+    let scanId: string | null = null;
 
     try {
       // Track analytics event
@@ -107,6 +111,14 @@ const ScanInterface = () => {
         scan_type: scanType,
         query_count: queries.length,
         user_id: user.id
+      });
+      
+      // Create initial scan record
+      scanId = await addScan({
+        scan_type: scanType as "openai" | "perplexity" | "combined" | "trending",
+        target_url: targetUrl,
+        queries: queries.filter(q => q.trim()),
+        status: 'pending'
       });
 
       if (devMode) {
@@ -118,6 +130,14 @@ const ScanInterface = () => {
         }
         
         setResults(mockScanResults);
+        
+        // Update scan record with results
+        if (scanId) {
+          await updateScan(scanId, {
+            status: 'completed',
+            results: mockScanResults
+          });
+        }
       } else {
         // Real API call with stepped progress simulation
         const steps = [
@@ -156,7 +176,21 @@ const ScanInterface = () => {
           const scanResults = await scanPromise;
           setProgress(100);
           setResults(scanResults);
+          
+          // Update scan record with results
+          if (scanId) {
+            await updateScan(scanId, {
+              status: 'completed',
+              results: scanResults
+            });
+          }
         } catch (dependencyError) {
+          // Update scan record as failed
+          if (scanId) {
+            await updateScan(scanId, {
+              status: 'failed'
+            });
+          }
           throw dependencyError;
         }
 
@@ -167,6 +201,17 @@ const ScanInterface = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Scan failed';
       showToast.error(errorMessage);
+      
+      // Update scan record as failed
+      if (scanId) {
+        try {
+          await updateScan(scanId, {
+            status: 'failed'
+          });
+        } catch (updateError) {
+          console.error('Failed to update scan status:', updateError);
+        }
+      }
     } finally {
       setIsScanning(false);
       setProgress(0);
