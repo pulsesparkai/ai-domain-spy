@@ -26,13 +26,9 @@ interface DashboardAnalysisSidebarProps {
   onViewChange: (view: string) => void;
 }
 
-// Main navigation items
-const mainNavItems = [
+// All navigation items in one flat list
+const allNavItems = [
   { id: 'command-center', label: 'Command Center', icon: Terminal, path: '/command-center' },
-];
-
-// Only dashboard analysis views - for dashboard page internal navigation
-const analysisViews = [
   { id: 'visibility', label: 'AI Visibility', icon: Eye },
   { id: 'domain', label: 'Domain Analysis', icon: Globe },
   { id: 'trends', label: 'Trending Prompts', icon: TrendingUp },
@@ -47,16 +43,16 @@ export function DashboardAnalysisSidebar({ activeView, onViewChange }: Dashboard
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleNavigation = (item: typeof mainNavItems[0]) => {
-    if (item.path === '/scan') {
-      // For scan, navigate to the scan page
-      navigate('/scan');
-    } else if (item.path === '/command-center') {
-      navigate('/command-center');
-    } else if (item.path === '/dashboard') {
-      navigate('/dashboard');
-    } else if (item.path === '/settings') {
-      navigate('/settings');
+  const handleItemClick = (item: typeof allNavItems[0]) => {
+    if (item.path) {
+      // Navigation items with paths
+      navigate(item.path);
+    } else {
+      // Analysis view items
+      if (isDashboard) {
+        navigate(`/dashboard?view=${item.id}`);
+      }
+      onViewChange(item.id);
     }
   };
 
@@ -66,17 +62,15 @@ export function DashboardAnalysisSidebar({ activeView, onViewChange }: Dashboard
   return (
     <Sidebar className={collapsed ? "w-14" : "w-60"}>
       <SidebarContent>
-        {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
+              {allNavItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton 
-                    onClick={() => handleNavigation(item)}
+                    onClick={() => handleItemClick(item)}
                     className={`cursor-pointer ${
-                      isActive(item.path)
+                      (item.path && isActive(item.path)) || (!item.path && activeView === item.id)
                         ? "bg-primary/10 text-primary font-medium" 
                         : "hover:bg-muted/50"
                     }`}
@@ -89,37 +83,6 @@ export function DashboardAnalysisSidebar({ activeView, onViewChange }: Dashboard
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {/* Dashboard Analysis Views - Only show when on dashboard */}
-        {isDashboard && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Analysis Views</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {analysisViews.map((view) => (
-                  <SidebarMenuItem key={view.id}>
-                  <SidebarMenuButton 
-                      onClick={() => {
-                        if (isDashboard) {
-                          navigate(`/dashboard?view=${view.id}`);
-                        }
-                        onViewChange(view.id);
-                      }}
-                      className={`cursor-pointer ${
-                        activeView === view.id
-                          ? "bg-primary/10 text-primary font-medium" 
-                          : "hover:bg-muted/50"
-                      }`}
-                    >
-                      <view.icon className="h-4 w-4" />
-                      {!collapsed && <span>{view.label}</span>}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
       </SidebarContent>
     </Sidebar>
   );
