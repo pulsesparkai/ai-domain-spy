@@ -4,12 +4,14 @@ import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ArrowUpRight, Download } from 'lucide-react';
+import { Loader2, ArrowUpRight, Download, Star, Sparkles } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { ScanHistoryTable } from '@/components/ScanHistoryTable';
 import { useScanHistoryStore } from '@/store/scanHistoryStore';
+import { useBrandProfile } from '@/hooks/useBrandProfile';
+import { BrandOnboarding } from '@/components/BrandOnboarding';
 
 // Import dashboard components
 import { VisibilityScore as VisibilityScoreComponent } from '@/components/dashboard/VisibilityScore';
@@ -24,9 +26,11 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { loadScans } = useScanHistoryStore();
+  const { brandProfile, loading: brandLoading } = useBrandProfile();
   const [activeView, setActiveView] = useState('visibility');
   const [scanData, setScanData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showBrandOnboarding, setShowBrandOnboarding] = useState(false);
 
   useEffect(() => {
     fetchLatestScan();
@@ -132,6 +136,24 @@ const Dashboard = () => {
     );
   }
 
+  if (showBrandOnboarding) {
+    return (
+      <div className="p-6">
+        <BrandOnboarding 
+          onComplete={() => {
+            setShowBrandOnboarding(false);
+            toast({
+              title: "🎉 Brand Profile Complete!",
+              description: "Great! All scans will now use your brand profile automatically",
+            });
+          }}
+          onSkip={() => setShowBrandOnboarding(false)}
+          onClose={() => setShowBrandOnboarding(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
         {/* Header */}
@@ -158,6 +180,37 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+
+        {/* Brand Profile Setup CTA */}
+        {!brandLoading && !brandProfile?.brand_name && (
+          <Card className="border-primary bg-primary/5 mb-6">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      Complete Your Brand Profile
+                      <Star className="h-4 w-4 text-amber-500" />
+                    </h3>
+                    <p className="text-muted-foreground mt-1">
+                      Set up your brand information once and we'll automatically use it for all scans.
+                      This enables smart query generation, competitor analysis, and location-based insights.
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => setShowBrandOnboarding(true)}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  Set Up Brand →
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Main Content */}
         {renderView()}
