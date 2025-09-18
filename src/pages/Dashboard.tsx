@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { DashboardLayout } from '@/layouts/DashboardLayout';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,6 +31,7 @@ const Dashboard = () => {
   const [scanData, setScanData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showBrandOnboarding, setShowBrandOnboarding] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     fetchLatestScan();
@@ -63,6 +64,24 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
+
+  // Sync active view with URL search param
+  useEffect(() => {
+    const view = searchParams.get('view');
+    if (view && view !== activeView) {
+      setActiveView(view);
+    }
+  }, [searchParams, activeView]);
+
+  // Keep URL updated when view changes
+  useEffect(() => {
+    const current = searchParams.get('view');
+    if (activeView && current !== activeView) {
+      const params = new URLSearchParams(searchParams);
+      params.set('view', activeView);
+      setSearchParams(params);
+    }
+  }, [activeView, searchParams, setSearchParams]);
 
   const renderView = () => {
     if (loading) {

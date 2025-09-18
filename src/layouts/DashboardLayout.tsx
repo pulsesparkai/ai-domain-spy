@@ -1,6 +1,6 @@
 import { DashboardAnalysisSidebar } from '@/components/DashboardAnalysisSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { useLocation, Outlet } from 'react-router-dom';
+import { useLocation, Outlet, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowUpRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

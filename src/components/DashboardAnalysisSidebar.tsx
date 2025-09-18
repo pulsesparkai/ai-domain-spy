@@ -101,8 +101,13 @@ export function DashboardAnalysisSidebar({ activeView, onViewChange }: Dashboard
               <SidebarMenu>
                 {analysisViews.map((view) => (
                   <SidebarMenuItem key={view.id}>
-                    <SidebarMenuButton 
-                      onClick={() => onViewChange(view.id)}
+                  <SidebarMenuButton 
+                      onClick={() => {
+                        if (isDashboard) {
+                          navigate(`/dashboard?view=${view.id}`);
+                        }
+                        onViewChange(view.id);
+                      }}
                       className={`cursor-pointer ${
                         activeView === view.id
                           ? "bg-primary/10 text-primary font-medium" 
