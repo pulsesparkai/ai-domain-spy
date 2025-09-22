@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { supabase } from '@/integrations/supabase/client';
 import { showToast } from '@/lib/toast';
+import { getApiBaseUrl, API_CONFIG } from '@/config';
 import { 
   ApiResponse, 
   ScanRequest, 
@@ -14,13 +15,12 @@ import { sanitizeApiPayload, validateScanRequest } from '@/lib/input-sanitizer';
 import { applySecurityHeaders } from '@/lib/security-headers';
 import { withAsyncErrorHandling } from '@/lib/async-error-wrapper';
 
-// API client configuration
-const API_CONFIG = {
-  timeout: 30000, // 30 seconds
-  retryAttempts: 3,
-  retryDelay: 1000, // 1 second
-  supabaseUrl: 'https://ljhcqubwczhtwrfpploa.supabase.co',
-  apiBaseUrl: 'https://api.pulsespark.ai',
+// API client configuration using centralized config
+const CLIENT_CONFIG = {
+  timeout: API_CONFIG.timeout,
+  retryAttempts: API_CONFIG.retries,
+  retryDelay: API_CONFIG.retryDelay,
+  baseUrl: getApiBaseUrl(),
 };
 
 // Custom error class for API errors
