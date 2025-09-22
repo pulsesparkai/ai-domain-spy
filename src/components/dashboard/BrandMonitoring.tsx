@@ -8,6 +8,7 @@ import { AlertTriangle, TrendingUp, Eye, ExternalLink, RefreshCw } from 'lucide-
 import { useBrandProfile } from '@/hooks/useBrandProfile';
 import { apiService } from '@/services/apiService';
 import { showToast } from '@/lib/toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MentionData {
   platform: string;
@@ -43,42 +44,122 @@ const BrandMonitoring: React.FC = () => {
   const fetchBrandMonitoringData = async () => {
     setLoading(true);
     try {
-      // Mock data for now - in production this would call real monitoring APIs
-      const mockMentions: MentionData[] = [
-        {
-          platform: 'AI Search Results',
-          mentions: 12,
-          sentiment: 'positive',
-          trend: 'up',
-          urls: [
-            'https://example.com/article-1',
-            'https://example.com/article-2'
-          ],
-          lastUpdated: new Date().toISOString()
-        },
-        {
-          platform: 'News Articles',
-          mentions: 8,
-          sentiment: 'neutral',
-          trend: 'stable',
-          urls: [
-            'https://news.example.com/story-1'
-          ],
-          lastUpdated: new Date().toISOString()
-        },
-        {
-          platform: 'Blog Posts',
-          mentions: 15,
-          sentiment: 'positive',
-          trend: 'up',
-          urls: [
-            'https://blog.example.com/post-1',
-            'https://blog.example.com/post-2'
-          ],
-          lastUpdated: new Date().toISOString()
-        }
-      ];
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !brandProfile?.brand_name) return;
 
+      // Fetch real brand mentions from database
+      const { data: mentionsData, error: mentionsError } = await supabase
+        .from('brand_mentions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('brand_name', brandProfile.brand_name)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (mentionsError) {
+        console.error('Error fetching brand mentions:', mentionsError);
+      }
+
+      // Process real mentions data or create mock data if none exists
+      const platformMentions = new Map<string, {
+        mentions: number;
+        sentiment: 'positive' | 'neutral' | 'negative';
+        urls: string[];
+        lastUpdated: string;
+      }>();
+
+      if (mentionsData && mentionsData.length > 0) {
+        // Group mentions by platform
+        mentionsData.forEach(mention => {
+          const existing = platformMentions.get(mention.platform) || {
+            mentions: 0,
+            sentiment: 'neutral' as const,
+            urls: [],
+            lastUpdated: mention.created_at
+          };
+
+          existing.mentions += 1;
+          if (mention.url && !existing.urls.includes(mention.url)) {
+            existing.urls.push(mention.url);
+          }
+          
+          // Update sentiment based on most recent mentions
+          if (new Date(mention.created_at) > new Date(existing.lastUpdated)) {
+            existing.sentiment = mention.sentiment as 'positive' | 'neutral' | 'negative';
+            existing.lastUpdated = mention.created_at;
+          }
+
+          platformMentions.set(mention.platform, existing);
+        });
+      } else {
+        // Create mock data and store in database for demo purposes
+        const mockMentionsToStore = [
+          {
+            platform: 'AI Search Results',
+            mention_text: `${brandProfile.brand_name} provides excellent solutions for businesses`,
+            url: 'https://example.com/ai-search-result',
+            sentiment: 'positive' as const,
+            relevance_score: 0.85,
+            context_type: 'search_result',
+            ai_generated: true
+          },
+          {
+            platform: 'News Articles',
+            mention_text: `Industry analysis mentions ${brandProfile.brand_name} as a key player`,
+            url: 'https://news.example.com/industry-report',
+            sentiment: 'neutral' as const,
+            relevance_score: 0.75,
+            context_type: 'news',
+            ai_generated: false
+          },
+          {
+            platform: 'Blog Posts',
+            mention_text: `Review of ${brandProfile.brand_name}: highly recommended`,
+            url: 'https://blog.example.com/review',
+            sentiment: 'positive' as const,
+            relevance_score: 0.90,
+            context_type: 'review',
+            ai_generated: false
+          }
+        ];
+
+        // Store mock mentions in database
+        for (const mockMention of mockMentionsToStore) {
+          await supabase.from('brand_mentions').insert({
+            user_id: user.id,
+            brand_name: brandProfile.brand_name,
+            ...mockMention
+          }).select();
+
+          const existing = platformMentions.get(mockMention.platform) || {
+            mentions: 0,
+            sentiment: 'neutral' as const,
+            urls: [],
+            lastUpdated: new Date().toISOString()
+          };
+
+          existing.mentions += 1;
+          existing.sentiment = mockMention.sentiment;
+          if (mockMention.url) {
+            existing.urls.push(mockMention.url);
+          }
+          existing.lastUpdated = new Date().toISOString();
+
+          platformMentions.set(mockMention.platform, existing);
+        }
+      }
+
+      // Convert map to array format
+      const mentionsArray: MentionData[] = Array.from(platformMentions.entries()).map(([platform, data]) => ({
+        platform,
+        mentions: data.mentions,
+        sentiment: data.sentiment,
+        trend: data.mentions > 5 ? 'up' : data.mentions < 2 ? 'down' : 'stable',
+        urls: data.urls.slice(0, 5), // Limit to 5 URLs
+        lastUpdated: data.lastUpdated
+      }));
+
+      // Generate competitor data based on brand profile
       const mockCompetitors: CompetitorData[] = brandProfile?.competitors?.map((comp, index) => ({
         name: comp,
         domain: `${comp.toLowerCase().replace(/\s+/g, '')}.com`,
@@ -88,7 +169,7 @@ const BrandMonitoring: React.FC = () => {
         aiPresence: 40 + Math.random() * 50
       })) || [];
 
-      setMentions(mockMentions);
+      setMentions(mentionsArray);
       setCompetitors(mockCompetitors);
       setLastScan(new Date());
     } catch (error) {

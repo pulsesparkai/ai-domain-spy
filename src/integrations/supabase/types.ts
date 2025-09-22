@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_mentions: {
+        Row: {
+          ai_generated: boolean | null
+          brand_name: string
+          context_type: string | null
+          created_at: string
+          id: string
+          mention_date: string | null
+          mention_text: string | null
+          platform: string
+          relevance_score: number | null
+          sentiment: string | null
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          brand_name: string
+          context_type?: string | null
+          created_at?: string
+          id?: string
+          mention_date?: string | null
+          mention_text?: string | null
+          platform: string
+          relevance_score?: number | null
+          sentiment?: string | null
+          updated_at?: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          brand_name?: string
+          context_type?: string | null
+          created_at?: string
+          id?: string
+          mention_date?: string | null
+          mention_text?: string | null
+          platform?: string
+          relevance_score?: number | null
+          sentiment?: string | null
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       brand_profiles: {
         Row: {
           brand_domain: string | null
@@ -58,6 +106,74 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      citations: {
+        Row: {
+          ai_model: string | null
+          clickable: boolean | null
+          created_at: string
+          domain_authority: number | null
+          id: string
+          last_verified: string | null
+          platform: string
+          query_context: string | null
+          relevance_score: number | null
+          scan_id: string | null
+          sentiment: string | null
+          snippet: string | null
+          status: string | null
+          title: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          ai_model?: string | null
+          clickable?: boolean | null
+          created_at?: string
+          domain_authority?: number | null
+          id?: string
+          last_verified?: string | null
+          platform?: string
+          query_context?: string | null
+          relevance_score?: number | null
+          scan_id?: string | null
+          sentiment?: string | null
+          snippet?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          ai_model?: string | null
+          clickable?: boolean | null
+          created_at?: string
+          domain_authority?: number | null
+          id?: string
+          last_verified?: string | null
+          platform?: string
+          query_context?: string | null
+          relevance_score?: number | null
+          scan_id?: string | null
+          sentiment?: string | null
+          snippet?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "citations_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       device_fingerprints: {
         Row: {

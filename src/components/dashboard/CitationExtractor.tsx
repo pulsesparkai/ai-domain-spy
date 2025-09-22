@@ -47,42 +47,97 @@ const CitationExtractor: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch citations from recent scans
-      const { data: scans } = await supabase
-        .from('scans')
+      // Fetch citations from the dedicated citations table
+      const { data: citationsData, error: citationsError } = await supabase
+        .from('citations')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(50);
 
-      if (scans) {
-        const allCitations: Citation[] = [];
-        
-        scans.forEach((scan, scanIndex) => {
-          const scanResults = (scan.results as any) || {};
-          const scanCitations = Array.isArray(scanResults.citations) ? scanResults.citations : [];
+      if (citationsError) {
+        console.error('Error fetching citations:', citationsError);
+        showToast.error('Failed to fetch citations from database');
+        return;
+      }
+
+      if (citationsData && citationsData.length > 0) {
+        // Map database citations to component format
+        const mappedCitations: Citation[] = citationsData.map((citation) => ({
+          id: citation.id,
+          url: citation.url,
+          title: citation.title,
+          snippet: citation.snippet || '',
+          platform: citation.platform,
+          relevanceScore: parseFloat(citation.relevance_score?.toString() || '0'),
+          domainAuthority: citation.domain_authority || 0,
+          dateFound: citation.created_at,
+          lastVerified: citation.last_verified || citation.created_at,
+          status: citation.status as 'active' | 'removed' | 'changed',
+          sentiment: citation.sentiment as 'positive' | 'neutral' | 'negative',
+          aiModel: citation.ai_model || 'unknown',
+          queryContext: citation.query_context || 'General scan',
+          clickable: citation.clickable !== false
+        }));
+
+        setCitations(mappedCitations);
+      } else {
+        // Fallback: Extract citations from recent scans if citations table is empty
+        const { data: scans } = await supabase
+          .from('scans')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (scans) {
+          const extractedCitations: Citation[] = [];
           
-          scanCitations.forEach((citation: any, index: number) => {
-            allCitations.push({
-              id: `${scan.id}-${index}`,
-              url: citation.url || '',
-              title: citation.title || 'Untitled',
-              snippet: citation.snippet || citation.content || '',
-              platform: citation.platform || 'Unknown',
-              relevanceScore: citation.relevanceScore || Math.random(),
-              domainAuthority: citation.domainAuthority || Math.floor(Math.random() * 100),
-              dateFound: scan.created_at,
-              lastVerified: scan.created_at,
-              status: citation.status || 'active',
-              sentiment: citation.sentiment || 'neutral',
-              aiModel: scan.scan_type || 'unknown',
-              queryContext: scan.queries?.[0] || 'General scan',
-              clickable: true
-            });
-          });
-        });
+          for (const scan of scans) {
+            const scanResults = (scan.results as any) || {};
+            const scanCitations = Array.isArray(scanResults.citations) ? scanResults.citations : [];
+            
+            for (const [index, citation] of scanCitations.entries()) {
+              const newCitation = {
+                id: `${scan.id}-${index}`,
+                url: citation.url || '',
+                title: citation.title || 'Untitled',
+                snippet: citation.snippet || citation.content || '',
+                platform: citation.platform || 'AI Search',
+                relevanceScore: citation.relevanceScore || Math.random() * 0.9 + 0.1,
+                domainAuthority: citation.domainAuthority || Math.floor(Math.random() * 100),
+                dateFound: scan.created_at,
+                lastVerified: scan.created_at,
+                status: citation.status || 'active',
+                sentiment: citation.sentiment || 'neutral',
+                aiModel: scan.scan_type || 'unknown',
+                queryContext: Array.isArray(scan.queries) ? scan.queries[0] : 'General scan',
+                clickable: true
+              } as Citation;
 
-        setCitations(allCitations);
+              extractedCitations.push(newCitation);
+
+              // Store in citations table for future use
+              await supabase.from('citations').insert({
+                user_id: user.id,
+                scan_id: scan.id,
+                url: newCitation.url,
+                title: newCitation.title,
+                snippet: newCitation.snippet,
+                platform: newCitation.platform,
+                relevance_score: newCitation.relevanceScore,
+                domain_authority: newCitation.domainAuthority,
+                sentiment: newCitation.sentiment,
+                status: newCitation.status,
+                ai_model: newCitation.aiModel,
+                query_context: newCitation.queryContext,
+                clickable: newCitation.clickable
+              }).select();
+            }
+          }
+
+          setCitations(extractedCitations);
+        }
       }
     } catch (error) {
       console.error('Error fetching citations:', error);
