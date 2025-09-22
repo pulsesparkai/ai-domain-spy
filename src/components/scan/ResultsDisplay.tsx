@@ -62,7 +62,7 @@ interface EntityAnalysis {
 }
 
 export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
-  console.log('ResultsDisplay received:', results); // Debug log
+  // Results data received and processed
   
   const [expandedCitationGroups, setExpandedCitationGroups] = useState<{[key: string]: boolean}>({});
   

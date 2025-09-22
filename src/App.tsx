@@ -33,7 +33,7 @@ import { createOptimizedQueryClient } from '@/lib/react-query-optimization';
 
 const queryClient = createOptimizedQueryClient();
 
-console.log('QueryClient initialized:', queryClient);
+// QueryClient initialized and ready
 
 const AppLayout = () => {
   const location = useLocation();

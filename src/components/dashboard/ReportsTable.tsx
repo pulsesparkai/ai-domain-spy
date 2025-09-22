@@ -37,12 +37,7 @@ const ReportsTable: React.FC = () => {
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize - 1;
 
-        console.log('Query executed: reports-table-fetch', { 
-          user_id: user.id, 
-          page: currentPage, 
-          limit: pageSize, 
-          offset: startIndex 
-        });
+        // Query executed for reports table fetch
 
         const { data, error, count } = await supabase
           .from('scans')

@@ -78,12 +78,12 @@ export class CachedQueryBuilder {
     const cached = queryCache.get<TableSchema>(cacheKey);
     
     if (cached) {
-      console.log(`Query cache hit: schema-${tableName}`);
+      // Query cache hit for schema
       return cached;
     }
 
     try {
-      console.log(`Query executed: schema-introspection-${tableName}`, { table: tableName });
+      // Schema introspection query executed
       
       // This is a minimal schema check - only get what we need
       const { data, error } = await supabase
@@ -131,19 +131,12 @@ export class CachedQueryBuilder {
     const cached = queryCache.get(cacheKey);
     
     if (cached) {
-      console.log(`Query cache hit: ${cacheKey}`);
+      // Query cache hit
       return cached;
     }
 
     try {
-      console.log('Query executed:', {
-        operation: 'SELECT',
-        table: tableName,
-        columns,
-        filters,
-        options,
-        timestamp: Date.now()
-      });
+      // SELECT query executed
 
       let query = supabase.from(tableName).select(columns);
 
@@ -206,13 +199,7 @@ export class CachedQueryBuilder {
     options: { returning?: string; upsert?: boolean } = {}
   ) {
     try {
-      console.log('Query executed:', {
-        operation: 'INSERT',
-        table: tableName,
-        count: Array.isArray(data) ? data.length : 1,
-        options,
-        timestamp: Date.now()
-      });
+      // INSERT query executed
 
       let query;
       
@@ -258,14 +245,7 @@ export class CachedQueryBuilder {
     options: { returning?: string } = {}
   ) {
     try {
-      console.log('Query executed:', {
-        operation: 'UPDATE',
-        table: tableName,
-        updates: Object.keys(updates),
-        filters,
-        options,
-        timestamp: Date.now()
-      });
+      // UPDATE query executed
 
       // Start with update and immediately apply first filter to get FilterBuilder type
       const filterEntries = Object.entries(filters);

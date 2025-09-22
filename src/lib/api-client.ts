@@ -248,7 +248,7 @@ class ApiClient {
     }
   ): Promise<T> {
     return this.withRetry(async () => {
-      console.log(`Query executed: edge-function-${functionName}`, { body, timestamp: Date.now() });
+      // Edge function call initiated
       
       const { data, error } = await supabase.functions.invoke(functionName, {
         body,
@@ -356,7 +356,7 @@ class ApiClient {
         });
 
         // Return the response directly as it matches our expected format
-        console.log('Scan completed successfully:', response);
+        // Scan completed successfully
         return response;
       },
       {

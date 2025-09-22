@@ -198,7 +198,7 @@ const ScanInterface = () => {
         setProgress(100);
         
         // Add debug logging
-        console.log('Scan API response:', scanResults);
+        // Scan API response processed successfully
         
         setResults(scanResults);
         
