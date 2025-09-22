@@ -62,9 +62,7 @@ export const LazyNotFound = lazy(() =>
 );
 
 export const LazyPasswordReset = lazy(() => 
-  import(/* webpackChunkName: "route-password-reset" */ '../components/PasswordReset').then(module => ({
-    default: module.PasswordReset
-  }))
+  import(/* webpackChunkName: "route-password-reset" */ '../components/PasswordReset')
 );
 
 

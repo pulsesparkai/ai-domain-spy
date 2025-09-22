@@ -40,7 +40,7 @@ const AppLayout = () => {
       {shouldShowHeader && <Header />}
       <div className={shouldShowHeader ? "pt-20" : ""}>
         <Suspense fallback={<RouteLoadingSkeleton />}>
-          <Routes>
+           <Routes>
             <Route path="/" element={<Navigate to="/auth" replace />} />
             <Route path="/auth" element={<LazyAuth />} />
             <Route path="/pricing" element={<LazyPricing />} />
@@ -49,15 +49,15 @@ const AppLayout = () => {
             <Route path="/reset-password" element={<LazyPasswordReset />} />
            
            {/* Protected routes with dashboard layout */}
-           <Route path="/" element={
+           <Route element={
              <ProtectedRoute>
                <DashboardLayout />
              </ProtectedRoute>
            }>
-             <Route path="command-center" element={<LazyCommandCenter />} />
-             <Route path="dashboard" element={<LazyDashboard />} />
-             <Route path="scan" element={<LazyScan />} />
-             <Route path="settings" element={<LazySettings />} />
+             <Route path="/command-center" element={<LazyCommandCenter />} />
+             <Route path="/dashboard" element={<LazyDashboard />} />
+             <Route path="/scan" element={<LazyScan />} />
+             <Route path="/settings" element={<LazySettings />} />
            </Route>
            
            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
