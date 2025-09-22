@@ -8,18 +8,18 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Modern Dashboard - Light theme with dark sidebar */
-    --background: 0, 0%, 97%; /* #F7F7F7 */
-    --foreground: 0, 0%, 20%; /* Dark text */
+    /* PulseSpark.ai Brand Colors - Light Mode Only */
+    --background: 240, 100%, 99.6%; /* #F8FAFF */
+    --foreground: 0, 0%, 10.2%; /* #1A1A1A */
 
-    --card: 0, 0%, 100%; /* White cards */
-    --card-foreground: 0, 0%, 20%;
+    --card: 0, 0%, 100%; /* #FFFFFF */
+    --card-foreground: 0, 0%, 10.2%; /* #1A1A1A */
 
     --popover: 0, 0%, 100%;
-    --popover-foreground: 0, 0%, 20%;
+    --popover-foreground: 0, 0%, 10.2%;
 
-    /* Primary - Dark */
-    --primary: 0, 0%, 13%; /* Dark primary */
+    /* Primary Purple */
+    --primary: 245, 71%, 67%; /* #6B5BFF */
     --primary-foreground: 0, 0%, 100%;
 
     /* Accent Blue */
@@ -27,34 +27,34 @@ All colors MUST be HSL.
     --accent-foreground: 0, 0%, 100%;
 
     /* Secondary & Muted */
-    --secondary: 0, 0%, 95%;
-    --secondary-foreground: 0, 0%, 20%;
+    --secondary: 240, 100%, 96.3%; /* #E8EFFF */
+    --secondary-foreground: 0, 0%, 10.2%;
 
-    --muted: 0, 0%, 45%; /* Gray muted text */
-    --muted-foreground: 0, 0%, 45%;
+    --muted: 0, 0%, 96%; /* #F5F5F5 */
+    --muted-foreground: 0, 0%, 40%; /* #666666 - Better contrast */
 
     /* Utilities */
     --destructive: 0, 73%, 64%; /* #FF4D4F */
     --destructive-foreground: 0, 0%, 100%;
 
-    --success: 120, 45%, 35%; /* #2E7D32 */
-    --success-foreground: 0, 0%, 100%;
-    --warning: 45, 100%, 40%; /* #CC8500 */
-    --warning-foreground: 0, 0%, 100%;
+    --success: 120, 45%, 35%; /* #2E7D32 - Darker green for better contrast */
+    --success-foreground: 0, 0%, 100%; /* White text on dark green */
+    --warning: 45, 100%, 40%; /* #CC8500 - Darker orange */
+    --warning-foreground: 0, 0%, 100%; /* White text on dark orange */
 
-    --border: 0, 0%, 90%; /* Light borders */
-    --input: 0, 0%, 90%;
-    --ring: 0, 0%, 13%;
+    --border: 220, 13%, 85%; /* #DADADA - Slightly darker */
+    --input: 220, 13%, 85%; /* #DADADA - Better border visibility */
+    --ring: 245, 71%, 67%; /* Focus ring color */
 
-    /* Dark Sidebar */
-    --sidebar-background: 0, 0%, 13%; /* Dark sidebar #212121 */
-    --sidebar-foreground: 0, 0%, 100%; /* White text on dark */
-    --sidebar-primary: 0, 0%, 100%;
-    --sidebar-primary-foreground: 0, 0%, 13%;
-    --sidebar-accent: 0, 0%, 20%;
-    --sidebar-accent-foreground: 0, 0%, 100%;
-    --sidebar-border: 0, 0%, 20%;
-    --sidebar-ring: 0, 0%, 100%;
+    /* Sidebar Colors - Consolidated with Main Theme */
+    --sidebar-background: 0, 0%, 98%;
+    --sidebar-foreground: 0, 0%, 10.2%;
+    --sidebar-primary: 245, 71%, 67%;
+    --sidebar-primary-foreground: 0, 0%, 100%;
+    --sidebar-accent: 240, 100%, 96.3%;
+    --sidebar-accent-foreground: 0, 0%, 10.2%;
+    --sidebar-border: 220, 13%, 91%;
+    --sidebar-ring: 245, 71%, 67%;
 
     /* Gradients */
     --gradient-hero: linear-gradient(135deg, hsl(240, 100%, 99.6%) 0%, hsl(240, 100%, 96.3%) 100%);

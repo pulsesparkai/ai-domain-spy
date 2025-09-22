@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
   language: string;
   notifications: boolean;
   autoSave: boolean;
@@ -14,6 +15,7 @@ export interface UserPreferences {
 
 interface UserPreferencesState {
   preferences: UserPreferences;
+  setTheme: (theme: UserPreferences['theme']) => void;
   setLanguage: (language: string) => void;
   toggleNotifications: () => void;
   toggleAutoSave: () => void;
@@ -24,6 +26,7 @@ interface UserPreferencesState {
 }
 
 const defaultPreferences: UserPreferences = {
+  theme: 'system',
   language: 'en',
   notifications: true,
   autoSave: true,
@@ -38,6 +41,11 @@ export const useUserPreferencesStore = create<UserPreferencesState>()(
   persist(
     (set, get) => ({
       preferences: defaultPreferences,
+      
+      setTheme: (theme) =>
+        set((state) => ({
+          preferences: { ...state.preferences, theme }
+        })),
       
       setLanguage: (language) =>
         set((state) => ({
@@ -89,6 +97,8 @@ export const useUserPreferencesStore = create<UserPreferencesState>()(
 );
 
 // Selectors for derived state
+export const useThemePreference = () => 
+  useUserPreferencesStore((state) => state.preferences.theme);
 
 export const useNotificationPreference = () => 
   useUserPreferencesStore((state) => state.preferences.notifications);
