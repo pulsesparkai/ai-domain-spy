@@ -5,7 +5,7 @@ import { Menu, X, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { analytics } from "@/lib/analytics";
-import { SkipToContent } from "@/components/SkipToContent";
+
 
 const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,8 +24,7 @@ const Navigation = () => {
 
   return (
     <>
-      <SkipToContent />
-      <nav 
+      <nav
         className="fixed top-0 left-0 right-0 z-sticky bg-white shadow-sm border-b border-gray-200"
         role="navigation"
         aria-label="Main navigation"

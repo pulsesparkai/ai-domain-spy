@@ -8,8 +8,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
 import DependencyLoading from "@/components/DependencyLoading";
-import { AccessibilityIndicator, AccessibilityToolbar } from "@/components/AccessibilityIndicator";
-import { PreviewModeIndicator } from "@/components/PreviewModeIndicator";
 import { Suspense, useEffect } from "react";
 import { 
   LazyAuth,
@@ -72,9 +70,6 @@ const AppLayout = () => {
          </Routes>
         </Suspense>
       </div>
-      <AccessibilityIndicator />
-      <AccessibilityToolbar />
-      <PreviewModeIndicator />
     </>
   );
 };
