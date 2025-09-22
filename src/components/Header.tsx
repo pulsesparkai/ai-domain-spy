@@ -19,17 +19,8 @@ export function Header() {
       {/* Center nav - Hidden if logged in */}
       {!user && (
         <nav className="hidden md:flex items-center space-x-8">
-          <Link to="/" className="text-gray-600 hover:text-purple-600 transition-colors">
-            Home
-          </Link>
           <Link to="/pricing" className="text-gray-600 hover:text-purple-600 transition-colors">
             Pricing
-          </Link>
-          <Link to="/about" className="text-gray-600 hover:text-purple-600 transition-colors">
-            About
-          </Link>
-          <Link to="/contact" className="text-gray-600 hover:text-purple-600 transition-colors">
-            Contact
           </Link>
         </nav>
       )}

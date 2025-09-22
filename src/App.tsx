@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster as HotToaster } from "react-hot-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
@@ -12,7 +12,6 @@ import { AccessibilityIndicator, AccessibilityToolbar } from "@/components/Acces
 import { PreviewModeIndicator } from "@/components/PreviewModeIndicator";
 import { Suspense, useEffect } from "react";
 import { 
-  LazyIndex,
   LazyAuth,
   LazyCommandCenter,
   LazyDashboard,
@@ -21,8 +20,6 @@ import {
   LazySettings,
   LazySuccess,
   LazyCancel,
-  LazyAbout,
-  LazyContact,
   LazyNotFound,
   LazyPasswordReset,
   
@@ -60,15 +57,13 @@ const App = () => {
                   <Header />
                   <div className="pt-20">
                     <Suspense fallback={<RouteLoadingSkeleton />}>
-                    <Routes>
-                      <Route path="/" element={<LazyIndex />} />
-                      <Route path="/auth" element={<LazyAuth />} />
-                      <Route path="/pricing" element={<LazyPricing />} />
-                      <Route path="/about" element={<LazyAbout />} />
-                      <Route path="/contact" element={<LazyContact />} />
-                      <Route path="/success" element={<LazySuccess />} />
-                      <Route path="/cancel" element={<LazyCancel />} />
-                      <Route path="/reset-password" element={<LazyPasswordReset />} />
+                     <Routes>
+                       <Route path="/" element={<Navigate to="/auth" replace />} />
+                       <Route path="/auth" element={<LazyAuth />} />
+                       <Route path="/pricing" element={<LazyPricing />} />
+                       <Route path="/success" element={<LazySuccess />} />
+                       <Route path="/cancel" element={<LazyCancel />} />
+                       <Route path="/reset-password" element={<LazyPasswordReset />} />
                       
                       {/* Protected routes with dashboard layout */}
                       <Route path="/" element={

@@ -24,10 +24,6 @@ const RouteLoadingSkeleton = () => (
 );
 
 // Lazy route components with named chunks
-export const LazyIndex = lazy(() => 
-  import(/* webpackChunkName: "route-index" */ '../pages/Index')
-);
-
 export const LazyAuth = lazy(() => 
   import(/* webpackChunkName: "route-auth" */ '../pages/Auth')
 );
@@ -60,13 +56,6 @@ export const LazyCancel = lazy(() =>
   import(/* webpackChunkName: "route-cancel" */ '../pages/Cancel')
 );
 
-export const LazyAbout = lazy(() => 
-  import(/* webpackChunkName: "route-about" */ '../pages/About')
-);
-
-export const LazyContact = lazy(() => 
-  import(/* webpackChunkName: "route-contact" */ '../pages/Contact')
-);
 
 export const LazyNotFound = lazy(() => 
   import(/* webpackChunkName: "route-notfound" */ '../pages/NotFound')
@@ -104,7 +93,6 @@ export const preloadCriticalRoutes = () => {
 // Preload routes on user interaction
 export const preloadOnHover = (routeName: keyof typeof routeMap) => {
   const routePreloaders: Record<keyof typeof routeMap, () => Promise<any>> = {
-    index: () => import('../pages/Index'),
     auth: () => import('../pages/Auth'),
     commandCenter: () => import('../pages/CommandCenter'),
     dashboard: () => import('../pages/Dashboard'),
@@ -113,8 +101,6 @@ export const preloadOnHover = (routeName: keyof typeof routeMap) => {
     settings: () => import('../pages/Settings'),
     success: () => import('../pages/Success'),
     cancel: () => import('../pages/Cancel'),
-    about: () => import('../pages/About'),
-    contact: () => import('../pages/Contact'),
     notFound: () => import('../pages/NotFound'),
     passwordReset: () => import('../components/PasswordReset'),
     
@@ -132,7 +118,6 @@ export const preloadOnHover = (routeName: keyof typeof routeMap) => {
 
 // Route map for easy access
 export const routeMap = {
-  index: LazyIndex,
   auth: LazyAuth,
   commandCenter: LazyCommandCenter,
   dashboard: LazyDashboard,
@@ -141,8 +126,6 @@ export const routeMap = {
   settings: LazySettings,
   success: LazySuccess,
   cancel: LazyCancel,
-  about: LazyAbout,
-  contact: LazyContact,
   notFound: LazyNotFound,
   passwordReset: LazyPasswordReset,
   
