@@ -2,12 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster as HotToaster } from "react-hot-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Outlet, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
 import DependencyLoading from "@/components/DependencyLoading";
+import { DataFlowProvider } from "@/components/DataFlowProvider";
 import { Suspense, useEffect } from "react";
 import { 
   LazyAuth,
@@ -27,11 +27,6 @@ import {
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Header } from "@/components/Header";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-
-// Create QueryClient with optimized configuration
-import { createOptimizedQueryClient } from '@/lib/react-query-optimization';
-
-const queryClient = createOptimizedQueryClient();
 
 // QueryClient initialized and ready
 
@@ -83,8 +78,8 @@ const App = () => {
   return (
     <ErrorBoundary>
       <AppErrorBoundary showReportButton>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
+        <AuthProvider>
+          <DataFlowProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -95,8 +90,8 @@ const App = () => {
                 </BrowserRouter>
               </DependencyLoading>
             </TooltipProvider>
-          </AuthProvider>
-        </QueryClientProvider>
+          </DataFlowProvider>
+        </AuthProvider>
       </AppErrorBoundary>
     </ErrorBoundary>
   );
