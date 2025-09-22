@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { showToast } from '@/lib/toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TrendingSearch {
   id: string;
@@ -19,48 +20,15 @@ const TrendingSearchesTable: React.FC = () => {
   const [searches, setSearches] = useState<TrendingSearch[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const mockSearches: TrendingSearch[] = [
-    {
-      id: '1',
-      query: 'AI tools for content creation',
-      volume: 15400,
-      change: 23.5,
-      category: 'Technology',
-      lastUpdated: '2024-01-15'
-    },
-    {
-      id: '2', 
-      query: 'SEO optimization techniques',
-      volume: 12300,
-      change: -5.2,
-      category: 'Marketing',
-      lastUpdated: '2024-01-15'
-    },
-    {
-      id: '3',
-      query: 'Perplexity AI search trends',
-      volume: 8900,
-      change: 45.8,
-      category: 'AI',
-      lastUpdated: '2024-01-15'
-    },
-    {
-      id: '4',
-      query: 'Digital marketing strategies',
-      volume: 22100,
-      change: 12.3,
-      category: 'Marketing',
-      lastUpdated: '2024-01-15'
-    },
-  ];
-
   const fetchTrendingSearches = async () => {
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch('https://api.pulsespark.ai/api/trending-searches', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': session ? `Bearer ${session.access_token}` : ''
         },
       });
 
@@ -71,12 +39,11 @@ const TrendingSearchesTable: React.FC = () => {
       }
 
       const data = await response.json();
-      setSearches(data.searches || mockSearches);
+      setSearches(data.searches || []);
     } catch (error) {
       console.error('Error fetching trending searches:', error);
       showToast.error(error instanceof Error ? error.message : 'Failed to fetch trending searches');
-      // Use mock data as fallback
-      setSearches(mockSearches);
+      setSearches([]);
     } finally {
       setLoading(false);
     }
@@ -112,28 +79,36 @@ const TrendingSearchesTable: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {searches.map((search) => (
-              <TableRow key={search.id}>
-                <TableCell className="font-medium">{search.query}</TableCell>
-                <TableCell>{search.volume.toLocaleString()}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    {search.change > 0 ? (
-                      <TrendingUp className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 text-red-600" />
-                    )}
-                    <span className={search.change > 0 ? 'text-green-600' : 'text-red-600'}>
-                      {search.change > 0 ? '+' : ''}{search.change}%
-                    </span>
-                  </div>
+            {searches.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  No trending searches available. Run a scan first.
                 </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{search.category}</Badge>
-                </TableCell>
-                <TableCell>{search.lastUpdated}</TableCell>
               </TableRow>
-            ))}
+            ) : (
+              searches.map((search) => (
+                <TableRow key={search.id}>
+                  <TableCell className="font-medium">{search.query}</TableCell>
+                  <TableCell>{search.volume.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      {search.change > 0 ? (
+                        <TrendingUp className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <TrendingDown className="w-4 h-4 text-red-600" />
+                      )}
+                      <span className={search.change > 0 ? 'text-green-600' : 'text-red-600'}>
+                        {search.change > 0 ? '+' : ''}{search.change}%
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{search.category}</Badge>
+                  </TableCell>
+                  <TableCell>{search.lastUpdated}</TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>

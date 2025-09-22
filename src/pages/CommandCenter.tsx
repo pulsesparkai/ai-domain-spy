@@ -67,18 +67,6 @@ export const CommandCenter = () => {
     }
   }, [metrics.visibilityScore]);
 
-  // Additional mock real-time updates for demonstration
-  useEffect(() => {
-    const additionalUpdates = setInterval(() => {
-      // Slight random variation in score
-      setCurrentScore(prev => {
-        const variation = (Math.random() - 0.5) * 2; // -1 to +1
-        return Math.max(0, Math.min(100, Math.round(prev + variation)));
-      });
-    }, 45000); // Every 45 seconds, different from main interval
-    
-    return () => clearInterval(additionalUpdates);
-  }, []);
 
 
   const getStatusIcon = (status: 'operational' | 'degraded' | 'down') => {

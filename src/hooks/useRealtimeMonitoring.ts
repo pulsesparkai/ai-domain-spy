@@ -30,141 +30,18 @@ export const useRealtimeMonitoring = () => {
   });
   const [hasNewNotifications, setHasNewNotifications] = useState(false);
 
-  // Simulate real-time updates (in production, this would be WebSocket or Server-Sent Events)
+  // Load real data from scans instead of mock data
   useEffect(() => {
     if (!user) return;
-
-    const activities = [
-      {
-        type: 'citation' as const,
-        title: 'New citation found on Perplexity',
-        description: 'Your content was referenced in an AI response about "AI tools comparison"',
-        platform: 'Perplexity'
-      },
-      {
-        type: 'score_change' as const,
-        title: 'Visibility score increased',
-        description: 'Your AI visibility score increased by 2 points',
-        change: 2
-      },
-      {
-        type: 'mention' as const,
-        title: 'Brand mentioned on Reddit',
-        description: 'Your brand was discussed in r/MachineLearning',
-        platform: 'Reddit'
-      },
-      {
-        type: 'citation' as const,
-        title: 'New ranking on ChatGPT',
-        description: 'Your content ranked #1 for "best AI tools"',
-        platform: 'ChatGPT'
-      },
-      {
-        type: 'scan_complete' as const,
-        title: 'Competitor analysis completed',
-        description: 'Analysis finished for competitive landscape scanning'
-      },
-      {
-        type: 'score_change' as const,
-        title: 'Visibility score decreased',
-        description: 'Your AI visibility score decreased by 1 point',
-        change: -1
-      },
-      {
-        type: 'citation' as const,
-        title: 'Featured in Claude response',
-        description: 'Your content was featured in a Claude AI analysis',
-        platform: 'Claude'
-      }
-    ];
-
-    const simulateRealtimeUpdates = () => {
-      const randomActivity = activities[Math.floor(Math.random() * activities.length)];
-      
-      const newActivity: ActivityItem = {
-        id: `activity_${Date.now()}_${Math.random()}`,
-        type: randomActivity.type,
-        title: randomActivity.title,
-        description: randomActivity.description,
-        timestamp: new Date().toISOString(),
-        metadata: {
-          platform: randomActivity.platform,
-          change: randomActivity.change
-        }
-      };
-
-      setActivityFeed(prev => [newActivity, ...prev.slice(0, 19)]); // Keep last 20 items
-      setHasNewNotifications(true);
-      
-      // Update metrics based on activity type
-      if (randomActivity.type === 'citation') {
-        setMetrics(prev => ({
-          ...prev,
-          citationsCount: prev.citationsCount + 1,
-          visibilityScore: Math.min(100, prev.visibilityScore + Math.random() * 3)
-        }));
-      } else if (randomActivity.type === 'score_change') {
-        setMetrics(prev => ({
-          ...prev,
-          visibilityScore: Math.max(0, Math.min(100, prev.visibilityScore + (randomActivity.change || 0)))
-        }));
-      } else if (randomActivity.type === 'mention') {
-        setMetrics(prev => ({
-          ...prev,
-          mentionsCount: prev.mentionsCount + 1
-        }));
-      }
-
-      // Show toast notification for important activities
-      if (randomActivity.type === 'citation' || randomActivity.type === 'score_change') {
-        toast({
-          title: randomActivity.title,
-          description: randomActivity.description,
-          duration: 4000,
-        });
-      }
-    };
-
-    // Simulate updates every 30 seconds
-    const interval = setInterval(simulateRealtimeUpdates, 30000);
-
-    // Add initial mock data
-    const mockActivities: ActivityItem[] = [
-      {
-        id: 'activity_1',
-        type: 'score_change',
-        title: 'Visibility score increased',
-        description: 'Your AI visibility score increased by 5 points',
-        timestamp: new Date(Date.now() - 300000).toISOString(), // 5 min ago
-        metadata: { change: +5, newScore: 87 }
-      },
-      {
-        id: 'activity_2',
-        type: 'citation',
-        title: 'New citation found on ChatGPT',
-        description: 'Your content was referenced in response about "content marketing"',
-        timestamp: new Date(Date.now() - 900000).toISOString(), // 15 min ago
-        metadata: { platform: 'ChatGPT', query: 'content marketing' }
-      },
-      {
-        id: 'activity_3',
-        type: 'mention',
-        title: 'Brand mentioned on Reddit',
-        description: 'Your brand was discussed in r/technology',
-        timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 min ago
-        metadata: { platform: 'Reddit', subreddit: 'technology' }
-      }
-    ];
-
-    setActivityFeed(mockActivities);
+    
+    // Initialize with empty state - will be populated by real scan data
+    setActivityFeed([]);
     setMetrics({
-      visibilityScore: 87,
-      citationsCount: 24,
-      mentionsCount: 156,
-      activePlatforms: ['Perplexity', 'ChatGPT', 'Claude', 'Reddit']
+      visibilityScore: 0,
+      citationsCount: 0,
+      mentionsCount: 0,
+      activePlatforms: []
     });
-
-    return () => clearInterval(interval);
   }, [user]);
 
   // Real-time subscription to scans table for completed scans
