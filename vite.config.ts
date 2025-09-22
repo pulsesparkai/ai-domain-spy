@@ -112,8 +112,8 @@ export default defineConfig(({ command, mode }) => ({
           // Chart libraries (heavy dependencies)
           'charts': ['recharts'],
           
-          // Code highlighting (heavy dependency)
-          'prism': ['prismjs'],
+          // Code highlighting (heavy dependency, only if used)
+          ...(mode === 'production' ? { 'prism': ['prismjs'] } : {}),
           
           // Supabase
           'supabase': ['@supabase/supabase-js'],
@@ -150,7 +150,12 @@ export default defineConfig(({ command, mode }) => ({
     exclude: [
       // Exclude heavy dependencies from pre-bundling to enable lazy loading
       'recharts',
-      'prismjs'
+      'prismjs',
+      // Exclude deprecated dependencies to avoid warnings
+      'sourcemap-codec',
+      'inflight',
+      'node-domexception',
+      'glob'
     ]
   },
 }));

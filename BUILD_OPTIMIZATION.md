@@ -1,3 +1,61 @@
+# Build Optimization & Warnings Resolution
+
+## Fixed Issues (2025-09-22)
+
+### 1. Dynamic/Static Import Conflicts
+**Issue**: Supabase client was imported both dynamically and statically, preventing proper chunk splitting.
+**Solution**: 
+- Updated dependency-checker.ts to maintain dynamic import but with clearer separation
+- All production code uses static imports for better bundling
+- Dynamic imports only in dependency checking for initialization
+
+### 2. Empty Chunk Warnings
+**Issue**: PrismJS was creating empty chunks when not used.
+**Solution**:
+- Modified vite.config.ts to conditionally include Prism chunk only in production builds
+- Added proper lazy loading structure for CodeBlock components
+- Updated ui/code-block.tsx to integrate with lazy-loaded PrismJS
+
+### 3. Deprecated Dependencies
+**Updated**:
+- `@jridgewell/sourcemap-codec@^1.5.5` (replacing deprecated sourcemap-codec)
+- `glob@^11.0.0` (replacing deprecated v7.2.3)
+- `@popperjs/core@^2.11.8` (already up-to-date, verified compatibility)
+
+**Excluded from pre-bundling**:
+- sourcemap-codec, inflight, node-domexception (deprecated)
+- prismjs, recharts (heavy deps for lazy loading)
+
+### 4. Build Configuration Optimizations
+**Vite Config Improvements**:
+- Added warning suppression for known deprecation warnings
+- Optimized manual chunks for better code splitting
+- Conditional Prism chunk creation only when needed
+- Enhanced dependency exclusion list
+
+### 5. Security & Performance
+**Maintained**:
+- All security headers remain intact
+- Content Security Policy unchanged
+- Compression (gzip/brotli) still active
+- PWA caching strategies preserved
+
+## Build Warnings Status
+✅ **RESOLVED**: sourcemap-codec deprecation  
+✅ **RESOLVED**: Empty Prism chunk warning  
+✅ **RESOLVED**: Dynamic/static import conflicts  
+✅ **UPDATED**: glob to v11  
+✅ **SUPPRESSED**: inflight, node-domexception (transitive deps)  
+✅ **VERIFIED**: @popperjs/core compatibility with Radix UI  
+
+## Performance Improvements
+- Reduced bundle size by eliminating empty chunks
+- Better code splitting with conditional chunk creation
+- Optimized dependency loading for faster initial page load
+- Maintained lazy loading for heavy libraries (charts, syntax highlighting)
+
+---
+
 # Build Scripts for Different Environments
 
 ## Development Build

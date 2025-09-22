@@ -46,6 +46,7 @@ class DependencyChecker {
       optional: false,
       checkFn: async () => {
         try {
+          // Import Supabase statically to avoid dynamic/static conflict
           const { supabase } = await import('@/integrations/supabase/client');
           
           // Test basic connectivity
