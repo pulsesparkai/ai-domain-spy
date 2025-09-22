@@ -70,7 +70,7 @@ export type ApiResponse<T = unknown> = SuccessResponse<T> | ErrorResponse;
 export const ScanStatusSchema = z.enum(['pending', 'in_progress', 'completed', 'failed', 'cancelled']);
 export type ScanStatus = z.infer<typeof ScanStatusSchema>;
 
-export const ScanTypeSchema = z.enum(['openai', 'perplexity', 'combined', 'trending']);
+export const ScanTypeSchema = z.enum(['openai', 'perplexity', 'deepseek', 'combined', 'trending']);
 export type ScanType = z.infer<typeof ScanTypeSchema>;
 
 // Discriminated union for scan results based on scan type
@@ -109,6 +109,33 @@ export const PerplexityScanResultSchema = z.object({
   }),
 });
 
+export const DeepSeekScanResultSchema = z.object({
+  type: z.literal('deepseek'),
+  scanId: z.string(),
+  status: z.enum(['completed', 'failed', 'processing']),
+  readinessScore: z.number(),
+  citations: z.array(z.object({
+    url: z.string(),
+    title: z.string(),
+    snippet: z.string(),
+    platform: z.string(),
+    relevanceScore: z.number(),
+  })),
+  platformPresence: z.record(z.unknown()),
+  entityAnalysis: z.record(z.unknown()),
+  contentAnalysis: z.record(z.unknown()),
+  recommendations: z.array(z.string()),
+  aggregates: z.object({
+    visibilityScore: z.number(),
+    totalCitations: z.number(),
+    sentimentBreakdown: z.object({
+      positive: z.number(),
+      neutral: z.number(),
+      negative: z.number(),
+    }),
+  }),
+});
+
 export const CombinedScanResultSchema = z.object({
   type: z.literal('combined'),
   openaiResults: OpenAIScanResultSchema.omit({ type: true }),
@@ -140,12 +167,14 @@ export const TrendingScanResultSchema = z.object({
 export const ScanResultSchema = z.discriminatedUnion('type', [
   OpenAIScanResultSchema,
   PerplexityScanResultSchema,
+  DeepSeekScanResultSchema,
   CombinedScanResultSchema,
   TrendingScanResultSchema,
 ]);
 
 export type OpenAIScanResult = z.infer<typeof OpenAIScanResultSchema>;
 export type PerplexityScanResult = z.infer<typeof PerplexityScanResultSchema>;
+export type DeepSeekScanResult = z.infer<typeof DeepSeekScanResultSchema>;
 export type CombinedScanResult = z.infer<typeof CombinedScanResultSchema>;
 export type TrendingScanResult = z.infer<typeof TrendingScanResultSchema>;
 export type ScanResult = z.infer<typeof ScanResultSchema>;

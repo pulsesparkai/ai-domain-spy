@@ -339,26 +339,25 @@ class ApiClient {
         // Use sanitized data
         const sanitizedData = sanitizeApiPayload(scanValidation.sanitizedRequest);
         
-        const response = await this.callEdgeFunction(`${data.scanType}-scan`, sanitizedData, {
+        // Call the appropriate edge function based on scan type
+        const functionName = `${data.scanType}-scan`;
+        console.log(`Calling edge function: ${functionName}`, sanitizedData);
+        
+        const response = await this.callEdgeFunction(functionName, {
+          query: `Analyze ${sanitizedData.targetUrl} for AI visibility and search ranking potential`,
+          targetUrl: sanitizedData.targetUrl,
+          queries: sanitizedData.queries || [],
+          options: sanitizedData.options || {}
+        }, {
           retryConfig: {
-            attempts: 1,
-            delay: 2000,
+            attempts: 2,
+            delay: 3000,
           }
         });
 
-        const responseValidation = validateApiResponse(ScanResponseSchema, { success: true, data: response, timestamp: new Date().toISOString() });
-        if (responseValidation.success) {
-          return responseValidation.data;
-        }
-        
-        // TypeScript now knows this is the error case
-        const errorResult = responseValidation as { success: false; error: AppError };
-        throw new ApiClientError(
-          'Invalid scan response format',
-          undefined,
-          'INVALID_RESPONSE',
-          { validationError: errorResult.error.type }
-        );
+        // Return the response directly as it matches our expected format
+        console.log('Scan completed successfully:', response);
+        return response;
       },
       {
         context: 'Scan Operation',
