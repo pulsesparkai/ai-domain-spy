@@ -43,7 +43,10 @@ export function DashboardAnalysisSidebar({ activeView, onViewChange }: Dashboard
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isDashboard = location.pathname === '/dashboard';
+  
   const handleItemClick = (item: typeof allNavItems[0]) => {
+    console.log('Navigating to:', item.path || `/dashboard?view=${item.id}`);
     if (item.path) {
       // Navigation items with paths
       navigate(item.path);
@@ -57,7 +60,6 @@ export function DashboardAnalysisSidebar({ activeView, onViewChange }: Dashboard
   };
 
   const isActive = (path: string) => location.pathname === path;
-  const isDashboard = location.pathname === '/dashboard';
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-60"}>

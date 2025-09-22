@@ -51,26 +51,10 @@ export const CommandCenter = () => {
     clearActivityFeed 
   } = useRealtimeMonitoring();
   const [loading, setLoading] = useState(false);
-  const [currentScore, setCurrentScore] = useState(87);
-  const [scoreHistory] = useState([
-    { date: '2024-01', score: 72 },
-    { date: '2024-02', score: 78 },
-    { date: '2024-03', score: 82 },
-    { date: '2024-04', score: 85 },
-    { date: '2024-05', score: 87 },
-  ]);
-
-  const [platformStatuses] = useState<PlatformStatus[]>([
-    { platform: 'Perplexity', status: 'operational', lastChecked: '2 min ago', responseTime: 245 },
-    { platform: 'ChatGPT', status: 'operational', lastChecked: '3 min ago', responseTime: 312 },
-    { platform: 'Claude', status: 'operational', lastChecked: '1 min ago', responseTime: 189 },
-  ]);
-
-  const [recentCitations] = useState([
-    { platform: 'Perplexity', url: 'example.com', query: 'AI tools comparison', timestamp: '5 min ago' },
-    { platform: 'Perplexity', url: 'demo-site.com', query: 'best practices guide', timestamp: '12 min ago' },
-    { platform: 'Perplexity', url: 'test.com', query: 'industry analysis', timestamp: '1 hour ago' },
-  ]);
+  const [currentScore, setCurrentScore] = useState(0);
+  const [scoreHistory, setScoreHistory] = useState(null);
+  const [platformStatuses, setPlatformStatuses] = useState<PlatformStatus[]>(null);
+  const [recentCitations, setRecentCitations] = useState(null);
 
   useEffect(() => {
     loadScans();
@@ -231,21 +215,27 @@ export const CommandCenter = () => {
                 <CardDescription>AI visibility score over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={scoreHistory}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Area 
-                      type="monotone" 
-                      dataKey="score" 
-                      stroke="hsl(var(--primary))" 
-                      fill="hsl(var(--primary))" 
-                      fillOpacity={0.2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {scoreHistory ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={scoreHistory}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Area 
+                        type="monotone" 
+                        dataKey="score" 
+                        stroke="hsl(var(--primary))" 
+                        fill="hsl(var(--primary))" 
+                        fillOpacity={0.2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                    No historical data available. Run scans to build your trend history.
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -256,22 +246,28 @@ export const CommandCenter = () => {
                 <CardDescription>Latest mentions across AI platforms</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {recentCitations.map((citation, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary">{citation.platform}</Badge>
-                          <span className="text-sm font-medium">{citation.url}</span>
+                {recentCitations ? (
+                  <div className="space-y-3">
+                    {recentCitations.map((citation, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">{citation.platform}</Badge>
+                            <span className="text-sm font-medium">{citation.url}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{citation.query}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground">{citation.query}</p>
+                        <div className="text-xs text-muted-foreground">
+                          {citation.timestamp}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {citation.timestamp}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-muted-foreground">
+                    No citations available. Run scans to track mentions across AI platforms.
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -283,21 +279,27 @@ export const CommandCenter = () => {
               <CardDescription>Real-time status of AI platforms</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {platformStatuses.map((platform) => (
-                  <div key={platform.platform} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">{platform.platform}</h4>
-                      {getStatusIcon(platform.status)}
+              {platformStatuses ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {platformStatuses.map((platform) => (
+                    <div key={platform.platform} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{platform.platform}</h4>
+                        {getStatusIcon(platform.status)}
+                      </div>
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <div>Status: <span className="capitalize text-foreground">{platform.status}</span></div>
+                        <div>Response: {platform.responseTime}ms</div>
+                        <div>Last checked: {platform.lastChecked}</div>
+                      </div>
                     </div>
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      <div>Status: <span className="capitalize text-foreground">{platform.status}</span></div>
-                      <div>Response: {platform.responseTime}ms</div>
-                      <div>Last checked: {platform.lastChecked}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-muted-foreground">
+                  No platform status data available. Run scans to monitor AI platform health.
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
