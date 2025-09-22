@@ -124,19 +124,23 @@ class ApiService {
     userId: string
   ): Promise<void> {
     try {
+      const scanRecord = {
+        user_id: userId,
+        scan_type: request.scanType,
+        target_url: request.targetUrl,
+        queries: request.queries || [],
+        results: response as any,
+        status: response.status,
+        citations: response.citations || [],
+        sentiment: {},
+        rankings: [],
+        entities: [],
+        analysis_log: []
+      };
+
       const { error } = await supabase
         .from('scans')
-        .insert({
-          user_id: userId,
-          scan_id: response.scanId,
-          scan_type: request.scanType,
-          target_url: request.targetUrl,
-          queries: request.queries || [],
-          results: response,
-          status: response.status,
-          visibility_score: response.readinessScore,
-          created_at: new Date().toISOString()
-        });
+        .insert(scanRecord);
 
       if (error) {
         console.error('Failed to save scan to database:', error);
@@ -177,12 +181,17 @@ class ApiService {
       const { data, error } = await supabase
         .from('scans')
         .select('*')
-        .eq('scan_id', scanId)
+        .eq('id', scanId)
         .eq('user_id', session.user.id)
         .single();
 
       if (error) throw error;
-      return data?.results || null;
+      
+      if (data?.results && typeof data.results === 'object') {
+        return data.results as unknown as ScanResult;
+      }
+      
+      return null;
     } catch (error) {
       console.error('Failed to fetch scan:', error);
       return null;

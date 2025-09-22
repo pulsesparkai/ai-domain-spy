@@ -113,126 +113,59 @@ class QueryCacheManager {
 export const queryCache = new QueryCacheManager();
 
 /**
- * Type-safe query builder
+ * Simplified query operations for scans
  */
-export class TypeSafeQueryBuilder {
+export class SimpleQueryBuilder {
   /**
-   * Build a basic select query with caching
+   * Get scans with caching
    */
-  static async selectWithCache<T>(
-    tableName: TableName,
-    options: {
-      select?: string;
-      filters?: Record<string, any>;
-      orderBy?: { column: string; ascending?: boolean };
-      limit?: number;
-      cacheKey?: string;
-      cacheTTL?: number;
-    } = {}
-  ): Promise<T[]> {
-    const { select = '*', filters = {}, orderBy, limit, cacheKey, cacheTTL } = options;
+  static async getScans(userId?: string): Promise<any[]> {
+    const key = `scans_${userId || 'all'}`;
     
-    const key = cacheKey || `select_${JSON.stringify({ select, filters, orderBy, limit })}`;
-    
-    return queryCache.get(tableName, key, async () => {
-      let query = supabase.from(tableName).select(select);
-
-      // Apply filters
-      Object.entries(filters).forEach(([column, value]) => {
-        if (Array.isArray(value)) {
-          query = query.in(column, value);
-        } else if (value !== undefined && value !== null) {
-          query = query.eq(column, value);
-        }
-      });
-
-      // Apply ordering
-      if (orderBy) {
-        query = query.order(orderBy.column, { ascending: orderBy.ascending ?? true });
+    return queryCache.get('scans', key, async () => {
+      let query = supabase.from('scans').select('*');
+      
+      if (userId) {
+        query = query.eq('user_id', userId);
       }
-
-      // Apply limit
-      if (limit) {
-        query = query.limit(limit);
-      }
-
+      
+      query = query.order('created_at', { ascending: false });
+      
       const { data, error } = await query;
       if (error) throw error;
       return data || [];
-    }, cacheTTL);
-  }
-
-  /**
-   * Upsert data with cache invalidation
-   */
-  static async upsert<T>(
-    tableName: TableName,
-    data: any,
-    options: {
-      onConflict?: string;
-      returning?: string;
-    } = {}
-  ): Promise<T[]> {
-    const { onConflict, returning = '*' } = options;
-
-    const query = supabase
-      .from(tableName)
-      .upsert(data, { onConflict })
-      .select(returning);
-
-    const { data: result, error } = await query;
-    if (error) throw error;
-
-    // Invalidate cache for this table
-    queryCache.invalidate(tableName);
-
-    return result || [];
-  }
-
-  /**
-   * Update data with cache invalidation
-   */
-  static async update<T>(
-    tableName: TableName,
-    updates: any,
-    filters: Record<string, any>,
-    returning: string = '*'
-  ): Promise<T[]> {
-    let query = supabase.from(tableName).update(updates);
-
-    // Apply filters
-    Object.entries(filters).forEach(([column, value]) => {
-      query = query.eq(column, value);
     });
-
-    const { data, error } = await query.select(returning);
-    if (error) throw error;
-
-    // Invalidate cache for this table
-    queryCache.invalidate(tableName);
-
-    return data || [];
   }
 
   /**
-   * Delete data with cache invalidation
+   * Insert scan and invalidate cache
    */
-  static async delete(
-    tableName: TableName,
-    filters: Record<string, any>
-  ): Promise<void> {
-    let query = supabase.from(tableName).delete();
+  static async insertScan(scanData: any): Promise<any> {
+    const { data, error } = await supabase
+      .from('scans')
+      .insert(scanData)
+      .select()
+      .single();
 
-    // Apply filters
-    Object.entries(filters).forEach(([column, value]) => {
-      query = query.eq(column, value);
-    });
-
-    const { error } = await query;
     if (error) throw error;
+    queryCache.invalidate('scans');
+    return data;
+  }
 
-    // Invalidate cache for this table
-    queryCache.invalidate(tableName);
+  /**
+   * Update scan and invalidate cache
+   */
+  static async updateScan(id: string, updates: any): Promise<any> {
+    const { data, error } = await supabase
+      .from('scans')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    queryCache.invalidate('scans');
+    return data;
   }
 }
 

@@ -78,17 +78,24 @@ export const useScanHistoryStore = create<ScanHistoryStore>((set, get) => ({
 
       if (error) throw error;
 
-      set({ 
-        scans: (data || []).map((scan: any) => ({
-          ...scan,
-          queries: Array.isArray(scan.queries) ? scan.queries : [],
-          citations: Array.isArray(scan.citations) ? scan.citations : [],
-          rankings: Array.isArray(scan.rankings) ? scan.rankings : [],
-          entities: Array.isArray(scan.entities) ? scan.entities : [],
-          analysis_log: Array.isArray(scan.analysis_log) ? scan.analysis_log : []
-        })), 
-        loading: false 
-      });
+      const processedScans: ScanRecord[] = (data || []).map((scan: any) => ({
+        id: scan.id,
+        created_at: scan.created_at,
+        updated_at: scan.updated_at,
+        user_id: scan.user_id,
+        scan_type: scan.scan_type,
+        target_url: scan.target_url,
+        status: (scan.status === 'pending' || scan.status === 'running' || scan.status === 'completed' || scan.status === 'failed') ? scan.status : 'pending',
+        queries: Array.isArray(scan.queries) ? scan.queries : [],
+        citations: Array.isArray(scan.citations) ? scan.citations : [],
+        rankings: Array.isArray(scan.rankings) ? scan.rankings : [],
+        entities: Array.isArray(scan.entities) ? scan.entities : [],
+        analysis_log: Array.isArray(scan.analysis_log) ? scan.analysis_log : [],
+        results: scan.results || null,
+        sentiment: scan.sentiment || {}
+      }));
+
+      set({ scans: processedScans, loading: false });
     } catch (error) {
       console.error('Error loading scans:', error);
       toast({
@@ -128,9 +135,26 @@ export const useScanHistoryStore = create<ScanHistoryStore>((set, get) => ({
 
       if (error) throw error;
 
-      // Add to local state
+      // Process and add to local state
+      const processedScan: ScanRecord = {
+        id: data.id,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        user_id: data.user_id,
+        scan_type: data.scan_type,
+        target_url: data.target_url,
+        status: (data.status === 'pending' || data.status === 'running' || data.status === 'completed' || data.status === 'failed') ? data.status : 'pending',
+        queries: Array.isArray(data.queries) ? data.queries : [],
+        citations: Array.isArray(data.citations) ? data.citations : [],
+        rankings: Array.isArray(data.rankings) ? data.rankings : [],
+        entities: Array.isArray(data.entities) ? data.entities : [],
+        analysis_log: Array.isArray(data.analysis_log) ? data.analysis_log : [],
+        results: data.results || null,
+        sentiment: data.sentiment || {}
+      };
+
       set(state => ({
-        scans: [data, ...state.scans]
+        scans: [processedScan, ...state.scans]
       }));
 
       return data.id;
@@ -156,10 +180,22 @@ export const useScanHistoryStore = create<ScanHistoryStore>((set, get) => ({
 
       if (error) throw error;
 
-      // Update local state
+      // Process and update local state
+      const processedUpdate: Partial<ScanRecord> = {
+        id: data.id,
+        updated_at: data.updated_at,
+        queries: Array.isArray(data.queries) ? data.queries : [],
+        citations: Array.isArray(data.citations) ? data.citations : [],
+        rankings: Array.isArray(data.rankings) ? data.rankings : [],
+        entities: Array.isArray(data.entities) ? data.entities : [],
+        analysis_log: Array.isArray(data.analysis_log) ? data.analysis_log : [],
+        results: data.results,
+        status: (data.status === 'pending' || data.status === 'running' || data.status === 'completed' || data.status === 'failed') ? data.status : 'pending'
+      };
+
       set(state => ({
         scans: state.scans.map(scan => 
-          scan.id === id ? { ...scan, ...data } : scan
+          scan.id === id ? { ...scan, ...processedUpdate } : scan
         )
       }));
     } catch (error) {

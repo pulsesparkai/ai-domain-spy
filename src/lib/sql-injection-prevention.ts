@@ -52,152 +52,52 @@ export function validateTableName(tableName: string): TableName | null {
 }
 
 /**
- * Type-safe database operations with SQL injection prevention
+ * Simple database operations with SQL injection prevention
  */
 export class SafeDatabaseOperations {
   /**
-   * Safe select operation
+   * Safe select operation for scans table
    */
-  static async safeSelect(
-    tableName: TableName,
-    options: {
-      select?: string;
-      filters?: Record<string, any>;
-      limit?: number;
-      orderBy?: { column: string; ascending?: boolean };
-    } = {}
-  ): Promise<any[]> {
-    const { select = '*', filters = {}, limit, orderBy } = options;
+  static async selectScans(filters: Record<string, any> = {}): Promise<any[]> {
+    let query = supabase.from('scans').select('*');
     
-    // Start with base query
-    let query = supabase.from(tableName).select(select);
-    
-    // Apply filters safely
     Object.entries(filters).forEach(([column, value]) => {
       if (value !== undefined && value !== null) {
-        // Sanitize column name
-        const safeColumn = sanitizeString(column);
-        if (safeColumn && safeColumn.length > 0) {
-          if (Array.isArray(value)) {
-            query = query.in(safeColumn, value);
-          } else {
-            query = query.eq(safeColumn, value);
-          }
+        if (column === 'user_id') {
+          query = query.eq(column, value);
         }
       }
     });
-    
-    // Apply ordering
-    if (orderBy?.column) {
-      const safeColumn = sanitizeString(orderBy.column);
-      if (safeColumn) {
-        query = query.order(safeColumn, { ascending: orderBy.ascending ?? true });
-      }
-    }
-    
-    // Apply limit
-    if (limit && typeof limit === 'number' && limit > 0 && limit <= 1000) {
-      query = query.limit(limit);
-    }
     
     const { data, error } = await query;
     if (error) throw error;
-    
     return data || [];
   }
 
   /**
-   * Safe insert operation
+   * Safe insert for scans table
    */
-  static async safeInsert(
-    tableName: TableName,
-    data: Record<string, any>
-  ): Promise<any[]> {
-    // Sanitize the data object
-    const sanitizedData: Record<string, any> = {};
-    
-    Object.entries(data).forEach(([key, value]) => {
-      const safeKey = sanitizeString(key);
-      if (safeKey && safeKey.length > 0) {
-        if (typeof value === 'string') {
-          sanitizedData[safeKey] = sanitizeString(value);
-        } else {
-          sanitizedData[safeKey] = value;
-        }
-      }
-    });
-    
+  static async insertScan(data: {
+    user_id: string;
+    scan_type: string;
+    target_url?: string;
+    queries?: any[];
+    results?: any;
+    status?: string;
+    citations?: any[];
+    sentiment?: any;
+    rankings?: any[];
+    entities?: any[];
+    analysis_log?: any[];
+  }): Promise<any> {
     const { data: result, error } = await supabase
-      .from(tableName)
-      .insert(sanitizedData)
-      .select();
+      .from('scans')
+      .insert(data)
+      .select()
+      .single();
     
     if (error) throw error;
-    return result || [];
-  }
-
-  /**
-   * Safe update operation
-   */
-  static async safeUpdate(
-    tableName: TableName,
-    updates: Record<string, any>,
-    filters: Record<string, any>
-  ): Promise<any[]> {
-    // Sanitize updates
-    const sanitizedUpdates: Record<string, any> = {};
-    Object.entries(updates).forEach(([key, value]) => {
-      const safeKey = sanitizeString(key);
-      if (safeKey && safeKey.length > 0) {
-        if (typeof value === 'string') {
-          sanitizedUpdates[safeKey] = sanitizeString(value);
-        } else {
-          sanitizedUpdates[safeKey] = value;
-        }
-      }
-    });
-    
-    // Start with base query
-    let query = supabase.from(tableName).update(sanitizedUpdates);
-    
-    // Apply filters safely
-    Object.entries(filters).forEach(([column, value]) => {
-      const safeColumn = sanitizeString(column);
-      if (safeColumn && value !== undefined && value !== null) {
-        query = query.eq(safeColumn, value);
-      }
-    });
-    
-    const { data, error } = await query.select();
-    if (error) throw error;
-    
-    return data || [];
-  }
-
-  /**
-   * Safe delete operation
-   */
-  static async safeDelete(
-    tableName: TableName,
-    filters: Record<string, any>
-  ): Promise<void> {
-    // Require at least one filter for safety
-    if (!filters || Object.keys(filters).length === 0) {
-      throw new Error('Delete operation requires at least one filter');
-    }
-    
-    let query = supabase.from(tableName).delete();
-    
-    // Apply filters safely
-    Object.entries(filters).forEach(([column, value]) => {
-      const safeColumn = sanitizeString(column);
-      if (safeColumn && value !== undefined && value !== null) {
-        query = query.eq(safeColumn, value);
-      }
-    });
-    
-    const { error } = await query;
-    if (error) throw error;
+    return result;
   }
 }
 
