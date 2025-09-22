@@ -159,9 +159,10 @@ export const ScanForm = ({
             )}>
               <SelectValue placeholder="Select scan type" />
             </SelectTrigger>
-            <SelectContent className="bg-card border border-input-border rounded-lg">
+            <SelectContent className="bg-card border border-input-border rounded-lg z-50">
               <SelectItem value="brand-monitoring" className="text-foreground">Brand Monitoring</SelectItem>
               <SelectItem value="competitor-analysis" className="text-foreground">Competitor Analysis</SelectItem>
+              <SelectItem value="perplexity" className="text-foreground">Perplexity AI Visibility</SelectItem>
               <SelectItem value="trend-tracking" className="text-foreground">Trend Tracking</SelectItem>
             </SelectContent>
           </Select>
