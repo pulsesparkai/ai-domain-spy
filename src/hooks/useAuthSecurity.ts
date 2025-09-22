@@ -159,13 +159,21 @@ export const useBruteForceProtection = () => {
 
       if (error) throw error;
 
-      if (data) {
-        setIsBlocked(data.is_blocked);
-        setBlockUntil(data.block_until ? new Date(data.block_until) : null);
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        const result = data as {
+          is_blocked?: boolean;
+          block_until?: string;
+          email_attempts?: number;
+          ip_attempts?: number;
+          fingerprint_attempts?: number;
+        };
+
+        setIsBlocked(result.is_blocked || false);
+        setBlockUntil(result.block_until ? new Date(result.block_until) : null);
         setAttempts({
-          email: data.email_attempts,
-          ip: data.ip_attempts,
-          fingerprint: data.fingerprint_attempts
+          email: result.email_attempts || 0,
+          ip: result.ip_attempts || 0,
+          fingerprint: result.fingerprint_attempts || 0
         });
       }
 

@@ -78,7 +78,17 @@ export const useScanHistoryStore = create<ScanHistoryStore>((set, get) => ({
 
       if (error) throw error;
 
-      set({ scans: data || [], loading: false });
+      set({ 
+        scans: (data || []).map((scan: any) => ({
+          ...scan,
+          queries: Array.isArray(scan.queries) ? scan.queries : [],
+          citations: Array.isArray(scan.citations) ? scan.citations : [],
+          rankings: Array.isArray(scan.rankings) ? scan.rankings : [],
+          entities: Array.isArray(scan.entities) ? scan.entities : [],
+          analysis_log: Array.isArray(scan.analysis_log) ? scan.analysis_log : []
+        })), 
+        loading: false 
+      });
     } catch (error) {
       console.error('Error loading scans:', error);
       toast({

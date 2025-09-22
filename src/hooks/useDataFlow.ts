@@ -64,26 +64,32 @@ export const useDataFlow = () => {
       if (!user || !scansData?.length) return null;
 
       const completedScans = scansData.filter(scan => scan.status === 'completed');
-      const totalCitations = completedScans.reduce((acc, scan) => 
-        acc + (scan.citations?.length || 0), 0
-      );
+      const totalCitations = completedScans.reduce((acc, scan) => {
+        const citations = Array.isArray(scan.citations) ? scan.citations : [];
+        return acc + citations.length;
+      }, 0);
       
       const platforms = new Set();
       completedScans.forEach(scan => {
-        scan.citations?.forEach((citation: any) => {
-          if (citation.platform) platforms.add(citation.platform);
+        const citations = Array.isArray(scan.citations) ? scan.citations : [];
+        citations.forEach((citation: any) => {
+          if (citation && typeof citation === 'object' && citation.platform) {
+            platforms.add(citation.platform);
+          }
         });
       });
 
       return {
         visibilityScore: completedScans.length > 0 ? 
-          Math.round(completedScans.reduce((acc, scan) => 
-            acc + (scan.results?.visibility_score || 0), 0
-          ) / completedScans.length) : 0,
+          Math.round(completedScans.reduce((acc, scan) => {
+            const results = scan.results as any;
+            return acc + (results?.visibility_score || 0);
+          }, 0) / completedScans.length) : 0,
         citationsCount: totalCitations,
-        mentionsCount: completedScans.reduce((acc, scan) => 
-          acc + (scan.results?.mentions_count || 0), 0
-        ),
+        mentionsCount: completedScans.reduce((acc, scan) => {
+          const results = scan.results as any;
+          return acc + (results?.mentions_count || 0);
+        }, 0),
         activePlatforms: Array.from(platforms) as string[]
       };
     },

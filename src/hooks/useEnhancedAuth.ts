@@ -161,18 +161,21 @@ export const useEnhancedAuth = () => {
       // Check for brute force attempts before signing in
       const attemptCheck = await checkLoginAttempts(email, clientIP, fingerprint);
       
-      if (attemptCheck?.is_blocked) {
-        const error = new Error('Too many failed login attempts. Please try again later.');
-        await logLoginAttempt(
-          undefined,
-          email,
-          clientIP,
-          fingerprint,
+      if (attemptCheck && typeof attemptCheck === 'object' && !Array.isArray(attemptCheck)) {
+        const result = attemptCheck as { is_blocked?: boolean };
+        if (result.is_blocked) {
+          const error = new Error('Too many failed login attempts. Please try again later.');
+          await logLoginAttempt(
+            undefined,
+            email,
+            clientIP,
+            fingerprint,
           false,
           'Account temporarily blocked',
           navigator.userAgent
         );
         throw error;
+        }
       }
 
       const redirectUrl = `${window.location.origin}/`;

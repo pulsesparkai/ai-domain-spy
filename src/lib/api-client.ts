@@ -374,7 +374,7 @@ class ApiClient {
   public async healthCheck(): Promise<{ status: string; timestamp: number }> {
     return withAsyncErrorHandling(
       async () => {
-        await this.get(`${API_CONFIG.apiBaseUrl}/health`);
+        await this.get(`${CLIENT_CONFIG.baseUrl}/health`);
         return {
           status: 'healthy',
           timestamp: Date.now(),

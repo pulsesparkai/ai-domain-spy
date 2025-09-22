@@ -59,8 +59,8 @@ const CitationExtractor: React.FC = () => {
         const allCitations: Citation[] = [];
         
         scans.forEach((scan, scanIndex) => {
-          const scanResults = scan.results || {};
-          const scanCitations = scanResults.citations || [];
+          const scanResults = (scan.results as any) || {};
+          const scanCitations = Array.isArray(scanResults.citations) ? scanResults.citations : [];
           
           scanCitations.forEach((citation: any, index: number) => {
             allCitations.push({
