@@ -1,4 +1,4 @@
-import { Suspense, useState } from "react";
+import { Suspense, useState, lazy } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -32,7 +32,35 @@ import {
 } from "lucide-react";
 import { TooltipWrapper } from "@/components/TooltipWrapper";
 import { LazyPieChart } from "@/components/lazy/LazyChartComponents";
-import { RadialBarChart, RadialBar, ResponsiveContainer } from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const LazyRadialBarChart = lazy(() => 
+  import('recharts').then(module => ({
+    default: ({ data, readinessScore }: any) => {
+      const { RadialBarChart, RadialBar, ResponsiveContainer } = module;
+      const fillColor = readinessScore >= 80 ? '#10b981' : readinessScore >= 60 ? '#f59e0b' : '#ef4444';
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <RadialBarChart 
+            cx="50%" 
+            cy="50%" 
+            innerRadius="60%" 
+            outerRadius="90%" 
+            startAngle={90} 
+            endAngle={-270} 
+            data={data}
+          >
+            <RadialBar
+              dataKey="value"
+              cornerRadius={10}
+              fill={fillColor}
+            />
+          </RadialBarChart>
+        </ResponsiveContainer>
+      );
+    }
+  }))
+);
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ExportButton } from "@/components/ExportButton";
@@ -226,23 +254,9 @@ export const ResultsDisplay = ({ results }: ResultsDisplayProps) => {
           <CardContent>
             <div className="flex items-center justify-center">
               <div className="relative w-48 h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadialBarChart 
-                    cx="50%" 
-                    cy="50%" 
-                    innerRadius="60%" 
-                    outerRadius="90%" 
-                    startAngle={90} 
-                    endAngle={-270} 
-                    data={getRadialData(readinessScore)}
-                  >
-                    <RadialBar
-                      dataKey="value"
-                      cornerRadius={10}
-                      fill={readinessScore >= 80 ? '#10b981' : readinessScore >= 60 ? '#f59e0b' : '#ef4444'}
-                    />
-                  </RadialBarChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<Skeleton className="w-48 h-48 rounded-full" />}>
+                  <LazyRadialBarChart data={getRadialData(readinessScore)} readinessScore={readinessScore} />
+                </Suspense>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-4xl font-bold">{readinessScore}</div>

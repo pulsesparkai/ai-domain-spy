@@ -1,5 +1,36 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { Suspense, lazy } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const LazyPieChart = lazy(() => 
+  import('recharts').then(module => ({
+    default: ({ data, renderCustomizedLabel }: any) => {
+      const { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } = module;
+      return (
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={renderCustomizedLabel}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {data.map((entry: any, index: number) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      );
+    }
+  }))
+);
 
 export const PlatformDistribution = ({ platformData }: any) => {
   if (!platformData) {
@@ -56,26 +87,9 @@ export const PlatformDistribution = ({ platformData }: any) => {
         <CardTitle>Platform Distribution</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={renderCustomizedLabel}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
+        <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
+          <LazyPieChart data={data} renderCustomizedLabel={renderCustomizedLabel} />
+        </Suspense>
       </CardContent>
     </Card>
   );

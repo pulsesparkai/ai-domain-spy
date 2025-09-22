@@ -20,7 +20,68 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ScanRecord } from "@/store/scanHistoryStore";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { Suspense, lazy } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const LazyLineChart = lazy(() => 
+  import('recharts').then(module => ({
+    default: ({ data }: any) => {
+      const { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } = module;
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis dataKey="date" fontSize={12} />
+            <YAxis fontSize={12} domain={[0, 100]} />
+            <Tooltip 
+              contentStyle={{
+                backgroundColor: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '6px'
+              }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="readinessScore" 
+              stroke="#10b981" 
+              strokeWidth={3}
+              dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      );
+    }
+  }))
+);
+
+const LazyBarChart = lazy(() => 
+  import('recharts').then(module => ({
+    default: ({ data }: any) => {
+      const { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } = module;
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            <XAxis dataKey="date" fontSize={12} />
+            <YAxis fontSize={12} />
+            <Tooltip 
+              contentStyle={{
+                backgroundColor: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '6px'
+              }}
+            />
+            <Bar 
+              dataKey="citationsCount" 
+              fill="#3b82f6" 
+              radius={[2, 2, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      );
+    }
+  }))
+);
 
 interface ScanComparisonProps {
   scans: ScanRecord[];
@@ -153,27 +214,9 @@ export const ScanComparison = ({ scans, onClose }: ScanComparisonProps) => {
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={comparisonData}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="date" fontSize={12} />
-                  <YAxis fontSize={12} domain={[0, 100]} />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px'
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="readinessScore" 
-                    stroke="#10b981" 
-                    strokeWidth={3}
-                    dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<Skeleton className="w-full h-64" />}>
+                <LazyLineChart data={comparisonData} />
+              </Suspense>
             </div>
           </CardContent>
         </Card>
@@ -188,25 +231,9 @@ export const ScanComparison = ({ scans, onClose }: ScanComparisonProps) => {
           </CardHeader>
           <CardContent>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={comparisonData}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="date" fontSize={12} />
-                  <YAxis fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px'
-                    }}
-                  />
-                  <Bar 
-                    dataKey="citationsCount" 
-                    fill="#3b82f6" 
-                    radius={[2, 2, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<Skeleton className="w-full h-64" />}>
+                <LazyBarChart data={comparisonData} />
+              </Suspense>
             </div>
           </CardContent>
         </Card>

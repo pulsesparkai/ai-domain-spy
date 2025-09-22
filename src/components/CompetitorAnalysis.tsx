@@ -1,6 +1,30 @@
+import { Suspense, lazy } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+
+const LazyBarChart = lazy(() => 
+  import('recharts').then(module => ({
+    default: ({ data }: any) => {
+      const { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Cell } = module;
+      return (
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="score" fill="#8b5cf6">
+              {data.map((entry: any, index: number) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      );
+    }
+  }))
+);
 
 export const CompetitorAnalysis = ({ domain, score }: { domain?: string; score?: number }) => {
   const competitors = [
@@ -16,19 +40,9 @@ export const CompetitorAnalysis = ({ domain, score }: { domain?: string; score?:
         <CardTitle>Competitor Analysis</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={competitors}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="score" fill="#8b5cf6">
-              {competitors.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <Suspense fallback={<Skeleton className="w-full h-[200px]" />}>
+          <LazyBarChart data={competitors} />
+        </Suspense>
         
         <div className="mt-4 space-y-2">
           {competitors.map((comp) => (

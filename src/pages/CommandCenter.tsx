@@ -8,7 +8,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { AlertCircle, TrendingUp, Eye, Zap, Clock, ExternalLink, Trash2, Play, CheckCircle, XCircle, Minus, Bell, History } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { Suspense, lazy } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const LazyAreaChart = lazy(() => 
+  import('recharts').then(module => ({
+    default: ({ data }: any) => {
+      const { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } = module;
+      return (
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Area 
+              type="monotone" 
+              dataKey="score" 
+              stroke="hsl(var(--primary))" 
+              fill="hsl(var(--primary))" 
+              fillOpacity={0.2}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      );
+    }
+  }))
+);
 import { ScanHistoryTable } from '@/components/ScanHistoryTable';
 import { useScanHistoryStore } from '@/store/scanHistoryStore';
 import { useRealtimeMonitoring } from '@/hooks/useRealtimeMonitoring';
@@ -204,21 +230,9 @@ export const CommandCenter = () => {
               </CardHeader>
               <CardContent>
                 {scoreHistory ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={scoreHistory}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Area 
-                        type="monotone" 
-                        dataKey="score" 
-                        stroke="hsl(var(--primary))" 
-                        fill="hsl(var(--primary))" 
-                        fillOpacity={0.2}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
+                    <LazyAreaChart data={scoreHistory} />
+                  </Suspense>
                 ) : (
                   <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                     No historical data available. Run scans to build your trend history.

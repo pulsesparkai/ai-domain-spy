@@ -1,5 +1,26 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { Suspense, lazy } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const LazyAreaChart = lazy(() => 
+  import('recharts').then(module => ({
+    default: ({ data }: any) => {
+      const { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } = module;
+      return (
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Area type="monotone" dataKey="score" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
+            <Area type="monotone" dataKey="citations" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
+          </AreaChart>
+        </ResponsiveContainer>
+      );
+    }
+  }))
+);
 
 export const VisibilityChart = ({ data }: any) => {
   const chartData = [
@@ -18,16 +39,9 @@ export const VisibilityChart = ({ data }: any) => {
         <CardTitle>Visibility Trend</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Area type="monotone" dataKey="score" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
-            <Area type="monotone" dataKey="citations" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
-          </AreaChart>
-        </ResponsiveContainer>
+        <Suspense fallback={<Skeleton className="w-full h-[300px]" />}>
+          <LazyAreaChart data={chartData} />
+        </Suspense>
       </CardContent>
     </Card>
   );
