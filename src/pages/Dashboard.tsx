@@ -19,6 +19,7 @@ import CitationsList from '@/components/dashboard/CitationsList';
 import SentimentAnalyzer from '@/components/dashboard/SentimentAnalyzer';
 import RankingsTable from '@/components/dashboard/RankingsTable';
 import ReportsTable from '@/components/dashboard/ReportsTable';
+import { PerplexityInsights } from '@/components/dashboard/PerplexityInsights';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -118,6 +119,8 @@ const Dashboard = () => {
         return <SentimentAnalyzer />;
       case 'rankings':
         return <RankingsTable />;
+      case 'perplexity':
+        return <PerplexityInsights />;
       case 'reports':
         return (
           <Card>
