@@ -10,6 +10,7 @@ import { ScanHistoryTable } from '@/components/ScanHistoryTable';
 import { useScanHistoryStore } from '@/store/scanHistoryStore';
 import { useBrandProfile } from '@/hooks/useBrandProfile';
 import { BrandOnboarding } from '@/components/BrandOnboarding';
+import DashboardNavigation from '@/components/DashboardNavigation';
 
 // Import dashboard components
 import { VisibilityScore as VisibilityScoreComponent } from '@/components/dashboard/VisibilityScore';
@@ -21,6 +22,10 @@ import RankingsTable from '@/components/dashboard/RankingsTable';
 import ReportsTable from '@/components/dashboard/ReportsTable';
 import { PerplexityInsights } from '@/components/dashboard/PerplexityInsights';
 import { EmptyStateCard } from '@/components/dashboard/EmptyStateCard';
+import BrandMonitoring from '@/components/dashboard/BrandMonitoring';
+import CitationExtractor from '@/components/dashboard/CitationExtractor';
+import DomainRanking from '@/components/dashboard/DomainRanking';
+import ContentOptimizer from '@/components/dashboard/ContentOptimizer';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -115,6 +120,14 @@ const Dashboard = () => {
       case 'domain':
         if (!scanData) return <EmptyStateCard />;
         return <DomainAnalysis data={scanData} />;
+      case 'domain-ranking':
+        return <DomainRanking />;
+      case 'brand-monitoring':
+        return <BrandMonitoring />;
+      case 'citation-extractor':
+        return <CitationExtractor />;
+      case 'content-optimizer':
+        return <ContentOptimizer />;
       case 'trends':
         if (!scanData) return <EmptyStateCard />;
         return <TrendingSearchesTable />;
@@ -236,6 +249,13 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Navigation */}
+      <DashboardNavigation 
+        activeView={activeView}
+        onViewChange={setActiveView}
+        scanData={scanData}
+      />
 
       {/* Main Content */}
       {renderView()}
