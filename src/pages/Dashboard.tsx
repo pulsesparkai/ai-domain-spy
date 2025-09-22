@@ -20,6 +20,7 @@ import SentimentAnalyzer from '@/components/dashboard/SentimentAnalyzer';
 import RankingsTable from '@/components/dashboard/RankingsTable';
 import ReportsTable from '@/components/dashboard/ReportsTable';
 import { PerplexityInsights } from '@/components/dashboard/PerplexityInsights';
+import { EmptyStateCard } from '@/components/dashboard/EmptyStateCard';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ const Dashboard = () => {
         .order('created_at', { ascending: false })
         .limit(1);
       
+      console.log('Fetched scan data:', scans);
       if (scans && scans[0]) {
         setScanData(scans[0].results);
       }
@@ -108,16 +110,22 @@ const Dashboard = () => {
 
     switch (activeView) {
       case 'visibility':
+        if (!scanData) return <EmptyStateCard />;
         return <VisibilityScoreComponent data={scanData} />;
       case 'domain':
+        if (!scanData) return <EmptyStateCard />;
         return <DomainAnalysis data={scanData} />;
       case 'trends':
+        if (!scanData) return <EmptyStateCard />;
         return <TrendingSearchesTable />;
       case 'citations':
+        if (!scanData) return <EmptyStateCard />;
         return <CitationsList citations={scanData?.citations || []} />;
       case 'sentiment':
+        if (!scanData) return <EmptyStateCard />;
         return <SentimentAnalyzer />;
       case 'rankings':
+        if (!scanData) return <EmptyStateCard />;
         return <RankingsTable />;
       case 'perplexity':
         return <PerplexityInsights />;
