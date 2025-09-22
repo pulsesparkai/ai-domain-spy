@@ -85,44 +85,62 @@ export default defineConfig(({ command, mode }) => ({
   build: {
     // Optimize bundle size
     rollupOptions: {
-      // Suppress deprecation warnings
+      // Suppress deprecation warnings and dynamic/static import conflicts
       onwarn(warning, warn) {
         // Suppress common deprecation warnings
         if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
         if (warning.code === 'UNRESOLVED_IMPORT') return;
         if (warning.code === 'CIRCULAR_DEPENDENCY') return;
         if (warning.code === 'EVAL') return;
+        
+        // Suppress dynamic/static import conflict for Supabase client
+        if (warning.message?.includes('is dynamically imported by') && warning.message?.includes('supabase/client')) {
+          return; // Ignore this specific warning
+        }
+        
         // Suppress sourcemap and dependency warnings
         if (warning.message?.includes('sourcemap-codec')) return;
         if (warning.message?.includes('inflight')) return;
         if (warning.message?.includes('node-domexception')) return;
         if (warning.message?.includes('glob')) return;
         if (warning.message?.includes('popper.js')) return;
+        if (warning.message?.includes('source-map')) return;
+        
         warn(warning);
       },
       output: {
         // Manual chunks for better code splitting
-        manualChunks: {
+        manualChunks: (id: string) => {
           // Vendor chunks
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['react-router-dom'],
-          'query-vendor': ['@tanstack/react-query'],
-          'ui-vendor': ['@radix-ui/react-accordion', '@radix-ui/react-alert-dialog', '@radix-ui/react-avatar'],
-          
-          // Chart libraries (heavy dependencies)
-          'charts': ['recharts'],
-          
-          // Code highlighting (heavy dependency, only if used)
-          ...(mode === 'production' ? { 'prism': ['prismjs'] } : {}),
-          
-          // Supabase
-          'supabase': ['@supabase/supabase-js'],
-          
-          // Analytics
-          'analytics': ['posthog-js', '@sentry/react'],
-          
-          // Utilities
-          'utils': ['date-fns', 'clsx', 'class-variance-authority'],
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('react-router-dom')) {
+              return 'router-vendor';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'query-vendor';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'ui-vendor';
+            }
+            if (id.includes('recharts')) {
+              return 'charts';
+            }
+            if (id.includes('prismjs') && mode === 'production') {
+              return 'prism';
+            }
+            if (id.includes('@supabase/supabase-js')) {
+              return 'supabase';
+            }
+            if (id.includes('posthog-js') || id.includes('@sentry/react')) {
+              return 'analytics';
+            }
+            if (id.includes('date-fns') || id.includes('clsx') || id.includes('class-variance-authority')) {
+              return 'utils';
+            }
+          }
         },
       },
     },
@@ -155,7 +173,9 @@ export default defineConfig(({ command, mode }) => ({
       'sourcemap-codec',
       'inflight',
       'node-domexception',
-      'glob'
+      'glob',
+      // Exclude beta/deprecated packages
+      'source-map'
     ]
   },
 }));

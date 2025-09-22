@@ -41,12 +41,14 @@
 - PWA caching strategies preserved
 
 ## Build Warnings Status
-✅ **RESOLVED**: sourcemap-codec deprecation  
-✅ **RESOLVED**: Empty Prism chunk warning  
-✅ **RESOLVED**: Dynamic/static import conflicts  
-✅ **UPDATED**: glob to v11  
-✅ **SUPPRESSED**: inflight, node-domexception (transitive deps)  
-✅ **VERIFIED**: @popperjs/core compatibility with Radix UI  
+✅ **RESOLVED**: sourcemap-codec deprecation (npm overrides)  
+✅ **RESOLVED**: Empty Prism chunk warning (conditional chunk creation)  
+✅ **RESOLVED**: Dynamic/static import conflicts (warning suppression)  
+✅ **UPDATED**: glob to v11 (npm overrides)  
+✅ **RESOLVED**: inflight memory leak (replaced with lru-cache)  
+✅ **RESOLVED**: node-domexception deprecated (removed, using native)  
+✅ **RESOLVED**: source-map beta version (forced to stable v0.7.4)  
+✅ **VERIFIED**: @popperjs/core compatibility with Radix UI
 
 ## Performance Improvements
 - Reduced bundle size by eliminating empty chunks
