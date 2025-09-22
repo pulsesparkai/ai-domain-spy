@@ -52,9 +52,9 @@ export const CommandCenter = () => {
   } = useRealtimeMonitoring();
   const [loading, setLoading] = useState(false);
   const [currentScore, setCurrentScore] = useState(0);
-  const [scoreHistory, setScoreHistory] = useState(null);
-  const [platformStatuses, setPlatformStatuses] = useState<PlatformStatus[]>(null);
-  const [recentCitations, setRecentCitations] = useState(null);
+  const [scoreHistory, setScoreHistory] = useState([]);
+  const [platformStatuses, setPlatformStatuses] = useState<PlatformStatus[]>([]);
+  const [recentCitations, setRecentCitations] = useState([]);
 
   useEffect(() => {
     loadScans();

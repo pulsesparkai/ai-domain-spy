@@ -6,7 +6,7 @@ import {
   Heart, 
   Target,
   FileText,
-  Terminal
+  Command
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -26,16 +26,15 @@ interface DashboardAnalysisSidebarProps {
   onViewChange: (view: string) => void;
 }
 
-// All navigation items in one flat list
-const allNavItems = [
-  { id: 'command-center', label: 'Command Center', icon: Terminal, path: '/command-center' },
-  { id: 'visibility', label: 'AI Visibility', icon: Eye },
-  { id: 'domain', label: 'Domain Analysis', icon: Globe },
-  { id: 'trends', label: 'Trending Prompts', icon: TrendingUp },
-  { id: 'citations', label: 'Citations', icon: Quote },
-  { id: 'sentiment', label: 'Sentiment Report', icon: Heart },
-  { id: 'rankings', label: 'AI Rankings', icon: Target },
-  { id: 'reports', label: 'Reports', icon: FileText },
+const navigationItems = [
+  { icon: Command, label: 'Command Center', path: '/command-center' },
+  { icon: Eye, label: 'AI Visibility', path: '/dashboard?view=visibility' },
+  { icon: Globe, label: 'Domain Analysis', path: '/dashboard?view=domain' },
+  { icon: TrendingUp, label: 'Trending Prompts', path: '/dashboard?view=trends' },
+  { icon: Quote, label: 'Citations', path: '/dashboard?view=citations' },
+  { icon: Heart, label: 'Sentiment Report', path: '/dashboard?view=sentiment' },
+  { icon: Target, label: 'AI Rankings', path: '/dashboard?view=rankings' },
+  { icon: FileText, label: 'Reports', path: '/dashboard?view=reports' }
 ];
 
 export function DashboardAnalysisSidebar({ activeView, onViewChange }: DashboardAnalysisSidebarProps) {
@@ -43,23 +42,7 @@ export function DashboardAnalysisSidebar({ activeView, onViewChange }: Dashboard
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isDashboard = location.pathname === '/dashboard';
-  
-  const handleItemClick = (item: typeof allNavItems[0]) => {
-    console.log('Navigating to:', item.path || `/dashboard?view=${item.id}`);
-    if (item.path) {
-      // Navigation items with paths
-      navigate(item.path);
-    } else {
-      // Analysis view items
-      if (isDashboard) {
-        navigate(`/dashboard?view=${item.id}`);
-      }
-      onViewChange(item.id);
-    }
-  };
-
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname + location.search === path;
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-60"}>
@@ -67,12 +50,12 @@ export function DashboardAnalysisSidebar({ activeView, onViewChange }: Dashboard
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {allNavItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
+              {navigationItems.map((item) => (
+                <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton 
-                    onClick={() => handleItemClick(item)}
+                    onClick={() => navigate(item.path)}
                     className={`cursor-pointer ${
-                      (item.path && isActive(item.path)) || (!item.path && activeView === item.id)
+                      isActive(item.path)
                         ? "bg-primary/10 text-primary font-medium" 
                         : "hover:bg-muted/50"
                     }`}
